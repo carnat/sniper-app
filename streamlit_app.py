@@ -940,6 +940,9 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
     market_col = _get_first_matching_column(df, ["market", "exchange", "country", "region"])
     master_col = _get_first_matching_column(df, ["master", "master_etf", "benchmark"])
 
+    # Default behavior: auto-detect per row with US fallback unless user forces a class.
+    fallback_asset_class = "US Stock" if default_asset_class == "Auto-detect" else default_asset_class
+
     is_transaction_mode = action_col is not None
     is_holdings_mode = (action_col is None and quantity_col is not None and (price_col is not None or cost_basis_col is not None))
 
@@ -988,7 +991,7 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
             row_errors.append(f"Row {row_num}: Invalid price/cost basis")
             continue
 
-        asset_class = default_asset_class
+        asset_class = fallback_asset_class
         if asset_col and pd.notna(row.get(asset_col)):
             mapped_asset = _normalize_asset_class(row[asset_col])
             if mapped_asset:
@@ -1011,11 +1014,11 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
         if not fund_code and asset_col is None:
             if symbol.endswith(".BK") or _looks_thai_market_hint(currency_hint, market_hint):
                 asset_class = "Thai Stock"
-            elif default_asset_class == "Mutual Fund":
+            elif fallback_asset_class == "Mutual Fund":
                 # Keep explicit user default for files that are all-fund and provided as symbol-like codes
                 asset_class = "Mutual Fund"
             else:
-                asset_class = default_asset_class
+                asset_class = fallback_asset_class
 
         if asset_class == "Thai Stock" and symbol and not symbol.endswith(".BK"):
             symbol = f"{symbol}.BK"
@@ -1549,9 +1552,10 @@ with tab6:
     st.markdown("---")
 
     import_asset_class = st.selectbox(
-        "Default asset class for rows without explicit class",
-        ["US Stock", "Thai Stock", "Mutual Fund"],
-        key="csv_default_asset_class"
+        "Asset class mode",
+        ["Auto-detect", "US Stock", "Thai Stock", "Mutual Fund"],
+        key="csv_default_asset_class",
+        help="Auto-detect uses per-row hints from Yahoo export (symbol/currency/market) and falls back to US Stock when ambiguous."
     )
 
     uploaded_csv = st.file_uploader("Upload CSV file", type=["csv"], key="csv_uploader")
