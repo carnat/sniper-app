@@ -499,7 +499,7 @@ usd_thb_rate = 34.0
 grand_total = (df_us['Value'].sum() * usd_thb_rate) + df_thai['Value'].sum() + df_vault['Value'].sum()
 grand_cost = (df_us['Cost Basis'].sum() * usd_thb_rate) + df_thai['Cost Basis'].sum() + df_vault['Cost Basis'].sum()
 grand_pl = grand_total - grand_cost
-grand_pct = (grand_pl / grand_cost) * 100
+grand_pct = (grand_pl / grand_cost) * 100 if grand_cost != 0 else 0
 
 # --- DASHBOARD ---
 st.subheader("📊 PORTFOLIO OVERVIEW")
@@ -517,19 +517,21 @@ with col1:
     )
 
 with col2:
+    us_pct_mean = df_us['P/L %'].mean() if len(df_us) > 0 else 0.0
     st.metric(
         "🦅 US ATTACK",
         f"${df_us['Value'].sum():,.0f}",
-        delta=f"{df_us['P/L %'].mean():+.2f}% Avg (${us_pl_usd:,.0f})",
-        delta_color="normal" if df_us['P/L %'].mean() > 0 else "inverse"
+        delta=f"{us_pct_mean:+.2f}% Avg (${us_pl_usd:,.0f})",
+        delta_color="normal" if us_pct_mean > 0 else "inverse"
     )
 
 with col3:
+    vault_pct_mean = df_vault['P/L %'].mean() if len(df_vault) > 0 else 0.0
     st.metric(
         "🏦 THAI VAULT",
         f"฿{df_vault['Value'].sum():,.0f}",
-        delta=f"{df_vault['P/L %'].mean():+.2f}% Avg (฿{vault_pl:,.0f})",
-        delta_color="normal" if df_vault['P/L %'].mean() > 0 else "inverse"
+        delta=f"{vault_pct_mean:+.2f}% Avg (฿{vault_pl:,.0f})",
+        delta_color="normal" if vault_pct_mean > 0 else "inverse"
     )
 
 st.markdown("""---""")
