@@ -489,6 +489,66 @@ def get_fund_data(fund_list):
     
     return df
 
+# --- NEWS & ALERTS ENGINE ---
+
+@st.cache_data(ttl=3600)
+def fetch_news_for_ticker(ticker):
+    """Fetch latest news for a ticker using NewsAPI (free tier)"""
+    try:
+        newsapi_key = st.secrets.get("news_alerts", {}).get("newsapi_key", "")
+        if not newsapi_key:
+            return []
+        
+        # Remove .BK extension for Thai stocks
+        search_ticker = ticker.replace(".BK", "")
+        
+        url = f"https://newsapi.org/v2/everything?q={search_ticker}&sortBy=publishedAt&language=en&pageSize=5"
+        headers = {"Authorization": newsapi_key}
+        
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            articles = response.json().get("articles", [])
+            return articles
+    except Exception as e:
+        pass
+    
+    return []
+
+def get_earnings_dates(tickers):
+    """Fetch upcoming earnings dates for tickers using yfinance"""
+    earnings = {}
+    for ticker in tickers:
+        try:
+            stock = yf.Ticker(ticker)
+            if hasattr(stock, 'info') and 'earningsDate' in stock.info:
+                earnings[ticker] = stock.info['earningsDate']
+        except:
+            pass
+    return earnings
+
+def check_price_alerts(portfolio_dict, current_prices):
+    """Check if any holdings cross price alert thresholds"""
+    alerts = []
+    threshold = st.secrets.get("news_alerts", {}).get("price_alert_threshold", 5)
+    
+    tickers = portfolio_dict.get("Ticker", [])
+    avg_costs = portfolio_dict.get("Avg_Cost", [])
+    
+    for ticker, avg_cost, current_price in zip(tickers, avg_costs, current_prices):
+        pct_change = ((current_price - avg_cost) / avg_cost) * 100
+        
+        if abs(pct_change) >= threshold:
+            alert_type = "📈 UP" if pct_change > 0 else "📉 DOWN"
+            alerts.append({
+                "ticker": ticker,
+                "change_pct": pct_change,
+                "change_type": alert_type,
+                "current_price": current_price,
+                "price_at_cost": avg_cost
+            })
+    
+    return alerts
+
 # --- EXECUTION ---
 df_us = get_stock_data(us_portfolio)
 df_thai = get_stock_data(thai_stocks)
@@ -536,7 +596,7 @@ with col3:
 
 st.markdown("""---""")
 st.markdown("")
-tab1, tab2, tab3 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS"])
+tab1, tab2, tab3, tab4 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER"])
 
 def color_pl(val): return f'color: {"#3fb950" if val > 0 else "#f85149"}; font-weight: bold;'
 
@@ -584,6 +644,63 @@ with tab3:
     with col_b:
         st.markdown("**Mutual Funds P/L %**")
         st.bar_chart(df_vault.set_index('Code')['P/L %'])
+
+with tab4:
+    st.subheader("📰 NEWS WATCHTOWER")
+    st.caption("Real-time news and alerts for your holdings")
+    
+    # Get all tickers from portfolios
+    all_tickers = us_portfolio.get("Ticker", []) + thai_stocks.get("Ticker", [])
+    
+    if not all_tickers:
+        st.info("📌 Add holdings to see news and alerts for your positions")
+    else:
+        # Check if NewsAPI key is configured
+        newsapi_key = st.secrets.get("news_alerts", {}).get("newsapi_key", "")
+        
+        if not newsapi_key:
+            st.warning("⚠️ NewsAPI key not configured. Add your free key from https://newsapi.org/ to `.streamlit/secrets.toml` under `[news_alerts]` → `newsapi_key`")
+        else:
+            # Price Alerts Section
+            st.markdown("#### 🚨 PRICE ALERTS")
+            us_prices = df_us['Live Price'].tolist() if len(df_us) > 0 else []
+            thai_prices = df_thai['Live Price'].tolist() if len(df_thai) > 0 else []
+            all_prices = us_prices + thai_prices
+            
+            us_alerts = check_price_alerts(us_portfolio, us_prices) if us_prices else []
+            thai_alerts = check_price_alerts(thai_stocks, thai_prices) if thai_prices else []
+            all_alerts = us_alerts + thai_alerts
+            
+            if all_alerts:
+                for alert in all_alerts:
+                    col_alert1, col_alert2, col_alert3 = st.columns([1, 2, 2])
+                    with col_alert1:
+                        st.metric(alert['ticker'], f"{alert['change_pct']:+.2f}%")
+                    with col_alert2:
+                        st.write(f"**Current:** ${alert['current_price']:.2f}")
+                    with col_alert3:
+                        st.write(f"**Cost Base:** ${alert['price_at_cost']:.2f}")
+            else:
+                st.success("✅ No price alerts - all holdings within threshold")
+            
+            st.markdown("---")
+            
+            # News Feed Section
+            st.markdown("#### 📺 NEWS FEED")
+            selected_ticker = st.selectbox("Select holding to view news", all_tickers)
+            
+            if selected_ticker:
+                st.write(f"**Latest news for {selected_ticker}**")
+                news_articles = fetch_news_for_ticker(selected_ticker)
+                
+                if news_articles:
+                    for i, article in enumerate(news_articles):
+                        with st.expander(f"📰 {article['title']} ({article['source']['name']})"):
+                            st.write(article['description'])
+                            st.caption(f"Published: {article['publishedAt']}")
+                            st.link_button("Read Full Article", article['url'])
+                else:
+                    st.info(f"No recent news found for {selected_ticker}")
 
 # --- TRANSACTION SIDEBAR ---
 st.sidebar.markdown("---")
