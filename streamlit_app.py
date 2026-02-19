@@ -870,6 +870,27 @@ def _get_first_matching_column(df, aliases):
             return normalized_map[key]
     return None
 
+def _normalize_asset_class(value):
+    text = str(value).strip().lower()
+    if text in ["us stock", "us", "stock", "equity", "us_equity"]:
+        return "US Stock"
+    if text in ["thai stock", "th stock", "thai", "thai_equity", "th_equity"]:
+        return "Thai Stock"
+    if text in ["mutual fund", "fund", "thai fund", "th fund", "thai_mutual_fund"]:
+        return "Mutual Fund"
+    return None
+
+def _looks_thai_market_hint(currency_value, market_value):
+    currency_text = str(currency_value).strip().upper() if currency_value is not None else ""
+    market_text = str(market_value).strip().upper() if market_value is not None else ""
+    return (
+        currency_text == "THB"
+        or "SET" in market_text
+        or "BANGKOK" in market_text
+        or "THAILAND" in market_text
+        or "BK" in market_text
+    )
+
 def _parse_numeric_value(value):
     """Parse numeric values from Yahoo-style CSV fields (commas, currency symbols, parentheses)."""
     if value is None or (isinstance(value, float) and pd.isna(value)):
@@ -915,6 +936,8 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
     cost_basis_col = _get_first_matching_column(df, ["cost_basis", "book_cost", "book cost", "total_cost", "cost basis"])
     date_col = _get_first_matching_column(df, ["trade_date", "date", "transaction_date"])
     asset_col = _get_first_matching_column(df, ["asset_class", "asset_type", "class"])
+    currency_col = _get_first_matching_column(df, ["currency", "curr", "trading_currency", "trading currency"])
+    market_col = _get_first_matching_column(df, ["market", "exchange", "country", "region"])
     master_col = _get_first_matching_column(df, ["master", "master_etf", "benchmark"])
 
     is_transaction_mode = action_col is not None
@@ -967,7 +990,9 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
 
         asset_class = default_asset_class
         if asset_col and pd.notna(row.get(asset_col)):
-            asset_class = str(row[asset_col]).strip()
+            mapped_asset = _normalize_asset_class(row[asset_col])
+            if mapped_asset:
+                asset_class = mapped_asset
 
         symbol = ""
         fund_code = ""
@@ -979,6 +1004,18 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
         else:
             row_errors.append(f"Row {row_num}: Missing symbol/fund code")
             continue
+
+        # Per-row inference for Yahoo exports (when asset class column is absent/ambiguous)
+        currency_hint = row.get(currency_col) if currency_col else None
+        market_hint = row.get(market_col) if market_col else None
+        if not fund_code and asset_col is None:
+            if symbol.endswith(".BK") or _looks_thai_market_hint(currency_hint, market_hint):
+                asset_class = "Thai Stock"
+            elif default_asset_class == "Mutual Fund":
+                # Keep explicit user default for files that are all-fund and provided as symbol-like codes
+                asset_class = "Mutual Fund"
+            else:
+                asset_class = default_asset_class
 
         if asset_class == "Thai Stock" and symbol and not symbol.endswith(".BK"):
             symbol = f"{symbol}.BK"
@@ -1496,6 +1533,7 @@ with tab5:
 with tab6:
     st.subheader("📥 CSV IMPORT (Yahoo-style)")
     st.caption("Import transactions or holdings snapshots for US stocks, Thai stocks, or Thai mutual funds. Extra columns are ignored.")
+    st.caption("Auto-normalization: if Yahoo row hints indicate Thailand (THB/SET/Thailand), symbols like ADVANC are converted to ADVANC.BK.")
 
     templates = get_csv_templates()
     col_t1, col_t2, col_t3, col_t4 = st.columns(4)
