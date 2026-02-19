@@ -870,31 +870,65 @@ def _get_first_matching_column(df, aliases):
             return normalized_map[key]
     return None
 
+def _parse_numeric_value(value):
+    """Parse numeric values from Yahoo-style CSV fields (commas, currency symbols, parentheses)."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    text = str(value).strip()
+    if text == "":
+        return None
+
+    negative = text.startswith("(") and text.endswith(")")
+    cleaned = (
+        text.replace("(", "")
+        .replace(")", "")
+        .replace(",", "")
+        .replace("$", "")
+        .replace("฿", "")
+        .replace("THB", "")
+        .replace("USD", "")
+        .strip()
+    )
+    try:
+        number = float(cleaned)
+        return -number if negative else number
+    except Exception:
+        return None
+
 def parse_transactions_csv(uploaded_file, default_asset_class):
-    """Parse Yahoo-style transaction CSV into canonical rows."""
+    """Parse Yahoo-style CSV into canonical transaction rows.
+
+    Supports:
+    - transaction export: action + quantity + price + date
+    - holdings export: symbol + shares + avg cost/cost basis
+    """
     try:
         df = pd.read_csv(uploaded_file)
     except Exception as exc:
         return None, [f"Unable to read CSV: {exc}"]
 
-    symbol_col = _get_first_matching_column(df, ["symbol", "ticker", "code"])
+    symbol_col = _get_first_matching_column(df, ["symbol", "ticker", "code", "holding", "security"])
     fund_col = _get_first_matching_column(df, ["fund_code", "fundcode", "fund"])
     action_col = _get_first_matching_column(df, ["action", "type", "transaction_type", "transaction type"])
-    quantity_col = _get_first_matching_column(df, ["quantity", "shares", "units", "qty"])
-    price_col = _get_first_matching_column(df, ["price", "trade_price", "fill_price", "avg_price", "nav"])
+    quantity_col = _get_first_matching_column(df, ["quantity", "shares", "units", "qty", "shares_owned", "shares owned"])
+    price_col = _get_first_matching_column(df, ["price", "trade_price", "fill_price", "avg_price", "nav", "average_cost", "avg_cost", "avg cost", "cost"])
+    cost_basis_col = _get_first_matching_column(df, ["cost_basis", "book_cost", "book cost", "total_cost", "cost basis"])
     date_col = _get_first_matching_column(df, ["trade_date", "date", "transaction_date"])
     asset_col = _get_first_matching_column(df, ["asset_class", "asset_type", "class"])
     master_col = _get_first_matching_column(df, ["master", "master_etf", "benchmark"])
 
+    is_transaction_mode = action_col is not None
+    is_holdings_mode = (action_col is None and quantity_col is not None and (price_col is not None or cost_basis_col is not None))
+
     errors = []
-    if not action_col:
-        errors.append("Missing action/type column (expected: action/type/transaction_type)")
     if not quantity_col:
         errors.append("Missing quantity column (expected: quantity/shares/units)")
-    if not price_col:
-        errors.append("Missing price column (expected: price/trade_price/nav)")
+    if not price_col and not cost_basis_col:
+        errors.append("Missing price or cost basis column (expected: price/nav/avg_cost or cost_basis)")
     if not symbol_col and not fund_col:
         errors.append("Missing instrument column (expected symbol/ticker/code or fund_code)")
+    if not is_transaction_mode and not is_holdings_mode:
+        errors.append("Could not detect CSV mode. Provide either action column (transactions) or holdings fields (shares + avg cost/cost basis).")
     if errors:
         return None, errors
 
@@ -903,24 +937,32 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
 
     for idx, row in df.iterrows():
         row_num = idx + 2
-        action_raw = str(row[action_col]).strip().upper()
-        if action_raw in ["BUY", "B"]:
-            action = "Buy"
-        elif action_raw in ["SELL", "S"]:
-            action = "Sell"
+        if is_transaction_mode:
+            action_raw = str(row[action_col]).strip().upper()
+            if action_raw in ["BUY", "B"]:
+                action = "Buy"
+            elif action_raw in ["SELL", "S"]:
+                action = "Sell"
+            else:
+                row_errors.append(f"Row {row_num}: Unsupported action '{action_raw}'")
+                continue
         else:
-            row_errors.append(f"Row {row_num}: Unsupported action '{action_raw}'")
+            # Holdings snapshot import: treat each row as opening BUY.
+            action = "Buy"
+
+        quantity = _parse_numeric_value(row[quantity_col])
+        if quantity is None or quantity <= 0:
+            row_errors.append(f"Row {row_num}: Invalid quantity")
             continue
 
-        try:
-            quantity = float(str(row[quantity_col]).replace(",", ""))
-            price = float(str(row[price_col]).replace(",", ""))
-        except Exception:
-            row_errors.append(f"Row {row_num}: Invalid quantity/price")
-            continue
+        price = _parse_numeric_value(row[price_col]) if price_col else None
+        if (price is None or price <= 0) and cost_basis_col:
+            cost_basis = _parse_numeric_value(row[cost_basis_col])
+            if cost_basis is not None and cost_basis > 0:
+                price = cost_basis / quantity
 
-        if quantity <= 0 or price <= 0:
-            row_errors.append(f"Row {row_num}: Quantity and price must be > 0")
+        if price is None or price <= 0:
+            row_errors.append(f"Row {row_num}: Invalid price/cost basis")
             continue
 
         asset_class = default_asset_class
@@ -1453,7 +1495,7 @@ with tab5:
 
 with tab6:
     st.subheader("📥 CSV IMPORT (Yahoo-style)")
-    st.caption("Import transactions for US stocks, Thai stocks, or Thai mutual funds.")
+    st.caption("Import transactions or holdings snapshots for US stocks, Thai stocks, or Thai mutual funds. Extra columns are ignored.")
 
     templates = get_csv_templates()
     col_t1, col_t2, col_t3, col_t4 = st.columns(4)
@@ -1486,6 +1528,7 @@ with tab6:
 
         if parsed_df is not None and len(parsed_df) > 0:
             st.success(f"Parsed {len(parsed_df)} valid rows")
+            st.info("Only relevant fields are extracted: instrument, action, quantity, price/cost basis, and date.")
             st.dataframe(parsed_df, hide_index=True, use_container_width=True)
 
             st.markdown("#### Dry Run Preview")
