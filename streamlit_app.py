@@ -150,6 +150,33 @@ def save_transaction_history():
     except Exception:
         pass
 
+def get_alert_state_file_path():
+    """Local file path for persistent alert trigger state."""
+    return Path(".streamlit") / "alert_state.json"
+
+def load_alert_state():
+    """Load alert trigger state from local file."""
+    try:
+        file_path = get_alert_state_file_path()
+        if file_path.exists():
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+                if isinstance(data, dict):
+                    return data
+    except Exception:
+        pass
+    return {}
+
+def save_alert_state():
+    """Persist alert trigger state to local file."""
+    try:
+        file_path = get_alert_state_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(st.session_state.alert_state, file, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
 def build_import_key(asset_class, action, symbol, fund_code, quantity, price, transaction_date):
     """Build deterministic key for idempotent CSV imports."""
     instrument = fund_code if fund_code else symbol
@@ -433,6 +460,10 @@ if 'us_portfolio' not in st.session_state:
 # Initialize transaction history
 if 'transaction_history' not in st.session_state:
     st.session_state.transaction_history = load_transaction_history()
+
+# Initialize alert state
+if 'alert_state' not in st.session_state:
+    st.session_state.alert_state = load_alert_state()
 
 init_lot_database()
 seed_opening_lots_from_portfolios(st.session_state.us_portfolio, st.session_state.thai_stocks, st.session_state.vault_portfolio)
@@ -864,26 +895,69 @@ def get_earnings_dates(tickers):
             pass
     return earnings
 
-def check_price_alerts(portfolio_dict, current_prices):
-    """Check if any holdings cross price alert thresholds"""
+def check_price_alerts(portfolio_dict, current_prices, asset_type):
+    """Check holdings against threshold with dedupe + cooldown state."""
     alerts = []
     threshold = st.secrets.get("news_alerts", {}).get("price_alert_threshold", 5)
+    cooldown_minutes = st.secrets.get("news_alerts", {}).get("alerts_cooldown_minutes", 60)
+    now = datetime.now()
     
     tickers = portfolio_dict.get("Ticker", [])
     avg_costs = portfolio_dict.get("Avg_Cost", [])
+    currency_symbol = "$" if asset_type == "US Stock" else "฿"
     
     for ticker, avg_cost, current_price in zip(tickers, avg_costs, current_prices):
+        if avg_cost is None or avg_cost == 0:
+            continue
+
         pct_change = ((current_price - avg_cost) / avg_cost) * 100
+        direction = "up" if pct_change > 0 else "down"
+        state_key = f"{asset_type}|{ticker}"
+        previous_state = st.session_state.alert_state.get(state_key, {})
+        previously_triggered = previous_state.get("triggered", False)
+        previous_direction = previous_state.get("direction")
+        last_alert_at = previous_state.get("last_alert_at")
+
+        cooldown_ok = True
+        if last_alert_at:
+            last_alert_dt = pd.to_datetime(last_alert_at, errors='coerce')
+            if not pd.isna(last_alert_dt):
+                elapsed_seconds = (now - last_alert_dt.to_pydatetime()).total_seconds()
+                cooldown_ok = elapsed_seconds >= (cooldown_minutes * 60)
+
+        in_threshold = abs(pct_change) >= threshold
+        is_new = False
+
+        if in_threshold:
+            crossed_threshold = (not previously_triggered) or (previous_direction != direction)
+            is_new = crossed_threshold and cooldown_ok
+
+            st.session_state.alert_state[state_key] = {
+                "triggered": True,
+                "direction": direction,
+                "last_alert_at": now.isoformat() if is_new else last_alert_at,
+                "last_pct": pct_change
+            }
         
-        if abs(pct_change) >= threshold:
-            alert_type = "📈 UP" if pct_change > 0 else "📉 DOWN"
             alerts.append({
                 "ticker": ticker,
                 "change_pct": pct_change,
-                "change_type": alert_type,
+                "change_type": "📈 UP" if pct_change > 0 else "📉 DOWN",
                 "current_price": current_price,
-                "price_at_cost": avg_cost
+                "price_at_cost": avg_cost,
+                "asset_type": asset_type,
+                "currency_symbol": currency_symbol,
+                "is_new": is_new
             })
+        else:
+            st.session_state.alert_state[state_key] = {
+                "triggered": False,
+                "direction": None,
+                "last_alert_at": last_alert_at,
+                "last_pct": pct_change
+            }
+
+    save_alert_state()
     
     return alerts
 
@@ -1381,6 +1455,14 @@ df_us = get_stock_data(us_portfolio)
 df_thai = get_stock_data(thai_stocks)
 df_vault = get_fund_data(vault_portfolio)
 
+# Precompute alerts once per render (for Today Brief and News tab)
+us_prices = df_us['Live Price'].tolist() if len(df_us) > 0 else []
+thai_prices = df_thai['Live Price'].tolist() if len(df_thai) > 0 else []
+us_alerts = check_price_alerts(us_portfolio, us_prices, "US Stock") if us_prices else []
+thai_alerts = check_price_alerts(thai_stocks, thai_prices, "Thai Stock") if thai_prices else []
+all_alerts = us_alerts + thai_alerts
+new_alert_count = sum(1 for alert in all_alerts if alert.get("is_new"))
+
 # Totals
 usd_thb_rate = 34.0
 grand_total = (df_us['Value'].sum() * usd_thb_rate) + df_thai['Value'].sum() + df_vault['Value'].sum()
@@ -1388,7 +1470,58 @@ grand_cost = (df_us['Cost Basis'].sum() * usd_thb_rate) + df_thai['Cost Basis'].
 grand_pl = grand_total - grand_cost
 grand_pct = (grand_pl / grand_cost) * 100 if grand_cost != 0 else 0
 
+# Today brief helpers
+biggest_mover_label = "N/A"
+biggest_mover_pct = 0.0
+try:
+    mover_candidates = []
+    if len(df_us) > 0:
+        for _, row in df_us.iterrows():
+            mover_candidates.append((row['Ticker'], float(row['P/L %'])))
+    if len(df_thai) > 0:
+        for _, row in df_thai.iterrows():
+            mover_candidates.append((row['Ticker'], float(row['P/L %'])))
+    if not mover_candidates and len(df_vault) > 0:
+        for _, row in df_vault.iterrows():
+            mover_candidates.append((row['Code'], float(row['Fund Day Gain %'])))
+    if mover_candidates:
+        biggest_mover_label, biggest_mover_pct = max(mover_candidates, key=lambda item: abs(item[1]))
+except Exception:
+    pass
+
+next_event_text = "No upcoming earnings"
+try:
+    earnings_map = get_earnings_dates(df_us['Ticker'].tolist() if len(df_us) > 0 else [])
+    upcoming = []
+    for ticker, event_value in earnings_map.items():
+        candidate = event_value[0] if isinstance(event_value, list) and len(event_value) > 0 else event_value
+        parsed_event = pd.to_datetime(candidate, errors='coerce')
+        if not pd.isna(parsed_event):
+            upcoming.append((parsed_event, ticker))
+    if upcoming:
+        upcoming.sort(key=lambda item: item[0])
+        event_date, event_ticker = upcoming[0]
+        next_event_text = f"{event_ticker} · {event_date.strftime('%b %d')}"
+except Exception:
+    pass
+
 # --- DASHBOARD ---
+st.subheader("🧭 TODAY BRIEF")
+brief1, brief2, brief3, brief4 = st.columns(4, gap="small")
+
+with brief1:
+    st.metric("Portfolio Move", f"{grand_pct:+.2f}%")
+
+with brief2:
+    st.metric("Biggest Mover", f"{biggest_mover_label}", delta=f"{biggest_mover_pct:+.2f}%")
+
+with brief3:
+    st.metric("Next Event", next_event_text)
+
+with brief4:
+    st.metric("New Alerts", new_alert_count, delta=f"{len(all_alerts)} active")
+
+st.markdown("---")
 st.subheader("📊 PORTFOLIO OVERVIEW")
 col1, col2, col3 = st.columns(3, gap="medium")
 
@@ -1490,23 +1623,19 @@ with tab4:
         else:
             # Price Alerts Section
             st.markdown("#### 🚨 PRICE ALERTS")
-            us_prices = df_us['Live Price'].tolist() if len(df_us) > 0 else []
-            thai_prices = df_thai['Live Price'].tolist() if len(df_thai) > 0 else []
-            all_prices = us_prices + thai_prices
-            
-            us_alerts = check_price_alerts(us_portfolio, us_prices) if us_prices else []
-            thai_alerts = check_price_alerts(thai_stocks, thai_prices) if thai_prices else []
-            all_alerts = us_alerts + thai_alerts
             
             if all_alerts:
                 for alert in all_alerts:
                     col_alert1, col_alert2, col_alert3 = st.columns([1, 2, 2])
                     with col_alert1:
-                        st.metric(alert['ticker'], f"{alert['change_pct']:+.2f}%")
+                        st.metric(
+                            f"{alert['ticker']}{' 🆕' if alert.get('is_new') else ''}",
+                            f"{alert['change_pct']:+.2f}%"
+                        )
                     with col_alert2:
-                        st.write(f"**Current:** ${alert['current_price']:.2f}")
+                        st.write(f"**Current:** {alert['currency_symbol']}{alert['current_price']:.2f}")
                     with col_alert3:
-                        st.write(f"**Cost Base:** ${alert['price_at_cost']:.2f}")
+                        st.write(f"**Cost Base:** {alert['currency_symbol']}{alert['price_at_cost']:.2f}")
             else:
                 st.success("✅ No price alerts - all holdings within threshold")
             
@@ -1657,15 +1786,18 @@ with tab6:
         help="Auto-detect uses per-row hints from Yahoo export (symbol/currency/market) and falls back to US Stock when ambiguous."
     )
 
+    st.markdown("#### Step 1 — Upload")
     uploaded_csv = st.file_uploader("Upload CSV file", type=["csv"], key="csv_uploader")
 
     if uploaded_csv is not None:
         parsed_df, parse_errors = parse_transactions_csv(uploaded_csv, import_asset_class)
 
+        st.markdown("#### Step 2 — Validate & Preview")
         if parse_errors:
-            st.error("CSV has validation issues:")
-            for err in parse_errors[:20]:
-                st.write(f"- {err}")
+            st.warning(f"Found {len(parse_errors)} validation notes")
+            with st.expander("Show validation notes"):
+                for err in parse_errors[:50]:
+                    st.write(f"- {err}")
 
         if parsed_df is not None and len(parsed_df) > 0:
             st.success(f"Parsed {len(parsed_df)} valid rows")
@@ -1687,6 +1819,8 @@ with tab6:
 
             st.dataframe(preview_df, hide_index=True, use_container_width=True)
 
+            st.markdown("#### Step 3 — Commit")
+            st.caption("Imports valid rows and skips duplicates automatically.")
             if st.button("Import Transactions", key="run_csv_import"):
                 success_count = 0
                 skipped_duplicates = 0
