@@ -1,90 +1,78 @@
 # 🎯 SNIPER OS
 
-SNIPER OS is a portfolio intelligence dashboard for tracking US stocks, Thai equities, and Thai mutual funds with real-time market data and performance analytics.
+SNIPER OS is a Streamlit portfolio dashboard for tracking US stocks, Thai equities, and Thai mutual funds in one place.
 
-Current app version is stored in [VERSION](VERSION).
+It combines live market pricing, transaction tracking, portfolio analytics, risk snapshots, and scenario tools in a single app.
 
-## 🚀 Features
+Current release version: [VERSION](VERSION)
 
-### 📊 Portfolio Overview Dashboard
+## Why SNIPER OS
 
-- **Net Worth (THB)** - Combined portfolio value with P/L tracking across all assets
-- **US Attack Performance** - US equity portfolio metrics with average returns
-- **Thai Vault Performance** - Thai holdings metrics with average returns
-- Real-time value updates and P/L calculations
+- Multi-market tracking for US + Thailand holdings
+- Realized and unrealized P/L visibility
+- Portfolio analytics (attribution, risk panel, rebalancing what-if)
+- News and alert workflow tied to portfolio symbols
+- Local-first storage with secrets-based private configuration
 
-### 🦅 US Equities (`US ATTACK`)
+## Feature Highlights
 
-- Track US stocks with live prices from yfinance
-- Display shares, average cost, live price, and P/L metrics
-- Automatic cost basis calculations
-- Color-coded P/L % (green for gains, red for losses)
+### Portfolio Overview
 
-### 🏰 Thai Assets (`THAI VAULT`)
+- Net worth and P/L summary in THB
+- Separate US and Thai portfolio performance blocks
+- "Today Brief" indicators for quick daily context
 
-- **Thai Equities** - Real-time price tracking for Thai-listed stocks (.BK tickers)
-- **Mutual Funds** - Real-time NAV (Net Asset Value) from SEC Thailand API
-  - Fund daily gains tracking
-  - Master ETF correlation analysis
-  - Performance comparison vs benchmark ETFs (QQQ, VOO, SOXX, VTI, GLD, etc.)
-  - Master vs Fund % - Shows daily correlation difference between fund and master ETF
+### Holdings & Pricing
 
-### 📈 Analytics Tab
+- US/Thai equities via yfinance
+- Thai mutual fund NAV via SEC Thailand API
+- Fund-to-master comparison metrics (e.g., QQQ, VOO)
 
-- Performance charts for US equities
-- Performance charts for mutual funds
-- Visual P/L % comparisons across holdings
+### Transactions & Lots
 
-### 📰 News Watchtower
+- Sidebar trade entry for US stocks, Thai stocks, and funds
+- Buy/Sell + cash events (Dividend/Fee) + stock splits
+- Lot methods per asset class (FIFO/LIFO/AVERAGE)
+- Realized P/L history and correction/reversal workflow
 
-- **Real-Time News Feed** - Latest articles for each holding from NewsAPI
-- **Price Alerts** - Automatic alerts when prices move ±5% (customizable)
-- **Smart Filtering** - View news by ticker with direct article links
-- **Alert Dashboard** - Visual indicators for significant price movements
-- See [NEWS_SETUP.md](NEWS_SETUP.md) for configuration
+### Analytics
 
-### 💰 Transaction Management (Sidebar)
+- P/L attribution by asset class and instrument
+- Risk Panel v1 (concentration, stress assumptions, exposure mix)
+- What-if rebalancing calculator
+- Signal scoring layer
+- Snapshot history and scenario backtesting/compare
 
-- **Buy/Sell Transactions** for US stocks, Thai stocks, and Thai mutual funds
-- **Automatic Cost Basis Updates** - Calculates weighted average cost
-- Add new positions or modify existing ones
-- Sell specific quantities while maintaining cost tracking
+### News & Alerts
 
-### 📡 Real-Time Data Sources
+- News feed by holding (NewsAPI)
+- Price alert monitoring based on configured thresholds
 
-- ✅ **US/Thai Stocks**: yfinance (market hours data)
-- ✅ **Thai Mutual Funds**: Official SEC Thailand API (api.sec.or.th)
-- ✅ **Master ETF Tracking**: Real-time market data from yfinance
-- ✅ **Live NAV**: Direct integration with Thai fund registry
+See [NEWS_SETUP.md](NEWS_SETUP.md) for NewsAPI setup.
 
-## 📋 Quick Start
+## Quick Start
 
-### 1. Install Requirements
+### 1) Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Your Portfolio (Private Data)
+### 2) Add private portfolio config
 
-Your holdings are stored in `.streamlit/secrets.toml` which is **NOT tracked by Git**.
-
-**Edit `.streamlit/secrets.toml`:**
+Create or edit `.streamlit/secrets.toml`:
 
 ```toml
-# US Portfolio
 [us_portfolio]
 Ticker = ["AAPL", "GOOGL", "MSFT"]
 Shares = [10.0, 5.0, 15.0]
 Avg_Cost = [150.25, 2800.50, 380.00]
 
-# Thai Stocks
 [thai_stocks]
 Ticker = ["TISCO.BK", "ADVANC.BK"]
 Shares = [100, 50]
 Avg_Cost = [95.50, 280.00]
 
-# Mutual Funds (add a [[vault_portfolio]] section for each fund)
 [[vault_portfolio]]
 Code = "SCBNDQ(E)"
 Units = 1000
@@ -97,7 +85,6 @@ Units = 500
 Cost = 38.00
 Master = "VOO"
 
-# Optional: News & Alerts (requires free NewsAPI key)
 [news_alerts]
 newsapi_key = "your_free_key_from_newsapi.org"
 price_alert_threshold = 5
@@ -105,87 +92,38 @@ enable_price_alerts = true
 enable_news_feed = true
 ```
 
-**Get NewsAPI Key:** Sign up free at [newsapi.org](https://newsapi.org/) (100 requests/day)
+Get a free key at [newsapi.org](https://newsapi.org/).
 
-### 3. Run the App
+### 3) Run the app
 
 ```bash
 streamlit run streamlit_app.py
 ```
 
-Visit `http://localhost:8501` in your browser
+Open [http://localhost:8501](http://localhost:8501).
 
-## 🔒 Data Privacy
+## Privacy & Data Storage
 
-Your portfolio data is designed to stay local to your environment:
+- Portfolio secrets: `.streamlit/secrets.toml` (gitignored)
+- Local runtime state: `.streamlit/` files (transactions, lots DB, snapshots, alerts)
+- No dedicated portfolio telemetry pipeline in this repo
 
-- ✅ **Portfolio data** stored in `.streamlit/secrets.toml` (gitignored)
-- ✅ **Not tracked in Git by default** - safe for normal code pushes
-- ✅ **Local storage** - data remains on your machine unless you deploy it
-- ✅ **No portfolio telemetry pipeline** in this app
+## Deployment (Streamlit Cloud)
 
-### Portfolio Data Format
+1. Push code to GitHub
+2. Connect repo in Streamlit Cloud
+3. Open app settings → Secrets
+4. Paste local `.streamlit/secrets.toml` contents
+5. Deploy and verify portfolio loads
 
-**US Portfolio:**
+## Software Versioning
 
-- Ticker (string array) - US stock symbols
-- Shares (float array) - Number of shares held
-- Avg_Cost (float array) - Average cost per share (USD)
+This project uses Semantic Versioning (`MAJOR.MINOR.PATCH`).
 
-**Thai Stocks:**
+- Source of truth: [VERSION](VERSION)
+- Release notes: [CHANGELOG.md](CHANGELOG.md)
 
-- Ticker (string array) - Thai stock symbols ending with `.BK`
-- Shares (float array) - Number of shares held
-- Avg_Cost (float array) - Average cost per share (THB)
-
-**Vault Portfolio (Mutual Funds):**
-
-- Code (string) - Fund identifier (e.g., "SCBNDQ(E)")
-- Units (float) - Number of fund units
-- Cost (float) - NAV cost per unit (THB)
-- Master (string) - Benchmark ETF for correlation tracking
-
-## 🌐 Deployment on Streamlit Cloud
-
-To deploy your app securely on Streamlit Cloud:
-
-1. Push code to GitHub (secrets.toml is gitignored, so your data won't be pushed)
-2. Connect your GitHub repo to Streamlit Cloud
-3. Go to app settings → "Secrets"
-4. Copy contents of your local `.streamlit/secrets.toml`
-5. Paste into the Streamlit Cloud secrets manager
-6. Your app will load holdings from Streamlit Cloud secrets
-
-## 📊 Dashboard Metrics Explained
-
-- **Net Worth (THB)** - Total portfolio value converted to Thai Baht (USD holdings × 34 THB/USD)
-- **P/L** - Unrealized profit/loss (Current Value - Cost Basis)
-- **P/L %** - Percentage return on investment
-- **Fund Day Gain %** - Day-over-day NAV change for mutual funds
-- **Master Day Gain %** - Day-over-day performance of benchmark ETF
-- **Master vs Fund %** - Difference between fund and master performance (alpha tracking)
-
-## 🛠️ Technical Stack
-
-- **Framework**: Streamlit
-- **Data**: yfinance, SEC Thailand API
-- **Storage**: TOML secrets file
-- **Language**: Python 3.8+
-
-## 🔢 Software Versioning
-
-This project uses **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
-
-- `MAJOR` - breaking changes
-- `MINOR` - backward-compatible features
-- `PATCH` - backward-compatible fixes
-
-### Single Source of Truth
-
-- App version is read from [VERSION](VERSION)
-- Release notes are tracked in [CHANGELOG.md](CHANGELOG.md)
-
-### Bump Version
+### Bump version
 
 ```bash
 python bump_version.py patch
@@ -193,46 +131,33 @@ python bump_version.py patch
 # or: python bump_version.py major
 ```
 
-After bumping:
-
-1. Update [CHANGELOG.md](CHANGELOG.md)
-2. Commit version + changelog together
-3. Tag release in Git (optional)
-
-### Release Process (Example)
+### Release flow (example)
 
 ```bash
-# 1) bump version
 python bump_version.py patch
 
-# 2) update changelog for the new version
-# (edit CHANGELOG.md)
-
-# 3) commit release metadata
+# update CHANGELOG.md
 git add VERSION CHANGELOG.md
 git commit -m "Release vX.Y.Z"
 
-# 4) create annotated tag
 git tag -a vX.Y.Z -m "Release vX.Y.Z"
-
-# 5) push commit and tag
 git push origin main
 git push origin vX.Y.Z
 ```
 
-## 📝 Notes
+## Tech Stack
 
-- Prices update in real-time during market hours
-- Thai market data available during Thai market hours
-- Average cost basis automatically calculated on buy transactions
-- All prices and costs denominated in their respective currencies (USD for US, THB for Thai)
+- Streamlit
+- pandas
+- yfinance
+- SEC Thailand API
 
-## 🔗 Resources
+## Resources
 
-- [Streamlit Documentation](https://docs.streamlit.io/)
+- [Streamlit Docs](https://docs.streamlit.io/)
 - [SEC Thailand API](https://api.sec.or.th/)
-- [yfinance Documentation](https://github.com/ranaroussi/yfinance)
+- [yfinance](https://github.com/ranaroussi/yfinance)
 
 ---
 
-**Disclaimer**: This is a personal portfolio tracking tool. Not financial advice. Always do your own research before investing.
+**Disclaimer:** This tool is for portfolio tracking and research workflows. It is not financial advice.
