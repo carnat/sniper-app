@@ -931,8 +931,9 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
     symbol_col = _get_first_matching_column(df, ["symbol", "ticker", "code", "holding", "security"])
     fund_col = _get_first_matching_column(df, ["fund_code", "fundcode", "fund"])
     action_col = _get_first_matching_column(df, ["action", "type", "transaction_type", "transaction type"])
+    yahoo_tx_type_col = _get_first_matching_column(df, ["transaction_type", "transaction type"])
     quantity_col = _get_first_matching_column(df, ["quantity", "shares", "units", "qty", "shares_owned", "shares owned"])
-    price_col = _get_first_matching_column(df, ["price", "trade_price", "fill_price", "avg_price", "nav", "average_cost", "avg_cost", "avg cost", "cost"])
+    price_col = _get_first_matching_column(df, ["price", "trade_price", "fill_price", "avg_price", "nav", "purchase_price", "purchase price", "average_cost", "avg_cost", "avg cost", "cost", "current_price", "current price"])
     cost_basis_col = _get_first_matching_column(df, ["cost_basis", "book_cost", "book cost", "total_cost", "cost basis"])
     date_col = _get_first_matching_column(df, ["trade_date", "date", "transaction_date"])
     asset_col = _get_first_matching_column(df, ["asset_class", "asset_type", "class"])
@@ -963,6 +964,17 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
 
     for idx, row in df.iterrows():
         row_num = idx + 2
+
+        # Skip Yahoo cash transactions (e.g., $$CASH_TX with DEPOSIT/WITHDRAWAL)
+        symbol_hint = ""
+        if symbol_col and pd.notna(row.get(symbol_col)):
+            symbol_hint = str(row[symbol_col]).strip().upper()
+        tx_type_hint = ""
+        if yahoo_tx_type_col and pd.notna(row.get(yahoo_tx_type_col)):
+            tx_type_hint = str(row[yahoo_tx_type_col]).strip().upper()
+        if symbol_hint.startswith("$$CASH") or tx_type_hint in {"DEPOSIT", "WITHDRAWAL", "CASH", "DIVIDEND CASH"}:
+            continue
+
         if is_transaction_mode:
             action_raw = str(row[action_col]).strip().upper()
             if action_raw in ["BUY", "B"]:
@@ -970,8 +982,12 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
             elif action_raw in ["SELL", "S"]:
                 action = "Sell"
             else:
-                row_errors.append(f"Row {row_num}: Unsupported action '{action_raw}'")
-                continue
+                # Yahoo holdings rows can appear with empty Transaction Type.
+                if action_raw in ["", "NAN", "NONE"]:
+                    action = "Buy"
+                else:
+                    row_errors.append(f"Row {row_num}: Unsupported action '{action_raw}'")
+                    continue
         else:
             # Holdings snapshot import: treat each row as opening BUY.
             action = "Buy"
