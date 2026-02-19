@@ -850,7 +850,79 @@ fund_api_mapping = {
     "SCBS&P500FUND(SSFA)": "SCBS&P500FUND(SSFA)",
     "SCBGOLDHE": "SCBGOLDHFUND",  # SCBGOLDHE is a class under SCBGOLDHFUND (M0856_2553)
     "SCB70SSF(SSFX)": "SCB70SSF",
+    "SCBS&P500(E)": "SCBS&P500FUND(E)",
+    "SCBS&P500-SSF": "SCBS&P500FUND(SSF)",
+    "SCB70-SSFX": "SCB70SSF(SSFX)",
 }
+
+def _normalize_fund_token(text):
+    """Normalize fund labels for resilient matching across import formats."""
+    return (
+        str(text or "")
+        .upper()
+        .replace(" ", "")
+        .replace("-", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace(".", "")
+    )
+
+def _resolve_fund_proj_id_and_class(fund_code, registry):
+    """Resolve SEC proj_id + class suffix from imported fund code variants."""
+    code_raw = str(fund_code or "").strip().upper()
+    if not code_raw:
+        return None, None
+
+    api_code = fund_api_mapping.get(code_raw, code_raw)
+
+    class_suffix = None
+    base_candidate = api_code
+    if '(' in api_code and api_code.endswith(')'):
+        base_candidate = api_code[:api_code.index('(')]
+        class_suffix = api_code[api_code.index('('):]
+    elif '-' in api_code:
+        left, right = api_code.rsplit('-', 1)
+        right = right.strip().upper()
+        if right in {'E', 'A', 'SSF', 'SSFE', 'SSFA', 'SSFX'}:
+            base_candidate = left.strip()
+            class_suffix = f"({right})"
+
+    candidate_bases = [base_candidate]
+    if base_candidate and not base_candidate.endswith("FUND"):
+        candidate_bases.append(f"{base_candidate}FUND")
+    if base_candidate and class_suffix and class_suffix in {"(SSFE)", "(SSFA)", "(SSFX)"} and not base_candidate.endswith("SSF"):
+        candidate_bases.append(f"{base_candidate}SSF")
+
+    # 1) Direct exact lookup
+    for candidate in candidate_bases:
+        if candidate in registry:
+            return registry[candidate], class_suffix
+
+    # 2) Normalized exact lookup
+    registry_norm = {_normalize_fund_token(k): v for k, v in registry.items()}
+    for candidate in candidate_bases:
+        norm = _normalize_fund_token(candidate)
+        if norm in registry_norm:
+            return registry_norm[norm], class_suffix
+
+    # 3) Fuzzy contains lookup for aliases like SCBS&P500 -> SCBS&P500FUND
+    best_match = None
+    best_score = 10**9
+    for candidate in candidate_bases:
+        cand_norm = _normalize_fund_token(candidate)
+        if len(cand_norm) < 4:
+            continue
+        for reg_key, proj_id in registry.items():
+            reg_norm = _normalize_fund_token(reg_key)
+            if cand_norm in reg_norm or reg_norm in cand_norm:
+                score = abs(len(reg_norm) - len(cand_norm))
+                if score < best_score:
+                    best_score = score
+                    best_match = proj_id
+    if best_match:
+        return best_match, class_suffix
+
+    return None, class_suffix
 
 # --- INTELLIGENCE ENGINES ---
 
@@ -1085,34 +1157,17 @@ def get_fund_nav_by_code(fund_code, registry):
     Uses fund_api_mapping for real names that differ from SEC API abbreviations.
     Includes fallback mechanisms for funds with navigation issues.
     """
-    # Check if fund has an API mapping (real name differs from API name)
-    api_code = fund_api_mapping.get(fund_code, fund_code)
-    
-    # Extract base fund name and class suffix
-    # e.g., "SCBNDQ(E)" -> base="SCBNDQ", class="(E)"
-    if '(' in api_code and api_code.endswith(')'):
-        base_name = api_code[:api_code.index('(')]
-        class_suffix = api_code[api_code.index('('):]
-    else:
-        base_name = api_code
-        class_suffix = None
-    
-    # Look up proj_id by base name
-    if base_name in registry:
-        proj_id = registry[base_name]
-        
-        # Primary attempt with specified class suffix
+    proj_id, class_suffix = _resolve_fund_proj_id_and_class(fund_code, registry)
+    if proj_id:
         nav = fetch_fund_nav(proj_id, class_suffix)
         if nav > 0:
             return nav
-        
-        # Fallback 1: Try without class suffix (for navigation issues)
+
         nav = fetch_fund_nav(proj_id, None)
         if nav > 0:
             return nav
-        
-        # Fallback 2: Try common class suffixes (for funds like SCBGOLDHE that may have registry variations)
-        for alt_class in ['(E)', '(SSF)', '(SSFE)', '(SSFA)', '(A)']:
+
+        for alt_class in ['(E)', '(SSF)', '(SSFE)', '(SSFA)', '(SSFX)', '(A)']:
             nav = fetch_fund_nav(proj_id, alt_class)
             if nav > 0:
                 return nav
@@ -1130,23 +1185,15 @@ def get_fund_data(fund_list):
     master_trends = get_master_data(fund_list)
 
     for i, fund in enumerate(fund_list):
-        # Get current and previous NAV for day gain calculation
-        api_code = fund_api_mapping.get(fund['Code'], fund['Code'])
-        
-        if '(' in api_code and api_code.endswith(')'):
-            base_name = api_code[:api_code.index('(')]
-            class_suffix = api_code[api_code.index('('):]
-        else:
-            base_name = api_code
-            class_suffix = None
+        # Resolve imported fund code variants into SEC proj_id/class
+        proj_id, class_suffix = _resolve_fund_proj_id_and_class(fund.get('Code', ''), registry)
         
         # Use efficient single API call to get both last_val and previous_val
         fund_day_gain = 0.0
         nav = 0.0
         prev_nav = 0.0
         
-        if base_name in registry:
-            proj_id = registry[base_name]
+        if proj_id:
             current_nav, previous_nav = fetch_fund_nav_with_previous(proj_id, class_suffix)
             
             nav = current_nav
