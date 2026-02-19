@@ -2035,24 +2035,65 @@ with tab1:
 
 with tab2:
     st.subheader("Mutual Funds (SEC Direct Data)")
-    st.caption("*Real-time NAV from api.sec.or.th | Master vs Fund % shows daily correlation with master ETF*")
-    # Calculate dynamic height: header (40px) + rows (35px each) + padding (10px)
-    table_height = min(40 + len(df_vault) * 35 + 10, 800)
-    st.dataframe(df_vault.style.applymap(color_pl, subset=['P/L %', 'Fund Day Gain %', 'Master Day Gain %', 'Master vs Fund %'])
-                 .format({
-                     "Units":"{:,.2f}",
-                     "Cost":"฿{:,.4f}",
-                     "Last Price":"฿{:,.4f}",
-                     "Previous Price":"฿{:,.4f}",
-                     "Fund Day Gain %":"{:+.2f}%",
-                     "Master Day Gain %":"{:+.2f}%",
-                     "Master vs Fund %":"{:+.2f}%",
-                     "Cost Basis":"฿{:,.2f}",
-                     "Value":"฿{:,.2f}",
-                     "P/L":"฿{:,.2f}",
-                     "P/L %":"{:+.2f}%"
-                 }),
-                 hide_index=True, width='stretch', height=table_height)
+    st.caption("*Real-time NAV from api.sec.or.th · Sorted by Market Value · Master vs Fund % highlights daily relative performance*")
+
+    if len(df_vault) > 0:
+        fund_total = len(df_vault)
+        avg_day_gain = float(df_vault['Fund Day Gain %'].mean()) if len(df_vault) > 0 else 0.0
+        positive_funds = int((df_vault['Fund Day Gain %'] > 0).sum())
+
+        vf1, vf2, vf3 = st.columns(3)
+        with vf1:
+            st.metric("Funds", fund_total)
+        with vf2:
+            st.metric("Avg Fund Day %", f"{avg_day_gain:+.2f}%")
+        with vf3:
+            st.metric("Positive Today", f"{positive_funds}/{fund_total}")
+
+        df_vault_display = df_vault.copy().sort_values("Value", ascending=False)
+        df_vault_display = df_vault_display.rename(columns={
+            "Code": "Fund Code",
+            "Cost": "Avg Cost",
+            "Last Price": "NAV",
+            "Previous Price": "Prev NAV",
+            "Fund Day Gain %": "Fund Day %",
+            "Master": "Master ETF",
+            "Master Day Gain %": "Master Day %",
+            "Master vs Fund %": "Fund vs Master %",
+            "Cost Basis": "Cost Basis",
+            "Value": "Market Value",
+            "P/L": "Unrealized P/L",
+            "P/L %": "Unrealized P/L %",
+        })
+
+        table_height = min(40 + len(df_vault_display) * 35 + 12, 820)
+
+        st.dataframe(
+            df_vault_display.style.applymap(
+                color_pl,
+                subset=['Unrealized P/L %', 'Fund Day %', 'Master Day %', 'Fund vs Master %']
+            ).format(
+                {
+                    "Units": "{:,.2f}",
+                    "Avg Cost": "฿{:,.4f}",
+                    "NAV": "฿{:,.4f}",
+                    "Prev NAV": "฿{:,.4f}",
+                    "Fund Day %": "{:+.2f}%",
+                    "Master Day %": "{:+.2f}%",
+                    "Fund vs Master %": "{:+.2f}%",
+                    "Cost Basis": "฿{:,.2f}",
+                    "Market Value": "฿{:,.2f}",
+                    "Unrealized P/L": "฿{:,.2f}",
+                    "Unrealized P/L %": "{:+.2f}%"
+                },
+                na_rep="—"
+            ),
+            hide_index=True,
+            width='stretch',
+            height=table_height
+        )
+    else:
+        st.info("No mutual fund positions yet.")
     
     st.markdown("---")
     st.subheader("Thai Equities")
