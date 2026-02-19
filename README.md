@@ -29,7 +29,14 @@
 - Performance charts for mutual funds
 - Visual P/L % comparisons across holdings
 
-### 💰 Transaction Management (Sidebar)
+### � News Watchtower (NEW!)
+- **Real-Time News Feed** - Latest articles for each holding from NewsAPI
+- **Price Alerts** - Automatic alerts when prices move ±5% (customizable)
+- **Smart Filtering** - View news by ticker with direct article links
+- **Alert Dashboard** - Visual indicators for significant price movements
+- See [NEWS_SETUP.md](NEWS_SETUP.md) for configuration
+
+### �💰 Transaction Management (Sidebar)
 - **Buy/Sell Transactions** for US stocks, Thai stocks, and Thai mutual funds
 - **Automatic Cost Basis Updates** - Calculates weighted average cost
 - Add new positions or modify existing ones
@@ -80,7 +87,16 @@ Code = "SCBS&P500FUND(E)"
 Units = 500
 Cost = 38.00
 Master = "VOO"
+
+# Optional: News & Alerts (requires free NewsAPI key)
+[news_alerts]
+newsapi_key = "your_free_key_from_newsapi.org"
+price_alert_threshold = 5
+enable_price_alerts = true
+enable_news_feed = true
 ```
+
+**Get NewsAPI Key:** Sign up free at https://newsapi.org/ (100 requests/day)
 
 ### 3. Run the App
 
