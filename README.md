@@ -1,6 +1,6 @@
 # 🎯 SNIPER OS
 
-**HYBRID INTEL COMMAND CENTER** - A comprehensive portfolio intelligence dashboard for tracking US stocks, Thai equities, and Thai mutual funds with real-time market data and performance analytics.
+SNIPER OS is a portfolio intelligence dashboard for tracking US stocks, Thai equities, and Thai mutual funds with real-time market data and performance analytics.
 
 Current app version is stored in [VERSION](VERSION).
 
@@ -35,7 +35,7 @@ Current app version is stored in [VERSION](VERSION).
 - Performance charts for mutual funds
 - Visual P/L % comparisons across holdings
 
-### � News Watchtower (NEW!)
+### 📰 News Watchtower
 
 - **Real-Time News Feed** - Latest articles for each holding from NewsAPI
 - **Price Alerts** - Automatic alerts when prices move ±5% (customizable)
@@ -43,7 +43,7 @@ Current app version is stored in [VERSION](VERSION).
 - **Alert Dashboard** - Visual indicators for significant price movements
 - See [NEWS_SETUP.md](NEWS_SETUP.md) for configuration
 
-### �💰 Transaction Management (Sidebar)
+### 💰 Transaction Management (Sidebar)
 
 - **Buy/Sell Transactions** for US stocks, Thai stocks, and Thai mutual funds
 - **Automatic Cost Basis Updates** - Calculates weighted average cost
@@ -115,15 +115,14 @@ streamlit run streamlit_app.py
 
 Visit `http://localhost:8501` in your browser
 
-## 🔒 Security
+## 🔒 Data Privacy
 
-Your portfolio data stays **completely private**:
+Your portfolio data is designed to stay local to your environment:
 
 - ✅ **Portfolio data** stored in `.streamlit/secrets.toml` (gitignored)
-- ✅ **Never committed to Git** - safe to push code to GitHub
-- ✅ **Local storage** - data remains on your machine
-- ✅ **No telemetry** - your holdings are never sent anywhere
-- ✅ **Git history cleaned** - old commits with sensitive data removed
+- ✅ **Not tracked in Git by default** - safe for normal code pushes
+- ✅ **Local storage** - data remains on your machine unless you deploy it
+- ✅ **No portfolio telemetry pipeline** in this app
 
 ### Portfolio Data Format
 
