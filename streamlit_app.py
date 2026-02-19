@@ -204,6 +204,33 @@ def save_analytics_snapshots():
     except Exception:
         pass
 
+def get_scenario_library_file_path():
+    """Local file path for saved backtesting scenarios."""
+    return Path(".streamlit") / "scenario_library.json"
+
+def load_saved_scenarios():
+    """Load saved scenario definitions from local file."""
+    try:
+        file_path = get_scenario_library_file_path()
+        if file_path.exists():
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+                if isinstance(data, list):
+                    return data
+    except Exception:
+        pass
+    return []
+
+def save_saved_scenarios():
+    """Persist saved scenarios to local file."""
+    try:
+        file_path = get_scenario_library_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(st.session_state.saved_scenarios, file, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
 def build_import_key(asset_class, action, symbol, fund_code, quantity, price, transaction_date):
     """Build deterministic key for idempotent CSV imports."""
     instrument = fund_code if fund_code else symbol
@@ -791,6 +818,10 @@ if 'lot_method_policies' not in st.session_state:
 # Initialize analytics snapshots
 if 'analytics_snapshots' not in st.session_state:
     st.session_state.analytics_snapshots = load_analytics_snapshots()
+
+# Initialize saved scenario library
+if 'saved_scenarios' not in st.session_state:
+    st.session_state.saved_scenarios = load_saved_scenarios()
 
 init_lot_database()
 seed_opening_lots_from_portfolios(st.session_state.us_portfolio, st.session_state.thai_stocks, st.session_state.vault_portfolio)
@@ -2051,6 +2082,51 @@ with tab3:
         st.markdown("---")
         st.markdown("#### Attribution History Drilldown")
 
+        # Auto daily snapshot (once per local day)
+        today_key = datetime.now().strftime("%Y-%m-%d")
+        has_today_auto = False
+        for existing_snapshot in st.session_state.analytics_snapshots:
+            if str(existing_snapshot.get("snapshot_kind", "")) != "auto_daily":
+                continue
+            captured_at = str(existing_snapshot.get("captured_at", ""))
+            if captured_at.startswith(today_key):
+                has_today_auto = True
+                break
+
+        if not has_today_auto:
+            auto_asset_values = (
+                df_attr.groupby("Asset Class", as_index=False)["Value (THB)"]
+                .sum()
+                .set_index("Asset Class")["Value (THB)"]
+                .to_dict()
+            )
+            auto_asset_pl = (
+                df_attr.groupby("Asset Class", as_index=False)["P/L (THB)"]
+                .sum()
+                .set_index("Asset Class")["P/L (THB)"]
+                .to_dict()
+            )
+
+            auto_snapshot = {
+                "captured_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "snapshot_kind": "auto_daily",
+                "net_worth_thb": float(grand_total),
+                "grand_pl_thb": float(grand_pl),
+                "asset_values": {
+                    "US Stock": float(auto_asset_values.get("US Stock", 0.0)),
+                    "Thai Stock": float(auto_asset_values.get("Thai Stock", 0.0)),
+                    "Mutual Fund": float(auto_asset_values.get("Mutual Fund", 0.0)),
+                },
+                "asset_pl": {
+                    "US Stock": float(auto_asset_pl.get("US Stock", 0.0)),
+                    "Thai Stock": float(auto_asset_pl.get("Thai Stock", 0.0)),
+                    "Mutual Fund": float(auto_asset_pl.get("Mutual Fund", 0.0)),
+                }
+            }
+            st.session_state.analytics_snapshots.append(auto_snapshot)
+            st.session_state.analytics_snapshots = st.session_state.analytics_snapshots[-500:]
+            save_analytics_snapshots()
+
         if st.button("Capture Analytics Snapshot", key="capture_analytics_snapshot"):
             asset_values = (
                 df_attr.groupby("Asset Class", as_index=False)["Value (THB)"]
@@ -2067,6 +2143,7 @@ with tab3:
 
             snapshot = {
                 "captured_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "snapshot_kind": "manual",
                 "net_worth_thb": float(grand_total),
                 "grand_pl_thb": float(grand_pl),
                 "asset_values": {
@@ -2090,10 +2167,12 @@ with tab3:
             snapshot_rows = []
             for s in snapshots:
                 captured_at = str(s.get("captured_at", ""))
+                snapshot_kind = str(s.get("snapshot_kind", "manual"))
                 values = s.get("asset_values", {}) if isinstance(s.get("asset_values"), dict) else {}
                 pls = s.get("asset_pl", {}) if isinstance(s.get("asset_pl"), dict) else {}
                 snapshot_rows.append({
                     "Captured": captured_at,
+                    "Type": snapshot_kind,
                     "Net Worth (THB)": float(s.get("net_worth_thb", 0.0) or 0.0),
                     "Total P/L (THB)": float(s.get("grand_pl_thb", 0.0) or 0.0),
                     "US Value (THB)": float(values.get("US Stock", 0.0) or 0.0),
@@ -2144,6 +2223,7 @@ with tab3:
                     hide_index=True,
                     width='stretch'
                 )
+                st.caption("Type = auto_daily (captured automatically once per day) or manual (captured via button).")
         else:
             st.info("No snapshots yet. Capture your first analytics snapshot to start drilldown history.")
     else:
@@ -2383,6 +2463,104 @@ with tab3:
             hide_index=True,
             width='stretch'
         )
+
+        st.markdown("**Save / Replay Scenarios**")
+        scenario_name = st.text_input("Scenario name", value=selected_preset, key="scenario_save_name")
+        save_col, replay_col = st.columns(2)
+
+        with save_col:
+            if st.button("Save Current Scenario", key="save_current_scenario"):
+                clean_name = str(scenario_name).strip()
+                if not clean_name:
+                    st.warning("Please provide a scenario name.")
+                else:
+                    new_entry = {
+                        "name": clean_name,
+                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "shocks": {
+                            "US Stock": float(shock_us),
+                            "Thai Stock": float(shock_thai),
+                            "Mutual Fund": float(shock_fund),
+                        }
+                    }
+                    without_same = [s for s in st.session_state.saved_scenarios if str(s.get("name", "")) != clean_name]
+                    without_same.append(new_entry)
+                    st.session_state.saved_scenarios = without_same[-200:]
+                    save_saved_scenarios()
+                    st.success(f"Saved scenario: {clean_name}")
+
+        saved_names = [str(s.get("name", "Untitled")) for s in st.session_state.saved_scenarios]
+        with replay_col:
+            if saved_names:
+                selected_saved = st.selectbox("Saved scenario", options=saved_names, key="saved_scenario_select")
+                if st.button("Replay Selected", key="replay_selected_scenario"):
+                    chosen = next((s for s in st.session_state.saved_scenarios if str(s.get("name", "")) == selected_saved), None)
+                    if chosen:
+                        shocks = chosen.get("shocks", {}) if isinstance(chosen.get("shocks"), dict) else {}
+                        st.session_state["scenario_shock_us"] = float(shocks.get("US Stock", shock_us))
+                        st.session_state["scenario_shock_thai"] = float(shocks.get("Thai Stock", shock_thai))
+                        st.session_state["scenario_shock_fund"] = float(shocks.get("Mutual Fund", shock_fund))
+                        st.rerun()
+            else:
+                st.caption("No saved scenarios yet.")
+
+        st.markdown("**Scenario Compare**")
+        compare_candidates = [{
+            "name": "Current Inputs",
+            "shocks": {
+                "US Stock": float(shock_us),
+                "Thai Stock": float(shock_thai),
+                "Mutual Fund": float(shock_fund),
+            }
+        }]
+        compare_candidates.extend(st.session_state.saved_scenarios)
+
+        compare_options = [str(c.get("name", "Untitled")) for c in compare_candidates]
+        default_compare = compare_options[: min(3, len(compare_options))]
+        selected_compare = st.multiselect(
+            "Select scenarios to compare",
+            options=compare_options,
+            default=default_compare,
+            key="scenario_compare_multiselect"
+        )
+
+        compare_rows = []
+        for scenario_label in selected_compare:
+            scenario = next((c for c in compare_candidates if str(c.get("name", "")) == scenario_label), None)
+            if not scenario:
+                continue
+            shocks = scenario.get("shocks", {}) if isinstance(scenario.get("shocks"), dict) else {}
+
+            scenario_projected_total = 0.0
+            for asset_class in ["US Stock", "Thai Stock", "Mutual Fund"]:
+                shock_pct = float(shocks.get(asset_class, 0.0) or 0.0)
+                current_value = float(exposure_map.get(asset_class, 0.0) or 0.0)
+                scenario_projected_total += current_value * (1 + (shock_pct / 100.0))
+
+            scenario_projected_pl = scenario_projected_total - grand_cost
+            scenario_projected_pct = (scenario_projected_pl / grand_cost * 100) if grand_cost != 0 else 0.0
+
+            compare_rows.append({
+                "Scenario": scenario_label,
+                "Projected Net Worth (THB)": scenario_projected_total,
+                "Delta vs Current (THB)": scenario_projected_total - grand_total,
+                "Projected P/L (THB)": scenario_projected_pl,
+                "Projected P/L %": scenario_projected_pct,
+            })
+
+        if compare_rows:
+            st.dataframe(
+                pd.DataFrame(compare_rows)
+                .sort_values("Projected Net Worth (THB)", ascending=False)
+                .style.format({
+                    "Projected Net Worth (THB)": "฿{:,.2f}",
+                    "Delta vs Current (THB)": "฿{:+,.2f}",
+                    "Projected P/L (THB)": "฿{:,.2f}",
+                    "Projected P/L %": "{:+.2f}%",
+                }),
+                hide_index=True,
+                width='stretch'
+            )
 
         st.markdown("---")
         st.markdown("#### Signal Scoring Layer")
