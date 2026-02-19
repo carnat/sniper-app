@@ -968,6 +968,133 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
 
     return pd.DataFrame(canonical_rows), row_errors
 
+def get_csv_templates():
+    """Return downloadable CSV templates for US, Thai stocks, and Thai funds."""
+    us_template = pd.DataFrame([
+        {"symbol": "AAPL", "action": "BUY", "quantity": 10, "price": 190.50, "date": "2026-01-15"},
+        {"symbol": "AAPL", "action": "SELL", "quantity": 2, "price": 201.20, "date": "2026-02-01"}
+    ]).to_csv(index=False)
+
+    thai_stock_template = pd.DataFrame([
+        {"symbol": "ADVANC.BK", "action": "BUY", "quantity": 50, "price": 220.00, "date": "2026-01-10"},
+        {"symbol": "TISCO.BK", "action": "BUY", "quantity": 100, "price": 98.50, "date": "2026-01-11"}
+    ]).to_csv(index=False)
+
+    thai_fund_template = pd.DataFrame([
+        {"fund_code": "SCBNDQ(E)", "action": "BUY", "quantity": 1000, "price": 13.50, "date": "2026-01-05", "master": "QQQ"},
+        {"fund_code": "SCBNDQ(E)", "action": "SELL", "quantity": 100, "price": 13.95, "date": "2026-02-12", "master": "QQQ"}
+    ]).to_csv(index=False)
+
+    mixed_template = pd.DataFrame([
+        {"asset_class": "US Stock", "symbol": "MSFT", "action": "BUY", "quantity": 3, "price": 420.00, "date": "2026-01-07"},
+        {"asset_class": "Thai Stock", "symbol": "ADVANC", "action": "BUY", "quantity": 20, "price": 221.00, "date": "2026-01-12"},
+        {"asset_class": "Mutual Fund", "fund_code": "SCBS&P500FUND(E)", "action": "BUY", "quantity": 200, "price": 38.20, "date": "2026-01-18", "master": "VOO"}
+    ]).to_csv(index=False)
+
+    return {
+        "us": us_template,
+        "thai_stock": thai_stock_template,
+        "thai_fund": thai_fund_template,
+        "mixed": mixed_template
+    }
+
+def simulate_import_preview(parsed_df):
+    """Dry-run import simulation to preview import/skip/fail outcomes."""
+    us_pos = {ticker: float(shares) for ticker, shares in zip(st.session_state.us_portfolio.get("Ticker", []), st.session_state.us_portfolio.get("Shares", []))}
+    thai_pos = {ticker: float(shares) for ticker, shares in zip(st.session_state.thai_stocks.get("Ticker", []), st.session_state.thai_stocks.get("Shares", []))}
+    fund_pos = {fund.get("Code"): float(fund.get("Units", 0)) for fund in st.session_state.vault_portfolio}
+
+    preview_rows = []
+    import_count = 0
+    skip_count = 0
+    fail_count = 0
+
+    for _, row in parsed_df.iterrows():
+        asset_class = row["asset_class"]
+        action = row["action"]
+        quantity = float(row["quantity"])
+        import_key = row.get("import_key", "")
+        symbol_or_code = row["fund_code"] if row["fund_code"] else row["symbol"]
+
+        status = "Import"
+        reason = ""
+
+        if import_key_exists(import_key):
+            status = "Skip"
+            reason = "Duplicate transaction"
+            skip_count += 1
+        else:
+            if asset_class == "US Stock":
+                current = us_pos.get(row["symbol"], 0.0)
+                if action == "Sell" and quantity > current:
+                    status = "Fail"
+                    reason = f"Insufficient shares ({current:.2f} available)"
+                    fail_count += 1
+                elif action == "Buy":
+                    us_pos[row["symbol"]] = current + quantity
+                    import_count += 1
+                else:
+                    new_qty = current - quantity
+                    if new_qty <= 0:
+                        us_pos.pop(row["symbol"], None)
+                    else:
+                        us_pos[row["symbol"]] = new_qty
+                    import_count += 1
+
+            elif asset_class == "Thai Stock":
+                current = thai_pos.get(row["symbol"], 0.0)
+                if action == "Sell" and quantity > current:
+                    status = "Fail"
+                    reason = f"Insufficient shares ({current:.2f} available)"
+                    fail_count += 1
+                elif action == "Buy":
+                    thai_pos[row["symbol"]] = current + quantity
+                    import_count += 1
+                else:
+                    new_qty = current - quantity
+                    if new_qty <= 0:
+                        thai_pos.pop(row["symbol"], None)
+                    else:
+                        thai_pos[row["symbol"]] = new_qty
+                    import_count += 1
+
+            else:
+                current = fund_pos.get(row["fund_code"], 0.0)
+                if action == "Sell" and quantity > current:
+                    status = "Fail"
+                    reason = f"Insufficient units ({current:.2f} available)"
+                    fail_count += 1
+                elif action == "Buy":
+                    fund_pos[row["fund_code"]] = current + quantity
+                    import_count += 1
+                else:
+                    new_qty = current - quantity
+                    if new_qty <= 0:
+                        fund_pos.pop(row["fund_code"], None)
+                    else:
+                        fund_pos[row["fund_code"]] = new_qty
+                    import_count += 1
+
+        preview_rows.append({
+            "Row": int(row["row_num"]),
+            "Asset": asset_class,
+            "Instrument": symbol_or_code,
+            "Action": action,
+            "Qty": quantity,
+            "Price": float(row["price"]),
+            "Date": row["transaction_date"],
+            "Status": status,
+            "Reason": reason
+        })
+
+    summary = {
+        "import": import_count,
+        "skip": skip_count,
+        "fail": fail_count,
+        "total": len(parsed_df)
+    }
+    return pd.DataFrame(preview_rows), summary
+
 def apply_import_transaction(import_row):
     """Apply one canonical imported transaction into session-state portfolios."""
     asset_class = import_row["asset_class"]
@@ -1328,6 +1455,19 @@ with tab6:
     st.subheader("📥 CSV IMPORT (Yahoo-style)")
     st.caption("Import transactions for US stocks, Thai stocks, or Thai mutual funds.")
 
+    templates = get_csv_templates()
+    col_t1, col_t2, col_t3, col_t4 = st.columns(4)
+    with col_t1:
+        st.download_button("⬇️ US Template", templates["us"], "template_us_transactions.csv", "text/csv")
+    with col_t2:
+        st.download_button("⬇️ Thai Stock Template", templates["thai_stock"], "template_thai_stock_transactions.csv", "text/csv")
+    with col_t3:
+        st.download_button("⬇️ Thai Fund Template", templates["thai_fund"], "template_thai_fund_transactions.csv", "text/csv")
+    with col_t4:
+        st.download_button("⬇️ Mixed Template", templates["mixed"], "template_mixed_transactions.csv", "text/csv")
+
+    st.markdown("---")
+
     import_asset_class = st.selectbox(
         "Default asset class for rows without explicit class",
         ["US Stock", "Thai Stock", "Mutual Fund"],
@@ -1347,6 +1487,21 @@ with tab6:
         if parsed_df is not None and len(parsed_df) > 0:
             st.success(f"Parsed {len(parsed_df)} valid rows")
             st.dataframe(parsed_df, hide_index=True, use_container_width=True)
+
+            st.markdown("#### Dry Run Preview")
+            preview_df, preview_summary = simulate_import_preview(parsed_df)
+
+            col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+            with col_p1:
+                st.metric("Total Rows", preview_summary["total"])
+            with col_p2:
+                st.metric("Will Import", preview_summary["import"])
+            with col_p3:
+                st.metric("Will Skip", preview_summary["skip"])
+            with col_p4:
+                st.metric("Will Fail", preview_summary["fail"])
+
+            st.dataframe(preview_df, hide_index=True, use_container_width=True)
 
             if st.button("Import Transactions", key="run_csv_import"):
                 success_count = 0
