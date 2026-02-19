@@ -342,6 +342,32 @@ def lot_record_sell_fifo(symbol, asset_type, currency, quantity, sale_price, sal
     except Exception:
         return None
 
+def lot_apply_split(symbol, asset_type, currency, split_ratio):
+    """Apply stock split ratio to open lots for a symbol."""
+    try:
+        ratio = float(split_ratio)
+        if ratio <= 0:
+            return False
+
+        conn = sqlite3.connect(get_lot_db_path())
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            UPDATE tax_lots
+            SET
+                quantity_original = quantity_original * ?,
+                quantity_remaining = quantity_remaining * ?,
+                cost_per_unit = cost_per_unit / ?
+            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
+            ''',
+            (ratio, ratio, ratio, symbol, asset_type, currency)
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
 def seed_opening_lots_from_portfolios(us_portfolio, thai_stocks, vault_portfolio):
     """Seed lot DB once from current starting positions (if DB is empty)."""
     try:
@@ -380,7 +406,18 @@ def seed_opening_lots_from_portfolios(us_portfolio, thai_stocks, vault_portfolio
     except Exception:
         pass
 
-def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stock", avg_cost_at_time=0, transaction_date=None, import_key=None):
+def log_transaction(
+    ticker,
+    transaction_type,
+    shares,
+    price,
+    asset_type="US Stock",
+    avg_cost_at_time=0,
+    transaction_date=None,
+    import_key=None,
+    total_override=None,
+    notes=None
+):
     """Log a transaction to history for P/L tracking"""
     from datetime import datetime
     
@@ -401,13 +438,15 @@ def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stoc
         else:
             realized_pl = fifo_realized
 
+    transaction_total = shares * price if total_override is None else float(total_override)
+
     transaction = {
         "date": f"{transaction_date} {datetime.now().strftime('%H:%M:%S')}",
         "ticker": ticker,
         "type": transaction_type,
         "shares": shares,
         "price": price,
-        "total": shares * price,
+        "total": transaction_total,
         "asset_type": asset_type,
         "currency": currency,
         "realized_pl": realized_pl
@@ -415,6 +454,8 @@ def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stoc
 
     if import_key:
         transaction["import_key"] = import_key
+    if notes:
+        transaction["notes"] = notes
     
     st.session_state.transaction_history.append(transaction)
     save_transaction_history()
@@ -470,17 +511,9 @@ def hydrate_portfolios_from_transaction_history():
 
     for txn in history:
         txn_type = str(txn.get("type", "")).strip().title()
-        if txn_type not in ["Buy", "Sell"]:
-            continue
-
         asset_type = txn.get("asset_type", "US Stock")
         ticker = str(txn.get("ticker", "")).strip().upper()
         if not ticker:
-            continue
-
-        shares = float(txn.get("shares", 0) or 0)
-        price = float(txn.get("price", 0) or 0)
-        if shares <= 0 or price <= 0:
             continue
 
         if asset_type == "US Stock":
@@ -490,6 +523,26 @@ def hydrate_portfolios_from_transaction_history():
         elif asset_type == "Mutual Fund":
             target = fund_map
         else:
+            continue
+
+        if txn_type == "Split":
+            split_ratio = float(txn.get("shares", 0) or 0)
+            if split_ratio <= 0 or ticker not in target:
+                continue
+            current_qty = float(target[ticker]["qty"])
+            current_cost = float(target[ticker]["cost"])
+            target[ticker] = {
+                "qty": current_qty * split_ratio,
+                "cost": (current_cost / split_ratio) if split_ratio > 0 else current_cost
+            }
+            continue
+
+        if txn_type not in ["Buy", "Sell"]:
+            continue
+
+        shares = float(txn.get("shares", 0) or 0)
+        price = float(txn.get("price", 0) or 0)
+        if shares <= 0 or price <= 0:
             continue
 
         existing = target.get(ticker, {"qty": 0.0, "cost": 0.0})
@@ -1686,7 +1739,7 @@ with col3:
 
 st.markdown("""---""")
 st.markdown("")
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER", "📜 TRANSACTION HISTORY", "📥 CSV IMPORT"])
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER", "📜 TRANSACTION HISTORY", "📥 CSV IMPORT", "🗓️ CALENDAR"])
 
 def color_pl(val): return f'color: {"#3fb950" if val > 0 else "#f85149"}; font-weight: bold;'
 
@@ -1734,6 +1787,77 @@ with tab3:
     with col_b:
         st.markdown("**Mutual Funds P/L %**")
         st.bar_chart(df_vault.set_index('Code')['P/L %'])
+
+    st.markdown("---")
+    st.markdown("#### P/L Attribution")
+
+    attribution_rows = []
+
+    if len(df_us) > 0:
+        for _, row in df_us.iterrows():
+            attribution_rows.append({
+                "Asset Class": "US Stock",
+                "Instrument": row["Ticker"],
+                "Value (THB)": float(row["Value"]) * usd_thb_rate,
+                "P/L (THB)": float(row["P/L"]) * usd_thb_rate,
+            })
+
+    if len(df_thai) > 0:
+        for _, row in df_thai.iterrows():
+            attribution_rows.append({
+                "Asset Class": "Thai Stock",
+                "Instrument": row["Ticker"],
+                "Value (THB)": float(row["Value"]),
+                "P/L (THB)": float(row["P/L"]),
+            })
+
+    if len(df_vault) > 0:
+        for _, row in df_vault.iterrows():
+            attribution_rows.append({
+                "Asset Class": "Mutual Fund",
+                "Instrument": row["Code"],
+                "Value (THB)": float(row["Value"]),
+                "P/L (THB)": float(row["P/L"]),
+            })
+
+    if attribution_rows:
+        df_attr = pd.DataFrame(attribution_rows)
+        df_attr["Contribution %"] = df_attr["P/L (THB)"] / grand_pl * 100 if grand_pl != 0 else 0.0
+        df_attr = df_attr.sort_values("P/L (THB)", ascending=False)
+
+        attr_summary = (
+            df_attr.groupby("Asset Class", as_index=False)
+            .agg({"Value (THB)": "sum", "P/L (THB)": "sum"})
+            .sort_values("P/L (THB)", ascending=False)
+        )
+
+        c_attr1, c_attr2 = st.columns(2)
+        with c_attr1:
+            st.markdown("**By Asset Class**")
+            st.dataframe(
+                attr_summary.style.format({
+                    "Value (THB)": "฿{:,.2f}",
+                    "P/L (THB)": "฿{:,.2f}",
+                }),
+                hide_index=True,
+                width='stretch'
+            )
+
+        with c_attr2:
+            st.markdown("**Top Instrument Contributors**")
+            st.dataframe(
+                df_attr[["Asset Class", "Instrument", "Value (THB)", "P/L (THB)", "Contribution %"]]
+                .head(12)
+                .style.format({
+                    "Value (THB)": "฿{:,.2f}",
+                    "P/L (THB)": "฿{:,.2f}",
+                    "Contribution %": "{:+.2f}%",
+                }),
+                hide_index=True,
+                width='stretch'
+            )
+    else:
+        st.info("No positions available yet for attribution analysis.")
 
 with tab4:
     st.subheader("📰 NEWS WATCHTOWER")
@@ -2065,177 +2189,408 @@ with tab6:
         ```
         """)
 
+with tab7:
+    st.subheader("🗓️ PORTFOLIO CALENDAR")
+
+    events = []
+    today = pd.Timestamp.now().normalize()
+
+    # Upcoming earnings (US holdings)
+    try:
+        earnings_map = get_earnings_dates(df_us['Ticker'].tolist() if len(df_us) > 0 else [])
+        for ticker, event_value in earnings_map.items():
+            candidate = event_value[0] if isinstance(event_value, list) and len(event_value) > 0 else event_value
+            parsed_event = pd.to_datetime(candidate, errors='coerce')
+            if not pd.isna(parsed_event):
+                event_date = parsed_event.normalize()
+                events.append({
+                    "Date": event_date,
+                    "Event": "Earnings",
+                    "Instrument": ticker,
+                    "Details": "Upcoming earnings date",
+                })
+    except Exception:
+        pass
+
+    # Recent and upcoming transaction activity
+    for txn in st.session_state.transaction_history[-300:]:
+        date_text = str(txn.get("date", "")).split(" ")[0]
+        parsed_date = pd.to_datetime(date_text, errors='coerce')
+        if pd.isna(parsed_date):
+            continue
+        event_date = parsed_date.normalize()
+        events.append({
+            "Date": event_date,
+            "Event": f"Transaction · {txn.get('type', 'N/A')}",
+            "Instrument": txn.get("ticker", "N/A"),
+            "Details": f"{float(txn.get('shares', 0) or 0):,.4f} @ {float(txn.get('price', 0) or 0):,.4f}",
+        })
+
+    if events:
+        df_events = pd.DataFrame(events).dropna(subset=["Date"])
+        if len(df_events) > 0:
+            df_events["Days"] = (df_events["Date"] - today).dt.days
+
+            upcoming_events = df_events[df_events["Days"] >= 0].sort_values("Date").head(40)
+            recent_events = df_events[df_events["Days"] < 0].sort_values("Date", ascending=False).head(40)
+
+            cal_col1, cal_col2 = st.columns(2)
+            with cal_col1:
+                st.markdown("**Upcoming**")
+                if len(upcoming_events) > 0:
+                    st.dataframe(
+                        upcoming_events[["Date", "Days", "Event", "Instrument", "Details"]],
+                        hide_index=True,
+                        width='stretch'
+                    )
+                else:
+                    st.info("No upcoming events.")
+
+            with cal_col2:
+                st.markdown("**Recent Activity**")
+                if len(recent_events) > 0:
+                    st.dataframe(
+                        recent_events[["Date", "Days", "Event", "Instrument", "Details"]],
+                        hide_index=True,
+                        width='stretch'
+                    )
+                else:
+                    st.info("No recent events.")
+        else:
+            st.info("No calendar events available.")
+    else:
+        st.info("No calendar events available.")
+
 # --- TRANSACTION SIDEBAR ---
 st.sidebar.markdown("---")
 st.sidebar.header("💰 ADD TRANSACTIONS")
 
 # US VAULT TRANSACTIONS
 st.sidebar.subheader("🦅 US Vault")
-us_transaction_type = st.sidebar.radio("US Transaction Type", ["Buy", "Sell"], key="us_trans_type")
+us_transaction_type = st.sidebar.radio("US Transaction Type", ["Buy", "Sell", "Dividend", "Fee", "Split"], key="us_trans_type")
 
 with st.sidebar.form("us_transaction_form"):
     us_ticker = st.text_input("Ticker Symbol (e.g., AAPL)", key="us_ticker")
-    us_shares = st.number_input("Shares", min_value=0.0, step=0.01, key="us_shares")
-    us_price = st.number_input("Price per Share ($)", min_value=0.0, step=0.01, key="us_price")
+
+    us_shares = 0.0
+    us_price = 0.0
+    us_cash_amount = 0.0
+    us_split_ratio = 0.0
+
+    if us_transaction_type in ["Buy", "Sell"]:
+        us_shares = st.number_input("Shares", min_value=0.0, step=0.01, key="us_shares")
+        us_price = st.number_input("Price per Share ($)", min_value=0.0, step=0.01, key="us_price")
+    elif us_transaction_type in ["Dividend", "Fee"]:
+        us_cash_amount = st.number_input("Cash Amount ($)", min_value=0.0, step=0.01, key="us_cash_amount")
+    else:
+        us_split_ratio = st.number_input("Split Ratio (new shares / old shares)", min_value=0.0001, step=0.0001, value=2.0, key="us_split_ratio")
+
     us_submit = st.form_submit_button(f"Add US {us_transaction_type}")
-    
-    if us_submit and us_ticker and us_shares > 0 and us_price > 0:
-        # Find if ticker exists
-        try:
-            ticker_idx = st.session_state.us_portfolio['Ticker'].index(us_ticker)
-            existing_shares = st.session_state.us_portfolio['Shares'][ticker_idx]
-            existing_avg_cost = st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
-            
-            if us_transaction_type == "Buy":
-                # Calculate new average cost
-                total_cost = (existing_shares * existing_avg_cost) + (us_shares * us_price)
-                new_shares = existing_shares + us_shares
-                new_avg_cost = total_cost / new_shares
-                
-                st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
-                st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
-                log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
-                st.sidebar.success(f"✅ Added {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
-            else:  # Sell
-                if us_shares > existing_shares:
-                    st.sidebar.error(f"❌ Cannot sell {us_shares} shares. Only {existing_shares} available.")
-                else:
-                    log_transaction(us_ticker, "Sell", us_shares, us_price, "US Stock", existing_avg_cost)
-                    new_shares = existing_shares - us_shares
-                    if new_shares == 0:
-                        # Remove the ticker entirely
-                        del st.session_state.us_portfolio['Ticker'][ticker_idx]
-                        del st.session_state.us_portfolio['Shares'][ticker_idx]
-                        del st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
-                        st.sidebar.success(f"✅ Sold all {us_ticker} shares")
-                    else:
-                        # Keep average cost the same
-                        st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
-                        st.sidebar.success(f"✅ Sold {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
-                    
-        except ValueError:
-            # Ticker doesn't exist
-            if us_transaction_type == "Buy":
-                st.session_state.us_portfolio['Ticker'].append(us_ticker)
-                st.session_state.us_portfolio['Shares'].append(us_shares)
-                st.session_state.us_portfolio['Avg_Cost'].append(us_price)
-                log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
-                st.sidebar.success(f"✅ Added new position: {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+
+    if us_submit and us_ticker:
+        us_ticker = us_ticker.strip().upper()
+
+        if us_transaction_type in ["Dividend", "Fee"]:
+            if us_cash_amount <= 0:
+                st.sidebar.error("❌ Amount must be greater than 0.")
             else:
-                st.sidebar.error(f"❌ Cannot sell {us_ticker}. No existing position found.")
-        
-        st.rerun()
+                event_total = us_cash_amount if us_transaction_type == "Dividend" else -us_cash_amount
+                log_transaction(
+                    us_ticker,
+                    us_transaction_type,
+                    0,
+                    us_cash_amount,
+                    "US Stock",
+                    total_override=event_total,
+                    notes=f"{us_transaction_type} cash event"
+                )
+                sign = "+" if us_transaction_type == "Dividend" else "-"
+                st.sidebar.success(f"✅ Logged {us_transaction_type} for {us_ticker}: {sign}${us_cash_amount:.2f}")
+                st.rerun()
+
+        elif us_transaction_type == "Split":
+            try:
+                ticker_idx = st.session_state.us_portfolio['Ticker'].index(us_ticker)
+                existing_shares = float(st.session_state.us_portfolio['Shares'][ticker_idx])
+                existing_avg_cost = float(st.session_state.us_portfolio['Avg_Cost'][ticker_idx])
+
+                if us_split_ratio <= 0:
+                    st.sidebar.error("❌ Split ratio must be greater than 0.")
+                else:
+                    new_shares = existing_shares * us_split_ratio
+                    new_avg_cost = existing_avg_cost / us_split_ratio
+                    st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
+                    st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
+                    lot_apply_split(us_ticker, "US Stock", "USD", us_split_ratio)
+                    log_transaction(
+                        us_ticker,
+                        "Split",
+                        us_split_ratio,
+                        0,
+                        "US Stock",
+                        total_override=0,
+                        notes=f"Split ratio {us_split_ratio:g}:1"
+                    )
+                    st.sidebar.success(f"✅ Applied split for {us_ticker}: {us_split_ratio:g}:1")
+                    st.rerun()
+            except ValueError:
+                st.sidebar.error(f"❌ Cannot apply split for {us_ticker}. No existing position found.")
+
+        elif us_shares > 0 and us_price > 0:
+        # Find if ticker exists
+            try:
+                ticker_idx = st.session_state.us_portfolio['Ticker'].index(us_ticker)
+                existing_shares = st.session_state.us_portfolio['Shares'][ticker_idx]
+                existing_avg_cost = st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
+
+                if us_transaction_type == "Buy":
+                    total_cost = (existing_shares * existing_avg_cost) + (us_shares * us_price)
+                    new_shares = existing_shares + us_shares
+                    new_avg_cost = total_cost / new_shares
+
+                    st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
+                    st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
+                    log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
+                    st.sidebar.success(f"✅ Added {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+                else:
+                    if us_shares > existing_shares:
+                        st.sidebar.error(f"❌ Cannot sell {us_shares} shares. Only {existing_shares} available.")
+                    else:
+                        log_transaction(us_ticker, "Sell", us_shares, us_price, "US Stock", existing_avg_cost)
+                        new_shares = existing_shares - us_shares
+                        if new_shares == 0:
+                            del st.session_state.us_portfolio['Ticker'][ticker_idx]
+                            del st.session_state.us_portfolio['Shares'][ticker_idx]
+                            del st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
+                            st.sidebar.success(f"✅ Sold all {us_ticker} shares")
+                        else:
+                            st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
+                            st.sidebar.success(f"✅ Sold {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+
+            except ValueError:
+                if us_transaction_type == "Buy":
+                    st.session_state.us_portfolio['Ticker'].append(us_ticker)
+                    st.session_state.us_portfolio['Shares'].append(us_shares)
+                    st.session_state.us_portfolio['Avg_Cost'].append(us_price)
+                    log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
+                    st.sidebar.success(f"✅ Added new position: {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+                else:
+                    st.sidebar.error(f"❌ Cannot sell {us_ticker}. No existing position found.")
+
+            st.rerun()
+        else:
+            st.sidebar.error("❌ Enter valid amount/price values.")
 
 st.sidebar.markdown("---")
 
 # THAI VAULT TRANSACTIONS
 st.sidebar.subheader("🏰 Thai Vault")
-thai_transaction_type = st.sidebar.radio("Thai Transaction Type", ["Buy", "Sell"], key="thai_trans_type")
+thai_transaction_type = st.sidebar.radio("Thai Transaction Type", ["Buy", "Sell", "Dividend", "Fee", "Split"], key="thai_trans_type")
 
 thai_vault_type = st.sidebar.radio("Asset Type", ["Thai Stock", "Mutual Fund"], key="thai_vault_type")
 
 if thai_vault_type == "Thai Stock":
     with st.sidebar.form("thai_stock_form"):
         thai_ticker = st.text_input("Ticker (e.g., TISCO.BK)", key="thai_ticker")
-        thai_shares = st.number_input("Shares", min_value=0.0, step=1.0, key="thai_shares")
-        thai_price = st.number_input("Price per Share (฿)", min_value=0.0, step=0.01, key="thai_price")
+        thai_shares = 0.0
+        thai_price = 0.0
+        thai_cash_amount = 0.0
+        thai_split_ratio = 0.0
+
+        if thai_transaction_type in ["Buy", "Sell"]:
+            thai_shares = st.number_input("Shares", min_value=0.0, step=1.0, key="thai_shares")
+            thai_price = st.number_input("Price per Share (฿)", min_value=0.0, step=0.01, key="thai_price")
+        elif thai_transaction_type in ["Dividend", "Fee"]:
+            thai_cash_amount = st.number_input("Cash Amount (฿)", min_value=0.0, step=0.01, key="thai_cash_amount")
+        else:
+            thai_split_ratio = st.number_input("Split Ratio (new shares / old shares)", min_value=0.0001, step=0.0001, value=2.0, key="thai_split_ratio")
+
         thai_submit = st.form_submit_button(f"Add Thai {thai_transaction_type}")
-        
-        if thai_submit and thai_ticker and thai_shares > 0 and thai_price > 0:
-            try:
-                ticker_idx = st.session_state.thai_stocks['Ticker'].index(thai_ticker)
-                existing_shares = st.session_state.thai_stocks['Shares'][ticker_idx]
-                existing_avg_cost = st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
-                
-                if thai_transaction_type == "Buy":
-                    total_cost = (existing_shares * existing_avg_cost) + (thai_shares * thai_price)
-                    new_shares = existing_shares + thai_shares
-                    new_avg_cost = total_cost / new_shares
-                    
-                    st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
-                    st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
-                    log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
-                    st.sidebar.success(f"✅ Added {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
+
+        if thai_submit and thai_ticker:
+            thai_ticker = thai_ticker.strip().upper()
+            if not thai_ticker.endswith(".BK"):
+                thai_ticker = f"{thai_ticker}.BK"
+
+            if thai_transaction_type in ["Dividend", "Fee"]:
+                if thai_cash_amount <= 0:
+                    st.sidebar.error("❌ Amount must be greater than 0.")
                 else:
-                    if thai_shares > existing_shares:
-                        st.sidebar.error(f"❌ Cannot sell {thai_shares} shares. Only {existing_shares} available.")
+                    event_total = thai_cash_amount if thai_transaction_type == "Dividend" else -thai_cash_amount
+                    log_transaction(
+                        thai_ticker,
+                        thai_transaction_type,
+                        0,
+                        thai_cash_amount,
+                        "Thai Stock",
+                        total_override=event_total,
+                        notes=f"{thai_transaction_type} cash event"
+                    )
+                    sign = "+" if thai_transaction_type == "Dividend" else "-"
+                    st.sidebar.success(f"✅ Logged {thai_transaction_type} for {thai_ticker}: {sign}฿{thai_cash_amount:.2f}")
+                    st.rerun()
+
+            elif thai_transaction_type == "Split":
+                try:
+                    ticker_idx = st.session_state.thai_stocks['Ticker'].index(thai_ticker)
+                    existing_shares = float(st.session_state.thai_stocks['Shares'][ticker_idx])
+                    existing_avg_cost = float(st.session_state.thai_stocks['Avg_Cost'][ticker_idx])
+
+                    if thai_split_ratio <= 0:
+                        st.sidebar.error("❌ Split ratio must be greater than 0.")
                     else:
-                        log_transaction(thai_ticker, "Sell", thai_shares, thai_price, "Thai Stock", existing_avg_cost)
-                        new_shares = existing_shares - thai_shares
-                        if new_shares == 0:
-                            del st.session_state.thai_stocks['Ticker'][ticker_idx]
-                            del st.session_state.thai_stocks['Shares'][ticker_idx]
-                            del st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
-                            st.sidebar.success(f"✅ Sold all {thai_ticker} shares")
+                        new_shares = existing_shares * thai_split_ratio
+                        new_avg_cost = existing_avg_cost / thai_split_ratio
+                        st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
+                        st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
+                        lot_apply_split(thai_ticker, "Thai Stock", "THB", thai_split_ratio)
+                        log_transaction(
+                            thai_ticker,
+                            "Split",
+                            thai_split_ratio,
+                            0,
+                            "Thai Stock",
+                            total_override=0,
+                            notes=f"Split ratio {thai_split_ratio:g}:1"
+                        )
+                        st.sidebar.success(f"✅ Applied split for {thai_ticker}: {thai_split_ratio:g}:1")
+                        st.rerun()
+                except ValueError:
+                    st.sidebar.error(f"❌ Cannot apply split for {thai_ticker}. No existing position found.")
+
+            elif thai_shares > 0 and thai_price > 0:
+                try:
+                    ticker_idx = st.session_state.thai_stocks['Ticker'].index(thai_ticker)
+                    existing_shares = st.session_state.thai_stocks['Shares'][ticker_idx]
+                    existing_avg_cost = st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
+
+                    if thai_transaction_type == "Buy":
+                        total_cost = (existing_shares * existing_avg_cost) + (thai_shares * thai_price)
+                        new_shares = existing_shares + thai_shares
+                        new_avg_cost = total_cost / new_shares
+
+                        st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
+                        st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
+                        log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
+                        st.sidebar.success(f"✅ Added {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
+                    else:
+                        if thai_shares > existing_shares:
+                            st.sidebar.error(f"❌ Cannot sell {thai_shares} shares. Only {existing_shares} available.")
                         else:
-                            st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
-                            st.sidebar.success(f"✅ Sold {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
-                        
-            except ValueError:
-                if thai_transaction_type == "Buy":
-                    st.session_state.thai_stocks['Ticker'].append(thai_ticker)
-                    st.session_state.thai_stocks['Shares'].append(thai_shares)
-                    st.session_state.thai_stocks['Avg_Cost'].append(thai_price)
-                    log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
-                    st.sidebar.success(f"✅ Added new position: {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
-                else:
-                    st.sidebar.error(f"❌ Cannot sell {thai_ticker}. No existing position found.")
-            
-            st.rerun()
+                            log_transaction(thai_ticker, "Sell", thai_shares, thai_price, "Thai Stock", existing_avg_cost)
+                            new_shares = existing_shares - thai_shares
+                            if new_shares == 0:
+                                del st.session_state.thai_stocks['Ticker'][ticker_idx]
+                                del st.session_state.thai_stocks['Shares'][ticker_idx]
+                                del st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
+                                st.sidebar.success(f"✅ Sold all {thai_ticker} shares")
+                            else:
+                                st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
+                                st.sidebar.success(f"✅ Sold {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
+
+                except ValueError:
+                    if thai_transaction_type == "Buy":
+                        st.session_state.thai_stocks['Ticker'].append(thai_ticker)
+                        st.session_state.thai_stocks['Shares'].append(thai_shares)
+                        st.session_state.thai_stocks['Avg_Cost'].append(thai_price)
+                        log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
+                        st.sidebar.success(f"✅ Added new position: {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
+                    else:
+                        st.sidebar.error(f"❌ Cannot sell {thai_ticker}. No existing position found.")
+
+                st.rerun()
+            else:
+                st.sidebar.error("❌ Enter valid amount/price values.")
 
 else:  # Mutual Fund
     with st.sidebar.form("thai_fund_form"):
         fund_code = st.text_input("Fund Code (e.g., SCBNDQ(E))", key="fund_code")
-        fund_units = st.number_input("Units", min_value=0.0, step=0.01, key="fund_units")
-        fund_price = st.number_input("NAV per Unit (฿)", min_value=0.0, step=0.0001, key="fund_price")
+        fund_units = 0.0
+        fund_price = 0.0
+        fund_cash_amount = 0.0
+
+        if thai_transaction_type in ["Buy", "Sell"]:
+            fund_units = st.number_input("Units", min_value=0.0, step=0.01, key="fund_units")
+            fund_price = st.number_input("NAV per Unit (฿)", min_value=0.0, step=0.0001, key="fund_price")
+        elif thai_transaction_type in ["Dividend", "Fee"]:
+            fund_cash_amount = st.number_input("Cash Amount (฿)", min_value=0.0, step=0.01, key="fund_cash_amount")
+        else:
+            st.caption("Split is available for Thai Stock only.")
+
         fund_master = st.selectbox("Master ETF", ["QQQ", "VOO", "VTI", "SOXX", "ICLN", "GLD", "^SET.BK", "N/A"], key="fund_master")
         fund_submit = st.form_submit_button(f"Add Fund {thai_transaction_type}")
-        
-        if fund_submit and fund_code and fund_units > 0 and fund_price > 0:
+
+        if fund_submit and fund_code:
+            fund_code = fund_code.strip().upper()
+
+            if thai_transaction_type in ["Dividend", "Fee"]:
+                if fund_cash_amount <= 0:
+                    st.sidebar.error("❌ Amount must be greater than 0.")
+                else:
+                    event_total = fund_cash_amount if thai_transaction_type == "Dividend" else -fund_cash_amount
+                    log_transaction(
+                        fund_code,
+                        thai_transaction_type,
+                        0,
+                        fund_cash_amount,
+                        "Mutual Fund",
+                        total_override=event_total,
+                        notes=f"{thai_transaction_type} cash event"
+                    )
+                    sign = "+" if thai_transaction_type == "Dividend" else "-"
+                    st.sidebar.success(f"✅ Logged {thai_transaction_type} for {fund_code}: {sign}฿{fund_cash_amount:.2f}")
+                    st.rerun()
+
+            elif thai_transaction_type == "Split":
+                st.sidebar.error("❌ Split is only supported for Thai Stock positions.")
+
+            elif fund_units > 0 and fund_price > 0:
             # Find if fund exists
-            fund_idx = None
-            for i, fund in enumerate(st.session_state.vault_portfolio):
-                if fund['Code'] == fund_code:
-                    fund_idx = i
-                    break
-            
-            if fund_idx is not None:
-                existing_units = st.session_state.vault_portfolio[fund_idx]['Units']
-                existing_cost = st.session_state.vault_portfolio[fund_idx]['Cost']
-                
-                if thai_transaction_type == "Buy":
-                    total_cost = (existing_units * existing_cost) + (fund_units * fund_price)
-                    new_units = existing_units + fund_units
-                    new_avg_cost = total_cost / new_units
-                    
-                    st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
-                    st.session_state.vault_portfolio[fund_idx]['Cost'] = new_avg_cost
-                    log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
-                    st.sidebar.success(f"✅ Added {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
-                else:
-                    if fund_units > existing_units:
-                        st.sidebar.error(f"❌ Cannot sell {fund_units} units. Only {existing_units} available.")
+                fund_idx = None
+                for i, fund in enumerate(st.session_state.vault_portfolio):
+                    if fund['Code'] == fund_code:
+                        fund_idx = i
+                        break
+
+                if fund_idx is not None:
+                    existing_units = st.session_state.vault_portfolio[fund_idx]['Units']
+                    existing_cost = st.session_state.vault_portfolio[fund_idx]['Cost']
+
+                    if thai_transaction_type == "Buy":
+                        total_cost = (existing_units * existing_cost) + (fund_units * fund_price)
+                        new_units = existing_units + fund_units
+                        new_avg_cost = total_cost / new_units
+
+                        st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
+                        st.session_state.vault_portfolio[fund_idx]['Cost'] = new_avg_cost
+                        log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
+                        st.sidebar.success(f"✅ Added {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
                     else:
-                        log_transaction(fund_code, "Sell", fund_units, fund_price, "Mutual Fund", existing_cost)
-                        new_units = existing_units - fund_units
-                        if new_units == 0:
-                            del st.session_state.vault_portfolio[fund_idx]
-                            st.sidebar.success(f"✅ Sold all {fund_code} units")
+                        if fund_units > existing_units:
+                            st.sidebar.error(f"❌ Cannot sell {fund_units} units. Only {existing_units} available.")
                         else:
-                            st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
-                            st.sidebar.success(f"✅ Sold {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
-            else:
-                if thai_transaction_type == "Buy":
-                    st.session_state.vault_portfolio.append({
-                        "Code": fund_code,
-                        "Units": fund_units,
-                        "Cost": fund_price,
-                        "Master": fund_master
-                    })
-                    log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
-                    st.sidebar.success(f"✅ Added new fund: {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
+                            log_transaction(fund_code, "Sell", fund_units, fund_price, "Mutual Fund", existing_cost)
+                            new_units = existing_units - fund_units
+                            if new_units == 0:
+                                del st.session_state.vault_portfolio[fund_idx]
+                                st.sidebar.success(f"✅ Sold all {fund_code} units")
+                            else:
+                                st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
+                                st.sidebar.success(f"✅ Sold {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
                 else:
-                    st.sidebar.error(f"❌ Cannot sell {fund_code}. No existing position found.")
-            
-            st.rerun()
+                    if thai_transaction_type == "Buy":
+                        st.session_state.vault_portfolio.append({
+                            "Code": fund_code,
+                            "Units": fund_units,
+                            "Cost": fund_price,
+                            "Master": fund_master
+                        })
+                        log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
+                        st.sidebar.success(f"✅ Added new fund: {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
+                    else:
+                        st.sidebar.error(f"❌ Cannot sell {fund_code}. No existing position found.")
+
+                st.rerun()
+            else:
+                st.sidebar.error("❌ Enter valid amount/price values.")
 
