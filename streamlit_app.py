@@ -4,6 +4,8 @@ import pandas as pd
 import requests
 import time
 import json
+import sqlite3
+import uuid
 from datetime import datetime
 from pathlib import Path
 from ratelimit import limits, sleep_and_retry
@@ -148,19 +150,211 @@ def save_transaction_history():
     except Exception:
         pass
 
-def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stock", avg_cost_at_time=0):
+def get_lot_db_path():
+    """Local SQLite file path for lot tracking."""
+    return Path(".streamlit") / "portfolio_lots.db"
+
+def init_lot_database():
+    """Initialize FIFO lot-tracking database tables."""
+    try:
+        db_path = get_lot_db_path()
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tax_lots (
+                lot_id TEXT PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                asset_type TEXT NOT NULL,
+                currency TEXT NOT NULL,
+                acquired_date TEXT NOT NULL,
+                quantity_original REAL NOT NULL,
+                quantity_remaining REAL NOT NULL,
+                cost_per_unit REAL NOT NULL,
+                source TEXT NOT NULL DEFAULT 'BUY'
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS realized_lots (
+                realized_id TEXT PRIMARY KEY,
+                symbol TEXT NOT NULL,
+                asset_type TEXT NOT NULL,
+                currency TEXT NOT NULL,
+                sale_date TEXT NOT NULL,
+                lot_id TEXT NOT NULL,
+                quantity_sold REAL NOT NULL,
+                cost_per_unit REAL NOT NULL,
+                sale_price REAL NOT NULL,
+                realized_pl REAL NOT NULL,
+                FOREIGN KEY (lot_id) REFERENCES tax_lots(lot_id)
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS lot_metadata (
+                meta_key TEXT PRIMARY KEY,
+                meta_value TEXT
+            )
+        ''')
+
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+def lot_record_buy(symbol, asset_type, currency, quantity, price, acquired_date=None, source='BUY'):
+    """Insert a new buy lot for FIFO tracking."""
+    try:
+        if quantity <= 0:
+            return
+        if acquired_date is None:
+            acquired_date = datetime.now().strftime("%Y-%m-%d")
+
+        conn = sqlite3.connect(get_lot_db_path())
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            INSERT INTO tax_lots (
+                lot_id, symbol, asset_type, currency, acquired_date,
+                quantity_original, quantity_remaining, cost_per_unit, source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                str(uuid.uuid4()), symbol, asset_type, currency, acquired_date,
+                float(quantity), float(quantity), float(price), source
+            )
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+def lot_record_sell_fifo(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
+    """Consume open lots via FIFO and return realized P/L. Returns None if insufficient lots."""
+    try:
+        if quantity <= 0:
+            return 0.0
+        if sale_date is None:
+            sale_date = datetime.now().strftime("%Y-%m-%d")
+
+        conn = sqlite3.connect(get_lot_db_path())
+        cursor = conn.cursor()
+
+        cursor.execute(
+            '''
+            SELECT lot_id, quantity_remaining, cost_per_unit
+            FROM tax_lots
+            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
+            ORDER BY acquired_date ASC, rowid ASC
+            ''',
+            (symbol, asset_type, currency)
+        )
+        lots = cursor.fetchall()
+
+        total_available = sum(lot[1] for lot in lots)
+        if total_available + 1e-9 < quantity:
+            conn.close()
+            return None
+
+        to_sell = float(quantity)
+        realized_total = 0.0
+        for lot_id, qty_remaining, cost_per_unit in lots:
+            if to_sell <= 0:
+                break
+
+            use_qty = min(qty_remaining, to_sell)
+            realized_piece = (float(sale_price) - float(cost_per_unit)) * float(use_qty)
+            realized_total += realized_piece
+
+            new_qty = float(qty_remaining) - float(use_qty)
+            cursor.execute(
+                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
+                (new_qty, lot_id)
+            )
+
+            cursor.execute(
+                '''
+                INSERT INTO realized_lots (
+                    realized_id, symbol, asset_type, currency, sale_date,
+                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
+                    lot_id, float(use_qty), float(cost_per_unit), float(sale_price), float(realized_piece)
+                )
+            )
+            to_sell -= float(use_qty)
+
+        conn.commit()
+        conn.close()
+        return realized_total
+    except Exception:
+        return None
+
+def seed_opening_lots_from_portfolios(us_portfolio, thai_stocks, vault_portfolio):
+    """Seed lot DB once from current starting positions (if DB is empty)."""
+    try:
+        conn = sqlite3.connect(get_lot_db_path())
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(1) FROM tax_lots")
+        lot_count = cursor.fetchone()[0]
+        if lot_count > 0:
+            conn.close()
+            return
+
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        for ticker, shares, avg_cost in zip(us_portfolio.get('Ticker', []), us_portfolio.get('Shares', []), us_portfolio.get('Avg_Cost', [])):
+            if float(shares) > 0:
+                lot_record_buy(ticker, "US Stock", "USD", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
+
+        for ticker, shares, avg_cost in zip(thai_stocks.get('Ticker', []), thai_stocks.get('Shares', []), thai_stocks.get('Avg_Cost', [])):
+            if float(shares) > 0:
+                lot_record_buy(ticker, "Thai Stock", "THB", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
+
+        for fund in vault_portfolio:
+            units = float(fund.get('Units', 0))
+            cost = float(fund.get('Cost', 0))
+            code = fund.get('Code', '')
+            if units > 0 and code:
+                lot_record_buy(code, "Mutual Fund", "THB", units, cost, acquired_date=today, source='OPENING')
+
+        cursor.execute(
+            "INSERT OR REPLACE INTO lot_metadata (meta_key, meta_value) VALUES (?, ?)",
+            ("opening_seeded_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stock", avg_cost_at_time=0, transaction_date=None):
     """Log a transaction to history for P/L tracking"""
     from datetime import datetime
     
-    # Calculate realized P/L for sells
-    realized_pl = 0
-    if transaction_type == "Sell":
-        realized_pl = (price - avg_cost_at_time) * shares
-    
     currency = "USD" if asset_type == "US Stock" else "THB"
+    if transaction_date is None:
+        transaction_date = datetime.now().strftime("%Y-%m-%d")
+
+    # Calculate realized P/L using lot tracking (FIFO), fallback to average-cost method.
+    realized_pl = 0
+    if transaction_type == "Buy":
+        lot_record_buy(ticker, asset_type, currency, float(shares), float(price), acquired_date=transaction_date)
+    elif transaction_type == "Sell":
+        fifo_realized = lot_record_sell_fifo(
+            ticker, asset_type, currency, float(shares), float(price), sale_date=transaction_date
+        )
+        if fifo_realized is None:
+            realized_pl = (price - avg_cost_at_time) * shares
+        else:
+            realized_pl = fifo_realized
 
     transaction = {
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "date": f"{transaction_date} {datetime.now().strftime('%H:%M:%S')}",
         "ticker": ticker,
         "type": transaction_type,
         "shares": shares,
@@ -215,6 +409,9 @@ if 'us_portfolio' not in st.session_state:
 # Initialize transaction history
 if 'transaction_history' not in st.session_state:
     st.session_state.transaction_history = load_transaction_history()
+
+init_lot_database()
+seed_opening_lots_from_portfolios(st.session_state.us_portfolio, st.session_state.thai_stocks, st.session_state.vault_portfolio)
 
 us_portfolio = st.session_state.us_portfolio
 thai_stocks = st.session_state.thai_stocks
@@ -638,6 +835,232 @@ def check_price_alerts(portfolio_dict, current_prices):
     
     return alerts
 
+def _normalize_column_name(name):
+    return str(name).strip().lower().replace(" ", "").replace("_", "")
+
+def _get_first_matching_column(df, aliases):
+    normalized_map = {_normalize_column_name(col): col for col in df.columns}
+    for alias in aliases:
+        key = _normalize_column_name(alias)
+        if key in normalized_map:
+            return normalized_map[key]
+    return None
+
+def parse_transactions_csv(uploaded_file, default_asset_class):
+    """Parse Yahoo-style transaction CSV into canonical rows."""
+    try:
+        df = pd.read_csv(uploaded_file)
+    except Exception as exc:
+        return None, [f"Unable to read CSV: {exc}"]
+
+    symbol_col = _get_first_matching_column(df, ["symbol", "ticker", "code"])
+    fund_col = _get_first_matching_column(df, ["fund_code", "fundcode", "fund"])
+    action_col = _get_first_matching_column(df, ["action", "type", "transaction_type", "transaction type"])
+    quantity_col = _get_first_matching_column(df, ["quantity", "shares", "units", "qty"])
+    price_col = _get_first_matching_column(df, ["price", "trade_price", "fill_price", "avg_price", "nav"])
+    date_col = _get_first_matching_column(df, ["trade_date", "date", "transaction_date"])
+    asset_col = _get_first_matching_column(df, ["asset_class", "asset_type", "class"])
+    master_col = _get_first_matching_column(df, ["master", "master_etf", "benchmark"])
+
+    errors = []
+    if not action_col:
+        errors.append("Missing action/type column (expected: action/type/transaction_type)")
+    if not quantity_col:
+        errors.append("Missing quantity column (expected: quantity/shares/units)")
+    if not price_col:
+        errors.append("Missing price column (expected: price/trade_price/nav)")
+    if not symbol_col and not fund_col:
+        errors.append("Missing instrument column (expected symbol/ticker/code or fund_code)")
+    if errors:
+        return None, errors
+
+    canonical_rows = []
+    row_errors = []
+
+    for idx, row in df.iterrows():
+        row_num = idx + 2
+        action_raw = str(row[action_col]).strip().upper()
+        if action_raw in ["BUY", "B"]:
+            action = "Buy"
+        elif action_raw in ["SELL", "S"]:
+            action = "Sell"
+        else:
+            row_errors.append(f"Row {row_num}: Unsupported action '{action_raw}'")
+            continue
+
+        try:
+            quantity = float(str(row[quantity_col]).replace(",", ""))
+            price = float(str(row[price_col]).replace(",", ""))
+        except Exception:
+            row_errors.append(f"Row {row_num}: Invalid quantity/price")
+            continue
+
+        if quantity <= 0 or price <= 0:
+            row_errors.append(f"Row {row_num}: Quantity and price must be > 0")
+            continue
+
+        asset_class = default_asset_class
+        if asset_col and pd.notna(row.get(asset_col)):
+            asset_class = str(row[asset_col]).strip()
+
+        symbol = ""
+        fund_code = ""
+        if fund_col and pd.notna(row.get(fund_col)) and str(row[fund_col]).strip():
+            fund_code = str(row[fund_col]).strip().upper()
+            asset_class = "Mutual Fund"
+        elif symbol_col and pd.notna(row.get(symbol_col)):
+            symbol = str(row[symbol_col]).strip().upper()
+        else:
+            row_errors.append(f"Row {row_num}: Missing symbol/fund code")
+            continue
+
+        if asset_class == "Thai Stock" and symbol and not symbol.endswith(".BK"):
+            symbol = f"{symbol}.BK"
+
+        date_value = datetime.now().strftime("%Y-%m-%d")
+        if date_col and pd.notna(row.get(date_col)) and str(row[date_col]).strip():
+            parsed_date = pd.to_datetime(str(row[date_col]), errors='coerce')
+            if pd.isna(parsed_date):
+                row_errors.append(f"Row {row_num}: Invalid date '{row[date_col]}'")
+                continue
+            date_value = parsed_date.strftime("%Y-%m-%d")
+
+        master = "N/A"
+        if master_col and pd.notna(row.get(master_col)) and str(row[master_col]).strip():
+            master = str(row[master_col]).strip().upper()
+
+        canonical_rows.append({
+            "row_num": row_num,
+            "asset_class": asset_class,
+            "action": action,
+            "symbol": symbol,
+            "fund_code": fund_code,
+            "quantity": quantity,
+            "price": price,
+            "transaction_date": date_value,
+            "master": master
+        })
+
+    return pd.DataFrame(canonical_rows), row_errors
+
+def apply_import_transaction(import_row):
+    """Apply one canonical imported transaction into session-state portfolios."""
+    asset_class = import_row["asset_class"]
+    action = import_row["action"]
+    quantity = float(import_row["quantity"])
+    price = float(import_row["price"])
+    transaction_date = import_row["transaction_date"]
+
+    if asset_class == "US Stock":
+        ticker = import_row["symbol"]
+        try:
+            idx = st.session_state.us_portfolio['Ticker'].index(ticker)
+            existing_shares = float(st.session_state.us_portfolio['Shares'][idx])
+            existing_avg = float(st.session_state.us_portfolio['Avg_Cost'][idx])
+
+            if action == "Buy":
+                total_cost = (existing_shares * existing_avg) + (quantity * price)
+                new_shares = existing_shares + quantity
+                st.session_state.us_portfolio['Shares'][idx] = new_shares
+                st.session_state.us_portfolio['Avg_Cost'][idx] = total_cost / new_shares
+                log_transaction(ticker, "Buy", quantity, price, "US Stock", transaction_date=transaction_date)
+            else:
+                if quantity > existing_shares:
+                    return False, f"Insufficient shares for {ticker}"
+                log_transaction(ticker, "Sell", quantity, price, "US Stock", existing_avg, transaction_date=transaction_date)
+                new_shares = existing_shares - quantity
+                if new_shares == 0:
+                    del st.session_state.us_portfolio['Ticker'][idx]
+                    del st.session_state.us_portfolio['Shares'][idx]
+                    del st.session_state.us_portfolio['Avg_Cost'][idx]
+                else:
+                    st.session_state.us_portfolio['Shares'][idx] = new_shares
+            return True, "ok"
+        except ValueError:
+            if action == "Buy":
+                st.session_state.us_portfolio['Ticker'].append(ticker)
+                st.session_state.us_portfolio['Shares'].append(quantity)
+                st.session_state.us_portfolio['Avg_Cost'].append(price)
+                log_transaction(ticker, "Buy", quantity, price, "US Stock", transaction_date=transaction_date)
+                return True, "ok"
+            return False, f"No existing position for {ticker}"
+
+    if asset_class == "Thai Stock":
+        ticker = import_row["symbol"]
+        try:
+            idx = st.session_state.thai_stocks['Ticker'].index(ticker)
+            existing_shares = float(st.session_state.thai_stocks['Shares'][idx])
+            existing_avg = float(st.session_state.thai_stocks['Avg_Cost'][idx])
+
+            if action == "Buy":
+                total_cost = (existing_shares * existing_avg) + (quantity * price)
+                new_shares = existing_shares + quantity
+                st.session_state.thai_stocks['Shares'][idx] = new_shares
+                st.session_state.thai_stocks['Avg_Cost'][idx] = total_cost / new_shares
+                log_transaction(ticker, "Buy", quantity, price, "Thai Stock", transaction_date=transaction_date)
+            else:
+                if quantity > existing_shares:
+                    return False, f"Insufficient shares for {ticker}"
+                log_transaction(ticker, "Sell", quantity, price, "Thai Stock", existing_avg, transaction_date=transaction_date)
+                new_shares = existing_shares - quantity
+                if new_shares == 0:
+                    del st.session_state.thai_stocks['Ticker'][idx]
+                    del st.session_state.thai_stocks['Shares'][idx]
+                    del st.session_state.thai_stocks['Avg_Cost'][idx]
+                else:
+                    st.session_state.thai_stocks['Shares'][idx] = new_shares
+            return True, "ok"
+        except ValueError:
+            if action == "Buy":
+                st.session_state.thai_stocks['Ticker'].append(ticker)
+                st.session_state.thai_stocks['Shares'].append(quantity)
+                st.session_state.thai_stocks['Avg_Cost'].append(price)
+                log_transaction(ticker, "Buy", quantity, price, "Thai Stock", transaction_date=transaction_date)
+                return True, "ok"
+            return False, f"No existing position for {ticker}"
+
+    # Mutual Fund
+    fund_code = import_row["fund_code"]
+    master = import_row.get("master", "N/A") or "N/A"
+    fund_idx = None
+    for index, fund in enumerate(st.session_state.vault_portfolio):
+        if fund.get('Code') == fund_code:
+            fund_idx = index
+            break
+
+    if fund_idx is not None:
+        existing_units = float(st.session_state.vault_portfolio[fund_idx]['Units'])
+        existing_cost = float(st.session_state.vault_portfolio[fund_idx]['Cost'])
+        if action == "Buy":
+            total_cost = (existing_units * existing_cost) + (quantity * price)
+            new_units = existing_units + quantity
+            st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
+            st.session_state.vault_portfolio[fund_idx]['Cost'] = total_cost / new_units
+            log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date)
+            return True, "ok"
+
+        if quantity > existing_units:
+            return False, f"Insufficient units for {fund_code}"
+        log_transaction(fund_code, "Sell", quantity, price, "Mutual Fund", existing_cost, transaction_date=transaction_date)
+        new_units = existing_units - quantity
+        if new_units == 0:
+            del st.session_state.vault_portfolio[fund_idx]
+        else:
+            st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
+        return True, "ok"
+
+    if action == "Buy":
+        st.session_state.vault_portfolio.append({
+            "Code": fund_code,
+            "Units": quantity,
+            "Cost": price,
+            "Master": master
+        })
+        log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date)
+        return True, "ok"
+
+    return False, f"No existing position for {fund_code}"
+
 # --- EXECUTION ---
 df_us = get_stock_data(us_portfolio)
 df_thai = get_stock_data(thai_stocks)
@@ -685,7 +1108,7 @@ with col3:
 
 st.markdown("""---""")
 st.markdown("")
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER", "📜 TRANSACTION HISTORY"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER", "📜 TRANSACTION HISTORY", "📥 CSV IMPORT"])
 
 def color_pl(val): return f'color: {"#3fb950" if val > 0 else "#f85149"}; font-weight: bold;'
 
@@ -870,6 +1293,83 @@ with tab5:
         - Used for tax reporting
         
         **Note:** Current implementation uses weighted average cost basis. Future updates will support FIFO/LIFO tax lot methods.
+        """)
+
+with tab6:
+    st.subheader("📥 CSV IMPORT (Yahoo-style)")
+    st.caption("Import transactions for US stocks, Thai stocks, or Thai mutual funds.")
+
+    import_asset_class = st.selectbox(
+        "Default asset class for rows without explicit class",
+        ["US Stock", "Thai Stock", "Mutual Fund"],
+        key="csv_default_asset_class"
+    )
+
+    uploaded_csv = st.file_uploader("Upload CSV file", type=["csv"], key="csv_uploader")
+
+    if uploaded_csv is not None:
+        parsed_df, parse_errors = parse_transactions_csv(uploaded_csv, import_asset_class)
+
+        if parse_errors:
+            st.error("CSV has validation issues:")
+            for err in parse_errors[:20]:
+                st.write(f"- {err}")
+
+        if parsed_df is not None and len(parsed_df) > 0:
+            st.success(f"Parsed {len(parsed_df)} valid rows")
+            st.dataframe(parsed_df, hide_index=True, use_container_width=True)
+
+            if st.button("Import Transactions", key="run_csv_import"):
+                success_count = 0
+                failed_rows = []
+
+                for _, import_row in parsed_df.iterrows():
+                    ok, message = apply_import_transaction(import_row)
+                    if ok:
+                        success_count += 1
+                    else:
+                        failed_rows.append(f"Row {import_row['row_num']}: {message}")
+
+                st.success(f"Imported {success_count} transactions")
+                if failed_rows:
+                    st.warning(f"Failed rows: {len(failed_rows)}")
+                    for failed in failed_rows[:20]:
+                        st.write(f"- {failed}")
+
+                st.rerun()
+        elif parsed_df is not None:
+            st.info("No valid transaction rows found in CSV")
+
+    with st.expander("CSV format examples"):
+        st.markdown("""
+        **Accepted aliases:**
+        - Symbol: `symbol`, `ticker`, `code`
+        - Fund code: `fund_code`, `fund`
+        - Action: `action`, `type`, `transaction_type`
+        - Quantity: `quantity`, `shares`, `units`
+        - Price: `price`, `trade_price`, `nav`
+        - Date: `trade_date`, `date`, `transaction_date`
+
+        **US stocks sample:**
+        ```csv
+        symbol,action,quantity,price,date
+        AAPL,BUY,10,190.50,2026-01-15
+        AAPL,SELL,2,201.20,2026-02-01
+        ```
+
+        **Thai stocks sample:**
+        ```csv
+        symbol,action,quantity,price,date
+        ADVANC.BK,BUY,50,220.00,2026-01-10
+        TISCO.BK,BUY,100,98.50,2026-01-11
+        ```
+
+        **Thai funds sample:**
+        ```csv
+        fund_code,action,quantity,price,date,master
+        SCBNDQ(E),BUY,1000,13.50,2026-01-05,QQQ
+        SCBNDQ(E),SELL,100,13.95,2026-02-12,QQQ
+        ```
         """)
 
 # --- TRANSACTION SIDEBAR ---
