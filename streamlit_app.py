@@ -150,6 +150,27 @@ def save_transaction_history():
     except Exception:
         pass
 
+def build_import_key(asset_class, action, symbol, fund_code, quantity, price, transaction_date):
+    """Build deterministic key for idempotent CSV imports."""
+    instrument = fund_code if fund_code else symbol
+    return "|".join([
+        str(asset_class).strip().upper(),
+        str(action).strip().upper(),
+        str(instrument).strip().upper(),
+        f"{float(quantity):.8f}",
+        f"{float(price):.8f}",
+        str(transaction_date).strip()
+    ])
+
+def import_key_exists(import_key):
+    """Check whether an imported transaction key already exists in history."""
+    if not import_key:
+        return False
+    for txn in st.session_state.transaction_history:
+        if txn.get("import_key") == import_key:
+            return True
+    return False
+
 def get_lot_db_path():
     """Local SQLite file path for lot tracking."""
     return Path(".streamlit") / "portfolio_lots.db"
@@ -332,7 +353,7 @@ def seed_opening_lots_from_portfolios(us_portfolio, thai_stocks, vault_portfolio
     except Exception:
         pass
 
-def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stock", avg_cost_at_time=0, transaction_date=None):
+def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stock", avg_cost_at_time=0, transaction_date=None, import_key=None):
     """Log a transaction to history for P/L tracking"""
     from datetime import datetime
     
@@ -364,6 +385,9 @@ def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stoc
         "currency": currency,
         "realized_pl": realized_pl
     }
+
+    if import_key:
+        transaction["import_key"] = import_key
     
     st.session_state.transaction_history.append(transaction)
     save_transaction_history()
@@ -938,7 +962,8 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
             "quantity": quantity,
             "price": price,
             "transaction_date": date_value,
-            "master": master
+            "master": master,
+            "import_key": build_import_key(asset_class, action, symbol, fund_code, quantity, price, date_value)
         })
 
     return pd.DataFrame(canonical_rows), row_errors
@@ -950,6 +975,10 @@ def apply_import_transaction(import_row):
     quantity = float(import_row["quantity"])
     price = float(import_row["price"])
     transaction_date = import_row["transaction_date"]
+    import_key = import_row.get("import_key", "")
+
+    if import_key_exists(import_key):
+        return False, "Duplicate transaction skipped"
 
     if asset_class == "US Stock":
         ticker = import_row["symbol"]
@@ -963,11 +992,11 @@ def apply_import_transaction(import_row):
                 new_shares = existing_shares + quantity
                 st.session_state.us_portfolio['Shares'][idx] = new_shares
                 st.session_state.us_portfolio['Avg_Cost'][idx] = total_cost / new_shares
-                log_transaction(ticker, "Buy", quantity, price, "US Stock", transaction_date=transaction_date)
+                log_transaction(ticker, "Buy", quantity, price, "US Stock", transaction_date=transaction_date, import_key=import_key)
             else:
                 if quantity > existing_shares:
                     return False, f"Insufficient shares for {ticker}"
-                log_transaction(ticker, "Sell", quantity, price, "US Stock", existing_avg, transaction_date=transaction_date)
+                log_transaction(ticker, "Sell", quantity, price, "US Stock", existing_avg, transaction_date=transaction_date, import_key=import_key)
                 new_shares = existing_shares - quantity
                 if new_shares == 0:
                     del st.session_state.us_portfolio['Ticker'][idx]
@@ -981,7 +1010,7 @@ def apply_import_transaction(import_row):
                 st.session_state.us_portfolio['Ticker'].append(ticker)
                 st.session_state.us_portfolio['Shares'].append(quantity)
                 st.session_state.us_portfolio['Avg_Cost'].append(price)
-                log_transaction(ticker, "Buy", quantity, price, "US Stock", transaction_date=transaction_date)
+                log_transaction(ticker, "Buy", quantity, price, "US Stock", transaction_date=transaction_date, import_key=import_key)
                 return True, "ok"
             return False, f"No existing position for {ticker}"
 
@@ -997,11 +1026,11 @@ def apply_import_transaction(import_row):
                 new_shares = existing_shares + quantity
                 st.session_state.thai_stocks['Shares'][idx] = new_shares
                 st.session_state.thai_stocks['Avg_Cost'][idx] = total_cost / new_shares
-                log_transaction(ticker, "Buy", quantity, price, "Thai Stock", transaction_date=transaction_date)
+                log_transaction(ticker, "Buy", quantity, price, "Thai Stock", transaction_date=transaction_date, import_key=import_key)
             else:
                 if quantity > existing_shares:
                     return False, f"Insufficient shares for {ticker}"
-                log_transaction(ticker, "Sell", quantity, price, "Thai Stock", existing_avg, transaction_date=transaction_date)
+                log_transaction(ticker, "Sell", quantity, price, "Thai Stock", existing_avg, transaction_date=transaction_date, import_key=import_key)
                 new_shares = existing_shares - quantity
                 if new_shares == 0:
                     del st.session_state.thai_stocks['Ticker'][idx]
@@ -1015,7 +1044,7 @@ def apply_import_transaction(import_row):
                 st.session_state.thai_stocks['Ticker'].append(ticker)
                 st.session_state.thai_stocks['Shares'].append(quantity)
                 st.session_state.thai_stocks['Avg_Cost'].append(price)
-                log_transaction(ticker, "Buy", quantity, price, "Thai Stock", transaction_date=transaction_date)
+                log_transaction(ticker, "Buy", quantity, price, "Thai Stock", transaction_date=transaction_date, import_key=import_key)
                 return True, "ok"
             return False, f"No existing position for {ticker}"
 
@@ -1036,12 +1065,12 @@ def apply_import_transaction(import_row):
             new_units = existing_units + quantity
             st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
             st.session_state.vault_portfolio[fund_idx]['Cost'] = total_cost / new_units
-            log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date)
+            log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date, import_key=import_key)
             return True, "ok"
 
         if quantity > existing_units:
             return False, f"Insufficient units for {fund_code}"
-        log_transaction(fund_code, "Sell", quantity, price, "Mutual Fund", existing_cost, transaction_date=transaction_date)
+        log_transaction(fund_code, "Sell", quantity, price, "Mutual Fund", existing_cost, transaction_date=transaction_date, import_key=import_key)
         new_units = existing_units - quantity
         if new_units == 0:
             del st.session_state.vault_portfolio[fund_idx]
@@ -1056,7 +1085,7 @@ def apply_import_transaction(import_row):
             "Cost": price,
             "Master": master
         })
-        log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date)
+        log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date, import_key=import_key)
         return True, "ok"
 
     return False, f"No existing position for {fund_code}"
@@ -1321,6 +1350,7 @@ with tab6:
 
             if st.button("Import Transactions", key="run_csv_import"):
                 success_count = 0
+                skipped_duplicates = 0
                 failed_rows = []
 
                 for _, import_row in parsed_df.iterrows():
@@ -1328,9 +1358,14 @@ with tab6:
                     if ok:
                         success_count += 1
                     else:
-                        failed_rows.append(f"Row {import_row['row_num']}: {message}")
+                        if message == "Duplicate transaction skipped":
+                            skipped_duplicates += 1
+                        else:
+                            failed_rows.append(f"Row {import_row['row_num']}: {message}")
 
                 st.success(f"Imported {success_count} transactions")
+                if skipped_duplicates > 0:
+                    st.info(f"Skipped {skipped_duplicates} duplicate rows")
                 if failed_rows:
                     st.warning(f"Failed rows: {len(failed_rows)}")
                     for failed in failed_rows[:20]:
