@@ -98,6 +98,10 @@ newsapi_key = "your_free_key_from_newsapi.org"
 price_alert_threshold = 5
 enable_price_alerts = true
 enable_news_feed = true
+
+[sec_api]
+primary_key = "your_sec_primary_key"
+secondary_key = "your_sec_secondary_key"
 ```
 
 Get a free key at [newsapi.org](https://newsapi.org/).

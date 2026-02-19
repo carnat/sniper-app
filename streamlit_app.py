@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -927,29 +928,51 @@ def _resolve_fund_proj_id_and_class(fund_code, registry):
 # --- INTELLIGENCE ENGINES ---
 
 # Rate Limiter: 5 calls per 1 second (SEC API limit)
-# SEC API Subscription Keys
-API_KEY_PRIMARY = "REDACTED_SEC_KEY_PRIMARY"
-API_KEY_SECONDARY = "REDACTED_SEC_KEY_SECONDARY"
+def get_sec_api_keys():
+    """Load SEC API keys from Streamlit secrets (preferred) or environment variables."""
+    keys = []
 
-# Try primary key first, fallback to secondary
-headers = {
-    'Content-Type': 'application/json',
-    'User-Agent': 'Mozilla/5.0',
-    'Ocp-Apim-Subscription-Key': API_KEY_PRIMARY  # Will fallback to secondary if this fails
-}
+    try:
+        sec_cfg = st.secrets.get("sec_api", {})
+        primary = str(sec_cfg.get("primary_key", "")).strip()
+        secondary = str(sec_cfg.get("secondary_key", "")).strip()
+        if primary:
+            keys.append(primary)
+        if secondary and secondary != primary:
+            keys.append(secondary)
+    except Exception:
+        pass
+
+    env_primary = str(os.getenv("SEC_API_PRIMARY_KEY", "")).strip()
+    env_secondary = str(os.getenv("SEC_API_SECONDARY_KEY", "")).strip()
+    if env_primary and env_primary not in keys:
+        keys.append(env_primary)
+    if env_secondary and env_secondary not in keys:
+        keys.append(env_secondary)
+
+    return keys
 
 @sleep_and_retry
 @limits(calls=5, period=1)
 def call_sec_api(url):
     """Rate-limited API call to SEC endpoints"""
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            return response
-        # For non-200 responses, still return None to trigger fallback
+    api_keys = get_sec_api_keys()
+    if not api_keys:
         return None
-    except Exception as e:
-        return None
+
+    for api_key in api_keys:
+        try:
+            headers = {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0',
+                'Ocp-Apim-Subscription-Key': api_key,
+            }
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                return response
+        except Exception:
+            pass
+    return None
 
 @st.cache_data(ttl=3600)
 def build_fund_registry():
@@ -2055,7 +2078,6 @@ with tab2:
             "Code": "Fund Code",
             "Cost": "Avg Cost",
             "Last Price": "NAV",
-            "Previous Price": "Prev NAV",
             "Fund Day Gain %": "Fund Day %",
             "Master": "Master ETF",
             "Master Day Gain %": "Master Day %",
@@ -2077,7 +2099,6 @@ with tab2:
                     "Units": "{:,.2f}",
                     "Avg Cost": "฿{:,.4f}",
                     "NAV": "฿{:,.4f}",
-                    "Prev NAV": "฿{:,.4f}",
                     "Fund Day %": "{:+.2f}%",
                     "Master Day %": "{:+.2f}%",
                     "Fund vs Master %": "{:+.2f}%",
