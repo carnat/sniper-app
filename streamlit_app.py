@@ -916,6 +916,30 @@ def _parse_numeric_value(value):
     except Exception:
         return None
 
+def _parse_date_value(value):
+    """Parse dates from Yahoo exports (supports YYYYMMDD, YYYYMMDD.0, and normal date strings)."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+
+    text = str(value).strip()
+    if text == "":
+        return None
+
+    # Handle numeric-like Yahoo dates such as 20260108 or 20260108.0
+    compact = text.replace(".0", "") if text.endswith(".0") else text
+    if compact.isdigit() and len(compact) == 8:
+        try:
+            parsed = pd.to_datetime(compact, format="%Y%m%d", errors="coerce")
+            if not pd.isna(parsed):
+                return parsed.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+
+    parsed = pd.to_datetime(text, errors='coerce')
+    if pd.isna(parsed):
+        return None
+    return parsed.strftime("%Y-%m-%d")
+
 def parse_transactions_csv(uploaded_file, default_asset_class):
     """Parse Yahoo-style CSV into canonical transaction rows.
 
@@ -1050,11 +1074,11 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
 
         date_value = datetime.now().strftime("%Y-%m-%d")
         if date_col and pd.notna(row.get(date_col)) and str(row[date_col]).strip():
-            parsed_date = pd.to_datetime(str(row[date_col]), errors='coerce')
-            if pd.isna(parsed_date):
+            parsed_date = _parse_date_value(row[date_col])
+            if parsed_date is None:
                 row_errors.append(f"Row {row_num}: Invalid date '{row[date_col]}'")
                 continue
-            date_value = parsed_date.strftime("%Y-%m-%d")
+            date_value = parsed_date
 
         master = "N/A"
         if master_col and pd.notna(row.get(master_col)) and str(row[master_col]).strip():
