@@ -7,18 +7,21 @@ Current app version is stored in [VERSION](VERSION).
 ## 🚀 Features
 
 ### 📊 Portfolio Overview Dashboard
+
 - **Net Worth (THB)** - Combined portfolio value with P/L tracking across all assets
 - **US Attack Performance** - US equity portfolio metrics with average returns
 - **Thai Vault Performance** - Thai holdings metrics with average returns
 - Real-time value updates and P/L calculations
 
 ### 🦅 US Equities (`US ATTACK`)
+
 - Track US stocks with live prices from yfinance
 - Display shares, average cost, live price, and P/L metrics
 - Automatic cost basis calculations
 - Color-coded P/L % (green for gains, red for losses)
 
 ### 🏰 Thai Assets (`THAI VAULT`)
+
 - **Thai Equities** - Real-time price tracking for Thai-listed stocks (.BK tickers)
 - **Mutual Funds** - Real-time NAV (Net Asset Value) from SEC Thailand API
   - Fund daily gains tracking
@@ -27,11 +30,13 @@ Current app version is stored in [VERSION](VERSION).
   - Master vs Fund % - Shows daily correlation difference between fund and master ETF
 
 ### 📈 Analytics Tab
+
 - Performance charts for US equities
 - Performance charts for mutual funds
 - Visual P/L % comparisons across holdings
 
 ### � News Watchtower (NEW!)
+
 - **Real-Time News Feed** - Latest articles for each holding from NewsAPI
 - **Price Alerts** - Automatic alerts when prices move ±5% (customizable)
 - **Smart Filtering** - View news by ticker with direct article links
@@ -39,12 +44,14 @@ Current app version is stored in [VERSION](VERSION).
 - See [NEWS_SETUP.md](NEWS_SETUP.md) for configuration
 
 ### �💰 Transaction Management (Sidebar)
+
 - **Buy/Sell Transactions** for US stocks, Thai stocks, and Thai mutual funds
 - **Automatic Cost Basis Updates** - Calculates weighted average cost
 - Add new positions or modify existing ones
 - Sell specific quantities while maintaining cost tracking
 
 ### 📡 Real-Time Data Sources
+
 - ✅ **US/Thai Stocks**: yfinance (market hours data)
 - ✅ **Thai Mutual Funds**: Official SEC Thailand API (api.sec.or.th)
 - ✅ **Master ETF Tracking**: Real-time market data from yfinance
@@ -98,7 +105,7 @@ enable_price_alerts = true
 enable_news_feed = true
 ```
 
-**Get NewsAPI Key:** Sign up free at https://newsapi.org/ (100 requests/day)
+**Get NewsAPI Key:** Sign up free at [newsapi.org](https://newsapi.org/) (100 requests/day)
 
 ### 3. Run the App
 
@@ -121,16 +128,19 @@ Your portfolio data stays **completely private**:
 ### Portfolio Data Format
 
 **US Portfolio:**
+
 - Ticker (string array) - US stock symbols
 - Shares (float array) - Number of shares held
 - Avg_Cost (float array) - Average cost per share (USD)
 
 **Thai Stocks:**
+
 - Ticker (string array) - Thai stock symbols ending with `.BK`
 - Shares (float array) - Number of shares held
 - Avg_Cost (float array) - Average cost per share (THB)
 
 **Vault Portfolio (Mutual Funds):**
+
 - Code (string) - Fund identifier (e.g., "SCBNDQ(E)")
 - Units (float) - Number of fund units
 - Cost (float) - NAV cost per unit (THB)
@@ -143,7 +153,7 @@ To deploy your app securely on Streamlit Cloud:
 1. Push code to GitHub (secrets.toml is gitignored, so your data won't be pushed)
 2. Connect your GitHub repo to Streamlit Cloud
 3. Go to app settings → "Secrets"
-4. Copy contents of your local `.streamlit/secrets.toml` 
+4. Copy contents of your local `.streamlit/secrets.toml`
 5. Paste into the Streamlit Cloud secrets manager
 6. Your app will load holdings from Streamlit Cloud secrets
 
