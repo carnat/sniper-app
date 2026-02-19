@@ -977,6 +977,7 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
 
         if is_transaction_mode:
             action_raw = str(row[action_col]).strip().upper()
+            action_inferred = False
             if action_raw in ["BUY", "B"]:
                 action = "Buy"
             elif action_raw in ["SELL", "S"]:
@@ -985,15 +986,21 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
                 # Yahoo holdings rows can appear with empty Transaction Type.
                 if action_raw in ["", "NAN", "NONE"]:
                     action = "Buy"
+                    action_inferred = True
                 else:
                     row_errors.append(f"Row {row_num}: Unsupported action '{action_raw}'")
                     continue
         else:
             # Holdings snapshot import: treat each row as opening BUY.
             action = "Buy"
+            action_inferred = True
 
         quantity = _parse_numeric_value(row[quantity_col])
         if quantity is None or quantity <= 0:
+            # Yahoo portfolio exports include many quote-only rows with no position data.
+            # Skip inferred holding rows quietly; keep strict validation for explicit transactions.
+            if action_inferred:
+                continue
             row_errors.append(f"Row {row_num}: Invalid quantity")
             continue
 
@@ -1004,6 +1011,8 @@ def parse_transactions_csv(uploaded_file, default_asset_class):
                 price = cost_basis / quantity
 
         if price is None or price <= 0:
+            if action_inferred:
+                continue
             row_errors.append(f"Row {row_num}: Invalid price/cost basis")
             continue
 
