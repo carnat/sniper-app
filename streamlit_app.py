@@ -10,6 +10,20 @@ from datetime import datetime
 from pathlib import Path
 from ratelimit import limits, sleep_and_retry
 
+def get_app_version():
+    """Read app version from VERSION file using SemVer format."""
+    try:
+        version_file = Path(__file__).with_name("VERSION")
+        if version_file.exists():
+            version_value = version_file.read_text(encoding="utf-8").strip()
+            if version_value:
+                return version_value
+    except Exception:
+        pass
+    return "0.0.0"
+
+APP_VERSION = get_app_version()
+
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="SNIPER COMMAND", layout="wide", page_icon="🎯")
 st.markdown("""
@@ -79,8 +93,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🎯 SNIPER OS v1.2")
+st.title("🎯 SNIPER OS")
 st.markdown("**HYBRID INTEL COMMAND CENTER**")
+st.caption(f"Version {APP_VERSION}")
 st.markdown("#####")
 st.caption("⚡ **US Markets:** Live (yfinance) | **Thai Stocks:** Live (yfinance) | **Thai Funds:** Live (SEC API)")
 st.markdown("---")

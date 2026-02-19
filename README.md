@@ -1,6 +1,8 @@
-# 🎯 SNIPER OS v1.2
+# 🎯 SNIPER OS
 
 **HYBRID INTEL COMMAND CENTER** - A comprehensive portfolio intelligence dashboard for tracking US stocks, Thai equities, and Thai mutual funds with real-time market data and performance analytics.
+
+Current app version is stored in [VERSION](VERSION).
 
 ## 🚀 Features
 
@@ -160,6 +162,33 @@ To deploy your app securely on Streamlit Cloud:
 - **Data**: yfinance, SEC Thailand API
 - **Storage**: TOML secrets file
 - **Language**: Python 3.8+
+
+## 🔢 Software Versioning
+
+This project uses **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
+
+- `MAJOR` - breaking changes
+- `MINOR` - backward-compatible features
+- `PATCH` - backward-compatible fixes
+
+### Single Source of Truth
+
+- App version is read from [VERSION](VERSION)
+- Release notes are tracked in [CHANGELOG.md](CHANGELOG.md)
+
+### Bump Version
+
+```bash
+python bump_version.py patch
+# or: python bump_version.py minor
+# or: python bump_version.py major
+```
+
+After bumping:
+
+1. Update [CHANGELOG.md](CHANGELOG.md)
+2. Commit version + changelog together
+3. Tag release in Git (optional)
 
 ## 📝 Notes
 
