@@ -50,6 +50,14 @@ Current release version: [VERSION](VERSION)
 
 See [NEWS_SETUP.md](NEWS_SETUP.md) for NewsAPI setup.
 
+## Screenshots
+
+Add screenshots to [docs/screenshots](docs/screenshots) and update the image links below.
+
+![Dashboard Overview](docs/screenshots/dashboard-overview.png)
+![Analytics Risk Panel](docs/screenshots/analytics-risk-panel.png)
+![News Watchtower](docs/screenshots/news-watchtower.png)
+
 ## Quick Start
 
 ### 1) Install dependencies
