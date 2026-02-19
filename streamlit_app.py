@@ -825,25 +825,29 @@ def fetch_news_for_ticker(ticker):
     return []
 
 def format_news_timestamp(published_at):
-    """Format published timestamp into relative time and exact UTC time."""
+    """Format published timestamp into relative time and exact local time."""
     try:
         parsed = pd.to_datetime(published_at, utc=True, errors='coerce')
         if pd.isna(parsed):
             return ("Unknown", "Unknown")
 
-        now_utc = pd.Timestamp.utcnow()
-        delta_seconds = int((now_utc - parsed).total_seconds())
+        local_tz = datetime.now().astimezone().tzinfo
+        parsed_local = parsed.tz_convert(local_tz)
+        now_local = pd.Timestamp.now(tz=local_tz)
+        delta_seconds = int((now_local - parsed_local).total_seconds())
+        if delta_seconds < 0:
+            delta_seconds = 0
 
         if delta_seconds < 60:
             relative = "just now"
         elif delta_seconds < 3600:
             relative = f"{delta_seconds // 60}m ago"
-        elif delta_seconds < 86400:
+        elif delta_seconds < 172800:
             relative = f"{delta_seconds // 3600}h ago"
         else:
             relative = f"{delta_seconds // 86400}d ago"
 
-        exact = parsed.strftime("%Y-%m-%d %H:%M UTC")
+        exact = parsed_local.strftime("%Y-%m-%d %H:%M %Z")
         return (relative, exact)
     except Exception:
         return ("Unknown", "Unknown")
@@ -1522,7 +1526,7 @@ with tab4:
                         relative_time, exact_time = format_news_timestamp(article.get('publishedAt'))
                         summary_rows.append({
                             "When": relative_time,
-                            "Published (UTC)": exact_time,
+                            "Published (Local)": exact_time,
                             "Source": article.get('source', {}).get('name', 'Unknown'),
                             "Headline": article.get('title', 'Untitled')
                         })
@@ -1538,7 +1542,11 @@ with tab4:
                         with st.expander(f"📰 [{relative_time}] {title} ({source_name})"):
                             st.caption(f"Published: {exact_time}")
                             st.write(article.get('description') or "No description available.")
-                            st.link_button("Read Full Article", article.get('url', '#'), key=f"news_link_{selected_ticker}_{i}")
+                            article_url = article.get('url', '')
+                            if article_url and str(article_url).startswith(('http://', 'https://')):
+                                st.markdown(f"[Read Full Article]({article_url})")
+                            else:
+                                st.caption("Article link unavailable")
                 else:
                     st.info(f"No recent news found for {selected_ticker}")
 
