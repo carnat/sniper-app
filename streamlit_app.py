@@ -1551,6 +1551,7 @@ with tab6:
 
     st.markdown("---")
 
+    st.session_state["csv_default_asset_class"] = "Auto-detect"
     import_asset_class = st.selectbox(
         "Asset class mode",
         ["Auto-detect", "US Stock", "Thai Stock", "Mutual Fund"],
