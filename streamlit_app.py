@@ -1859,6 +1859,116 @@ with tab3:
     else:
         st.info("No positions available yet for attribution analysis.")
 
+    st.markdown("---")
+    st.markdown("#### Risk Panel v1")
+
+    risk_positions = []
+
+    if len(df_us) > 0:
+        for _, row in df_us.iterrows():
+            risk_positions.append({
+                "Asset Class": "US Stock",
+                "Instrument": row["Ticker"],
+                "Value (THB)": float(row["Value"]) * usd_thb_rate,
+                "PL%": float(row["P/L %"]),
+            })
+
+    if len(df_thai) > 0:
+        for _, row in df_thai.iterrows():
+            risk_positions.append({
+                "Asset Class": "Thai Stock",
+                "Instrument": row["Ticker"],
+                "Value (THB)": float(row["Value"]),
+                "PL%": float(row["P/L %"]),
+            })
+
+    if len(df_vault) > 0:
+        for _, row in df_vault.iterrows():
+            risk_positions.append({
+                "Asset Class": "Mutual Fund",
+                "Instrument": row["Code"],
+                "Value (THB)": float(row["Value"]),
+                "PL%": float(row["P/L %"]),
+            })
+
+    if risk_positions:
+        df_risk = pd.DataFrame(risk_positions)
+        total_value_thb = float(df_risk["Value (THB)"].sum())
+
+        if total_value_thb > 0:
+            df_risk["Weight %"] = (df_risk["Value (THB)"] / total_value_thb) * 100
+            df_risk["Weight"] = df_risk["Weight %"] / 100
+        else:
+            df_risk["Weight %"] = 0.0
+            df_risk["Weight"] = 0.0
+
+        df_risk = df_risk.sort_values("Weight %", ascending=False)
+
+        top_weight = float(df_risk["Weight %"].iloc[0]) if len(df_risk) > 0 else 0.0
+        top_instrument = str(df_risk["Instrument"].iloc[0]) if len(df_risk) > 0 else "N/A"
+        top3_weight = float(df_risk["Weight %"].head(3).sum()) if len(df_risk) > 0 else 0.0
+        hhi = float((df_risk["Weight"] ** 2).sum())
+        effective_n = (1 / hhi) if hhi > 0 else 0.0
+
+        weighted_pl_pct = float((df_risk["PL%"] * df_risk["Weight"]).sum())
+        pl_pct_std = float(df_risk["PL%"].std()) if len(df_risk) > 1 else 0.0
+
+        # Simple stress assumptions for V1
+        stress_us = (df_risk[df_risk["Asset Class"] == "US Stock"]["Value (THB)"].sum()) * 0.10
+        stress_thai = (df_risk[df_risk["Asset Class"] == "Thai Stock"]["Value (THB)"].sum()) * 0.08
+        stress_fund = (df_risk[df_risk["Asset Class"] == "Mutual Fund"]["Value (THB)"].sum()) * 0.06
+        stress_loss = float(stress_us + stress_thai + stress_fund)
+        stress_loss_pct = (stress_loss / total_value_thb * 100) if total_value_thb > 0 else 0.0
+
+        r1, r2, r3, r4 = st.columns(4)
+        with r1:
+            st.metric("Top Position", f"{top_weight:.2f}%", delta=top_instrument)
+        with r2:
+            st.metric("Top 3 Concentration", f"{top3_weight:.2f}%")
+        with r3:
+            st.metric("Effective # Holdings", f"{effective_n:.2f}")
+        with r4:
+            st.metric("Stress Loss (V1)", f"฿{stress_loss:,.0f}", delta=f"-{stress_loss_pct:.2f}%")
+
+        rr1, rr2 = st.columns(2)
+        with rr1:
+            st.markdown("**Exposure Mix**")
+            exposure_mix = (
+                df_risk.groupby("Asset Class", as_index=False)["Value (THB)"]
+                .sum()
+                .sort_values("Value (THB)", ascending=False)
+            )
+            exposure_mix["Weight %"] = (exposure_mix["Value (THB)"] / total_value_thb) * 100 if total_value_thb > 0 else 0.0
+            st.dataframe(
+                exposure_mix.style.format({
+                    "Value (THB)": "฿{:,.2f}",
+                    "Weight %": "{:.2f}%",
+                }),
+                hide_index=True,
+                width='stretch'
+            )
+
+        with rr2:
+            st.markdown("**Risk Snapshot by Position**")
+            st.dataframe(
+                df_risk[["Asset Class", "Instrument", "Value (THB)", "Weight %", "PL%"]]
+                .head(15)
+                .style.format({
+                    "Value (THB)": "฿{:,.2f}",
+                    "Weight %": "{:.2f}%",
+                    "PL%": "{:+.2f}%",
+                }),
+                hide_index=True,
+                width='stretch'
+            )
+
+        st.caption(
+            f"Portfolio weighted P/L: {weighted_pl_pct:+.2f}% • Cross-position P/L dispersion (std): {pl_pct_std:.2f}%"
+        )
+        st.caption("Stress Loss (V1) assumptions: US -10%, Thai Stock -8%, Mutual Fund -6%.")
+    else:
+        st.info("No positions available yet for risk analysis.")
+
 with tab4:
     st.subheader("📰 NEWS WATCHTOWER")
     st.caption("Real-time news and alerts for your holdings")
