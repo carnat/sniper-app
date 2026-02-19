@@ -2,6 +2,7 @@
 .streamlit/transactions.json
 .streamlit/portfolio_lots.db
 .streamlit/alert_state.json
+.streamlit/analytics_snapshots.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -177,6 +177,33 @@ def save_alert_state():
     except Exception:
         pass
 
+def get_analytics_snapshots_file_path():
+    """Local file path for analytics snapshot history."""
+    return Path(".streamlit") / "analytics_snapshots.json"
+
+def load_analytics_snapshots():
+    """Load analytics snapshots from local file."""
+    try:
+        file_path = get_analytics_snapshots_file_path()
+        if file_path.exists():
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+                if isinstance(data, list):
+                    return data
+    except Exception:
+        pass
+    return []
+
+def save_analytics_snapshots():
+    """Persist analytics snapshots to local file."""
+    try:
+        file_path = get_analytics_snapshots_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(st.session_state.analytics_snapshots, file, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
 def build_import_key(asset_class, action, symbol, fund_code, quantity, price, transaction_date):
     """Build deterministic key for idempotent CSV imports."""
     instrument = fund_code if fund_code else symbol
@@ -760,6 +787,10 @@ if 'lot_method_policies' not in st.session_state:
         "Thai Stock": "FIFO",
         "Mutual Fund": "AVERAGE",
     }
+
+# Initialize analytics snapshots
+if 'analytics_snapshots' not in st.session_state:
+    st.session_state.analytics_snapshots = load_analytics_snapshots()
 
 init_lot_database()
 seed_opening_lots_from_portfolios(st.session_state.us_portfolio, st.session_state.thai_stocks, st.session_state.vault_portfolio)
@@ -2016,6 +2047,105 @@ with tab3:
                 hide_index=True,
                 width='stretch'
             )
+
+        st.markdown("---")
+        st.markdown("#### Attribution History Drilldown")
+
+        if st.button("Capture Analytics Snapshot", key="capture_analytics_snapshot"):
+            asset_values = (
+                df_attr.groupby("Asset Class", as_index=False)["Value (THB)"]
+                .sum()
+                .set_index("Asset Class")["Value (THB)"]
+                .to_dict()
+            )
+            asset_pl = (
+                df_attr.groupby("Asset Class", as_index=False)["P/L (THB)"]
+                .sum()
+                .set_index("Asset Class")["P/L (THB)"]
+                .to_dict()
+            )
+
+            snapshot = {
+                "captured_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "net_worth_thb": float(grand_total),
+                "grand_pl_thb": float(grand_pl),
+                "asset_values": {
+                    "US Stock": float(asset_values.get("US Stock", 0.0)),
+                    "Thai Stock": float(asset_values.get("Thai Stock", 0.0)),
+                    "Mutual Fund": float(asset_values.get("Mutual Fund", 0.0)),
+                },
+                "asset_pl": {
+                    "US Stock": float(asset_pl.get("US Stock", 0.0)),
+                    "Thai Stock": float(asset_pl.get("Thai Stock", 0.0)),
+                    "Mutual Fund": float(asset_pl.get("Mutual Fund", 0.0)),
+                }
+            }
+            st.session_state.analytics_snapshots.append(snapshot)
+            st.session_state.analytics_snapshots = st.session_state.analytics_snapshots[-500:]
+            save_analytics_snapshots()
+            st.success("Snapshot captured")
+
+        snapshots = st.session_state.analytics_snapshots
+        if snapshots:
+            snapshot_rows = []
+            for s in snapshots:
+                captured_at = str(s.get("captured_at", ""))
+                values = s.get("asset_values", {}) if isinstance(s.get("asset_values"), dict) else {}
+                pls = s.get("asset_pl", {}) if isinstance(s.get("asset_pl"), dict) else {}
+                snapshot_rows.append({
+                    "Captured": captured_at,
+                    "Net Worth (THB)": float(s.get("net_worth_thb", 0.0) or 0.0),
+                    "Total P/L (THB)": float(s.get("grand_pl_thb", 0.0) or 0.0),
+                    "US Value (THB)": float(values.get("US Stock", 0.0) or 0.0),
+                    "Thai Value (THB)": float(values.get("Thai Stock", 0.0) or 0.0),
+                    "Fund Value (THB)": float(values.get("Mutual Fund", 0.0) or 0.0),
+                    "US P/L (THB)": float(pls.get("US Stock", 0.0) or 0.0),
+                    "Thai P/L (THB)": float(pls.get("Thai Stock", 0.0) or 0.0),
+                    "Fund P/L (THB)": float(pls.get("Mutual Fund", 0.0) or 0.0),
+                })
+
+            df_snapshots = pd.DataFrame(snapshot_rows)
+            df_snapshots["Captured"] = pd.to_datetime(df_snapshots["Captured"], errors="coerce")
+            df_snapshots = df_snapshots.dropna(subset=["Captured"]).sort_values("Captured")
+
+            if len(df_snapshots) > 0:
+                series_options = {
+                    "Net Worth": "Net Worth (THB)",
+                    "Total P/L": "Total P/L (THB)",
+                    "US Value": "US Value (THB)",
+                    "Thai Value": "Thai Value (THB)",
+                    "Fund Value": "Fund Value (THB)",
+                    "US P/L": "US P/L (THB)",
+                    "Thai P/L": "Thai P/L (THB)",
+                    "Fund P/L": "Fund P/L (THB)",
+                }
+                selected_series_label = st.selectbox(
+                    "History series",
+                    options=list(series_options.keys()),
+                    key="attr_history_series"
+                )
+                selected_col = series_options[selected_series_label]
+
+                history_chart_df = df_snapshots[["Captured", selected_col]].set_index("Captured")
+                st.line_chart(history_chart_df)
+
+                last_n = st.slider("Snapshots to display", min_value=5, max_value=200, value=30, step=5, key="snapshots_last_n")
+                st.dataframe(
+                    df_snapshots.tail(last_n).style.format({
+                        "Net Worth (THB)": "฿{:,.2f}",
+                        "Total P/L (THB)": "฿{:,.2f}",
+                        "US Value (THB)": "฿{:,.2f}",
+                        "Thai Value (THB)": "฿{:,.2f}",
+                        "Fund Value (THB)": "฿{:,.2f}",
+                        "US P/L (THB)": "฿{:,.2f}",
+                        "Thai P/L (THB)": "฿{:,.2f}",
+                        "Fund P/L (THB)": "฿{:,.2f}",
+                    }),
+                    hide_index=True,
+                    width='stretch'
+                )
+        else:
+            st.info("No snapshots yet. Capture your first analytics snapshot to start drilldown history.")
     else:
         st.info("No positions available yet for attribution analysis.")
 
@@ -2186,6 +2316,73 @@ with tab3:
                     width='stretch'
                 )
                 st.caption("Positive trade values indicate buy amount required; negative values indicate sell amount required.")
+
+        st.markdown("---")
+        st.markdown("#### Scenario Backtesting")
+
+        scenario_presets = {
+            "Soft Landing": {"US Stock": -3.0, "Thai Stock": -2.0, "Mutual Fund": -1.5},
+            "US Tech Drawdown": {"US Stock": -15.0, "Thai Stock": -5.0, "Mutual Fund": -8.0},
+            "Thailand Risk-off": {"US Stock": -4.0, "Thai Stock": -12.0, "Mutual Fund": -7.0},
+            "Global Risk-off": {"US Stock": -18.0, "Thai Stock": -14.0, "Mutual Fund": -10.0},
+            "Risk-on Rally": {"US Stock": 10.0, "Thai Stock": 7.0, "Mutual Fund": 6.0},
+        }
+
+        selected_preset = st.selectbox(
+            "Scenario preset",
+            options=list(scenario_presets.keys()),
+            key="scenario_backtest_preset"
+        )
+        preset_shocks = scenario_presets[selected_preset]
+
+        sc1, sc2, sc3 = st.columns(3)
+        with sc1:
+            shock_us = st.number_input("US shock %", value=float(preset_shocks["US Stock"]), step=0.5, key="scenario_shock_us")
+        with sc2:
+            shock_thai = st.number_input("Thai shock %", value=float(preset_shocks["Thai Stock"]), step=0.5, key="scenario_shock_thai")
+        with sc3:
+            shock_fund = st.number_input("Fund shock %", value=float(preset_shocks["Mutual Fund"]), step=0.5, key="scenario_shock_fund")
+
+        backtest_rows = []
+        projected_total = 0.0
+        for asset_class, shock_pct in [
+            ("US Stock", shock_us),
+            ("Thai Stock", shock_thai),
+            ("Mutual Fund", shock_fund),
+        ]:
+            current_value = exposure_map.get(asset_class, 0.0)
+            projected_value = current_value * (1 + (float(shock_pct) / 100.0))
+            delta_value = projected_value - current_value
+            projected_total += projected_value
+            backtest_rows.append({
+                "Asset Class": asset_class,
+                "Current Value (THB)": current_value,
+                "Shock %": float(shock_pct),
+                "Projected Value (THB)": projected_value,
+                "Delta (THB)": delta_value,
+            })
+
+        projected_pl = projected_total - grand_cost
+        projected_pct = (projected_pl / grand_cost * 100) if grand_cost != 0 else 0.0
+
+        b1, b2, b3 = st.columns(3)
+        with b1:
+            st.metric("Current Net Worth", f"฿{grand_total:,.0f}")
+        with b2:
+            st.metric("Projected Net Worth", f"฿{projected_total:,.0f}", delta=f"฿{projected_total - grand_total:+,.0f}")
+        with b3:
+            st.metric("Projected Portfolio P/L", f"฿{projected_pl:,.0f}", delta=f"{projected_pct:+.2f}%")
+
+        st.dataframe(
+            pd.DataFrame(backtest_rows).style.format({
+                "Current Value (THB)": "฿{:,.2f}",
+                "Shock %": "{:+.2f}%",
+                "Projected Value (THB)": "฿{:,.2f}",
+                "Delta (THB)": "฿{:+,.2f}",
+            }),
+            hide_index=True,
+            width='stretch'
+        )
 
         st.markdown("---")
         st.markdown("#### Signal Scoring Layer")
