@@ -342,6 +342,147 @@ def lot_record_sell_fifo(symbol, asset_type, currency, quantity, sale_price, sal
     except Exception:
         return None
 
+def lot_record_sell_lifo(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
+    """Consume open lots via LIFO and return realized P/L. Returns None if insufficient lots."""
+    try:
+        if quantity <= 0:
+            return 0.0
+        if sale_date is None:
+            sale_date = datetime.now().strftime("%Y-%m-%d")
+
+        conn = sqlite3.connect(get_lot_db_path())
+        cursor = conn.cursor()
+
+        cursor.execute(
+            '''
+            SELECT lot_id, quantity_remaining, cost_per_unit
+            FROM tax_lots
+            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
+            ORDER BY acquired_date DESC, rowid DESC
+            ''',
+            (symbol, asset_type, currency)
+        )
+        lots = cursor.fetchall()
+
+        total_available = sum(lot[1] for lot in lots)
+        if total_available + 1e-9 < quantity:
+            conn.close()
+            return None
+
+        to_sell = float(quantity)
+        realized_total = 0.0
+        for lot_id, qty_remaining, cost_per_unit in lots:
+            if to_sell <= 0:
+                break
+
+            use_qty = min(qty_remaining, to_sell)
+            realized_piece = (float(sale_price) - float(cost_per_unit)) * float(use_qty)
+            realized_total += realized_piece
+
+            new_qty = float(qty_remaining) - float(use_qty)
+            cursor.execute(
+                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
+                (new_qty, lot_id)
+            )
+
+            cursor.execute(
+                '''
+                INSERT INTO realized_lots (
+                    realized_id, symbol, asset_type, currency, sale_date,
+                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
+                    lot_id, float(use_qty), float(cost_per_unit), float(sale_price), float(realized_piece)
+                )
+            )
+            to_sell -= float(use_qty)
+
+        conn.commit()
+        conn.close()
+        return realized_total
+    except Exception:
+        return None
+
+def lot_record_sell_average(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
+    """Consume open lots using average-cost method and return realized P/L."""
+    try:
+        if quantity <= 0:
+            return 0.0
+        if sale_date is None:
+            sale_date = datetime.now().strftime("%Y-%m-%d")
+
+        conn = sqlite3.connect(get_lot_db_path())
+        cursor = conn.cursor()
+
+        cursor.execute(
+            '''
+            SELECT lot_id, quantity_remaining, cost_per_unit
+            FROM tax_lots
+            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
+            ORDER BY acquired_date ASC, rowid ASC
+            ''',
+            (symbol, asset_type, currency)
+        )
+        lots = cursor.fetchall()
+
+        total_available = sum(float(lot[1]) for lot in lots)
+        if total_available + 1e-9 < quantity:
+            conn.close()
+            return None
+
+        if total_available <= 0:
+            conn.close()
+            return 0.0
+
+        weighted_cost_sum = sum(float(lot[1]) * float(lot[2]) for lot in lots)
+        avg_cost = weighted_cost_sum / total_available
+        realized_total = (float(sale_price) - float(avg_cost)) * float(quantity)
+
+        to_sell = float(quantity)
+        for lot_id, qty_remaining, _ in lots:
+            if to_sell <= 0:
+                break
+
+            use_qty = min(float(qty_remaining), to_sell)
+            new_qty = float(qty_remaining) - use_qty
+            cursor.execute(
+                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
+                (new_qty, lot_id)
+            )
+
+            realized_piece = (float(sale_price) - float(avg_cost)) * float(use_qty)
+            cursor.execute(
+                '''
+                INSERT INTO realized_lots (
+                    realized_id, symbol, asset_type, currency, sale_date,
+                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                (
+                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
+                    lot_id, float(use_qty), float(avg_cost), float(sale_price), float(realized_piece)
+                )
+            )
+            to_sell -= float(use_qty)
+
+        conn.commit()
+        conn.close()
+        return realized_total
+    except Exception:
+        return None
+
+def get_lot_method_for_asset(asset_type):
+    """Resolve selected lot method policy by asset type."""
+    policies = st.session_state.get("lot_method_policies", {})
+    default_map = {
+        "US Stock": "FIFO",
+        "Thai Stock": "FIFO",
+        "Mutual Fund": "AVERAGE",
+    }
+    return str(policies.get(asset_type, default_map.get(asset_type, "FIFO"))).upper()
+
 def lot_apply_split(symbol, asset_type, currency, split_ratio):
     """Apply stock split ratio to open lots for a symbol."""
     try:
@@ -427,16 +568,22 @@ def log_transaction(
 
     # Calculate realized P/L using lot tracking (FIFO), fallback to average-cost method.
     realized_pl = 0
+    lot_method_used = ""
     if transaction_type == "Buy":
         lot_record_buy(ticker, asset_type, currency, float(shares), float(price), acquired_date=transaction_date)
     elif transaction_type == "Sell":
-        fifo_realized = lot_record_sell_fifo(
-            ticker, asset_type, currency, float(shares), float(price), sale_date=transaction_date
-        )
-        if fifo_realized is None:
+        lot_method_used = get_lot_method_for_asset(asset_type)
+        if lot_method_used == "LIFO":
+            realized_result = lot_record_sell_lifo(ticker, asset_type, currency, float(shares), float(price), sale_date=transaction_date)
+        elif lot_method_used == "AVERAGE":
+            realized_result = lot_record_sell_average(ticker, asset_type, currency, float(shares), float(price), sale_date=transaction_date)
+        else:
+            realized_result = lot_record_sell_fifo(ticker, asset_type, currency, float(shares), float(price), sale_date=transaction_date)
+
+        if realized_result is None:
             realized_pl = (price - avg_cost_at_time) * shares
         else:
-            realized_pl = fifo_realized
+            realized_pl = realized_result
 
     transaction_total = shares * price if total_override is None else float(total_override)
 
@@ -456,6 +603,8 @@ def log_transaction(
         transaction["import_key"] = import_key
     if notes:
         transaction["notes"] = notes
+    if lot_method_used:
+        transaction["lot_method"] = lot_method_used
     
     st.session_state.transaction_history.append(transaction)
     save_transaction_history()
@@ -475,7 +624,7 @@ def get_realized_pl_summary():
 def get_transaction_dataframe():
     """Convert transaction history to DataFrame"""
     if not st.session_state.transaction_history:
-        return pd.DataFrame(columns=["Date", "Ticker", "Type", "Shares", "Price", "Total", "Asset Type", "Currency", "Realized P/L"])
+        return pd.DataFrame(columns=["Date", "Ticker", "Type", "Shares", "Price", "Total", "Asset Type", "Currency", "Realized P/L", "Lot Method"])
     
     df = pd.DataFrame(st.session_state.transaction_history)
     df = df.rename(columns={
@@ -489,6 +638,9 @@ def get_transaction_dataframe():
         "currency": "Currency",
         "realized_pl": "Realized P/L"
     })
+    if "lot_method" not in df.columns:
+        df["lot_method"] = ""
+    df = df.rename(columns={"lot_method": "Lot Method"})
     return df
 
 def hydrate_portfolios_from_transaction_history():
@@ -600,6 +752,14 @@ hydrate_portfolios_from_transaction_history()
 # Initialize alert state
 if 'alert_state' not in st.session_state:
     st.session_state.alert_state = load_alert_state()
+
+# Initialize lot method policies
+if 'lot_method_policies' not in st.session_state:
+    st.session_state.lot_method_policies = {
+        "US Stock": "FIFO",
+        "Thai Stock": "FIFO",
+        "Mutual Fund": "AVERAGE",
+    }
 
 init_lot_database()
 seed_opening_lots_from_portfolios(st.session_state.us_portfolio, st.session_state.thai_stocks, st.session_state.vault_portfolio)
@@ -1966,6 +2126,113 @@ with tab3:
             f"Portfolio weighted P/L: {weighted_pl_pct:+.2f}% • Cross-position P/L dispersion (std): {pl_pct_std:.2f}%"
         )
         st.caption("Stress Loss (V1) assumptions: US -10%, Thai Stock -8%, Mutual Fund -6%.")
+
+        st.markdown("---")
+        st.markdown("#### What-if Rebalancing")
+
+        exposure_map = {
+            "US Stock": float(df_risk[df_risk["Asset Class"] == "US Stock"]["Value (THB)"].sum()),
+            "Thai Stock": float(df_risk[df_risk["Asset Class"] == "Thai Stock"]["Value (THB)"].sum()),
+            "Mutual Fund": float(df_risk[df_risk["Asset Class"] == "Mutual Fund"]["Value (THB)"].sum()),
+        }
+
+        if total_value_thb > 0:
+            current_us_pct = (exposure_map["US Stock"] / total_value_thb) * 100
+            current_thai_pct = (exposure_map["Thai Stock"] / total_value_thb) * 100
+            current_fund_pct = (exposure_map["Mutual Fund"] / total_value_thb) * 100
+
+            rb_col1, rb_col2, rb_col3 = st.columns(3)
+            with rb_col1:
+                target_us = st.slider("Target US Stock %", 0, 100, int(round(current_us_pct)), key="rb_target_us")
+            with rb_col2:
+                target_thai = st.slider("Target Thai Stock %", 0, 100, int(round(current_thai_pct)), key="rb_target_thai")
+            with rb_col3:
+                target_fund = st.slider("Target Mutual Fund %", 0, 100, int(round(current_fund_pct)), key="rb_target_fund")
+
+            target_total = target_us + target_thai + target_fund
+            if target_total != 100:
+                st.warning(f"Target weights must sum to 100%. Current total: {target_total}%")
+            else:
+                rebalance_rows = []
+                for asset_class, target_pct in [
+                    ("US Stock", target_us),
+                    ("Thai Stock", target_thai),
+                    ("Mutual Fund", target_fund),
+                ]:
+                    current_value = exposure_map[asset_class]
+                    target_value = total_value_thb * (target_pct / 100)
+                    delta_value = target_value - current_value
+                    action = "Buy" if delta_value > 0 else "Sell" if delta_value < 0 else "Hold"
+                    rebalance_rows.append({
+                        "Asset Class": asset_class,
+                        "Current %": (current_value / total_value_thb) * 100,
+                        "Target %": target_pct,
+                        "Current Value (THB)": current_value,
+                        "Target Value (THB)": target_value,
+                        "Trade Needed (THB)": delta_value,
+                        "Action": action,
+                    })
+
+                df_rebalance = pd.DataFrame(rebalance_rows)
+                st.dataframe(
+                    df_rebalance.style.format({
+                        "Current %": "{:.2f}%",
+                        "Target %": "{:.2f}%",
+                        "Current Value (THB)": "฿{:,.2f}",
+                        "Target Value (THB)": "฿{:,.2f}",
+                        "Trade Needed (THB)": "฿{:+,.2f}",
+                    }),
+                    hide_index=True,
+                    width='stretch'
+                )
+                st.caption("Positive trade values indicate buy amount required; negative values indicate sell amount required.")
+
+        st.markdown("---")
+        st.markdown("#### Signal Scoring Layer")
+
+        alert_tickers = {str(alert.get("ticker", "")).upper() for alert in all_alerts}
+        score_rows = []
+
+        for _, row in df_risk.iterrows():
+            pl_pct = float(row.get("PL%", 0.0))
+            weight_pct = float(row.get("Weight %", 0.0))
+            instrument = str(row.get("Instrument", "")).upper()
+
+            momentum_component = max(-20.0, min(20.0, pl_pct)) * 1.5
+            concentration_penalty = max(0.0, weight_pct - 15.0) * 0.8
+            alert_adjustment = -6.0 if instrument in alert_tickers else 0.0
+
+            raw_score = 50.0 + momentum_component - concentration_penalty + alert_adjustment
+            score = max(0.0, min(100.0, raw_score))
+
+            if score >= 65:
+                signal = "Bullish"
+            elif score <= 35:
+                signal = "Bearish"
+            else:
+                signal = "Neutral"
+
+            score_rows.append({
+                "Asset Class": row["Asset Class"],
+                "Instrument": row["Instrument"],
+                "Weight %": weight_pct,
+                "P/L %": pl_pct,
+                "Signal Score": score,
+                "Signal": signal,
+            })
+
+        if score_rows:
+            df_scores = pd.DataFrame(score_rows).sort_values("Signal Score", ascending=False)
+            st.dataframe(
+                df_scores.style.format({
+                    "Weight %": "{:.2f}%",
+                    "P/L %": "{:+.2f}%",
+                    "Signal Score": "{:.1f}",
+                }),
+                hide_index=True,
+                width='stretch'
+            )
+            st.caption("Scoring inputs: capped P/L momentum, concentration penalty above 15% position weight, and active alert penalty.")
     else:
         st.info("No positions available yet for risk analysis.")
 
@@ -2137,7 +2404,7 @@ with tab5:
         st.dataframe(
             df_txn_display[[
                 "Date", "Ticker", "Type", "Shares", "Price Display", "Total Display",
-                "Asset Type", "Currency", "Realized P/L Display"
+                "Asset Type", "Currency", "Lot Method", "Realized P/L Display"
             ]],
             hide_index=True,
             use_container_width=True
@@ -2374,6 +2641,27 @@ with tab7:
 # --- TRANSACTION SIDEBAR ---
 st.sidebar.markdown("---")
 st.sidebar.header("💰 ADD TRANSACTIONS")
+
+with st.sidebar.expander("⚙️ Lot Method Policies", expanded=False):
+    st.caption("Choose cost-basis method used for Sell realized P/L by asset class.")
+    st.session_state.lot_method_policies["US Stock"] = st.selectbox(
+        "US Stock method",
+        ["FIFO", "LIFO", "AVERAGE"],
+        index=["FIFO", "LIFO", "AVERAGE"].index(st.session_state.lot_method_policies.get("US Stock", "FIFO")),
+        key="lot_policy_us"
+    )
+    st.session_state.lot_method_policies["Thai Stock"] = st.selectbox(
+        "Thai Stock method",
+        ["FIFO", "LIFO", "AVERAGE"],
+        index=["FIFO", "LIFO", "AVERAGE"].index(st.session_state.lot_method_policies.get("Thai Stock", "FIFO")),
+        key="lot_policy_thai"
+    )
+    st.session_state.lot_method_policies["Mutual Fund"] = st.selectbox(
+        "Mutual Fund method",
+        ["AVERAGE", "FIFO", "LIFO"],
+        index=["AVERAGE", "FIFO", "LIFO"].index(st.session_state.lot_method_policies.get("Mutual Fund", "AVERAGE")),
+        key="lot_policy_fund"
+    )
 
 # US VAULT TRANSACTIONS
 st.sidebar.subheader("🦅 US Vault")
