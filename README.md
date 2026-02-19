@@ -200,6 +200,27 @@ After bumping:
 2. Commit version + changelog together
 3. Tag release in Git (optional)
 
+### Release Process (Example)
+
+```bash
+# 1) bump version
+python bump_version.py patch
+
+# 2) update changelog for the new version
+# (edit CHANGELOG.md)
+
+# 3) commit release metadata
+git add VERSION CHANGELOG.md
+git commit -m "Release vX.Y.Z"
+
+# 4) create annotated tag
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+
+# 5) push commit and tag
+git push origin main
+git push origin vX.Y.Z
+```
+
 ## 📝 Notes
 
 - Prices update in real-time during market hours
