@@ -450,6 +450,86 @@ def get_transaction_dataframe():
     })
     return df
 
+def hydrate_portfolios_from_transaction_history():
+    """Rebuild current holdings from persisted Buy/Sell history when session portfolios are empty."""
+    history = st.session_state.get("transaction_history", [])
+    if not history:
+        return
+
+    has_existing_positions = (
+        len(st.session_state.us_portfolio.get("Ticker", [])) > 0
+        or len(st.session_state.thai_stocks.get("Ticker", [])) > 0
+        or len(st.session_state.vault_portfolio) > 0
+    )
+    if has_existing_positions:
+        return
+
+    us_map = {}
+    thai_map = {}
+    fund_map = {}
+
+    for txn in history:
+        txn_type = str(txn.get("type", "")).strip().title()
+        if txn_type not in ["Buy", "Sell"]:
+            continue
+
+        asset_type = txn.get("asset_type", "US Stock")
+        ticker = str(txn.get("ticker", "")).strip().upper()
+        if not ticker:
+            continue
+
+        shares = float(txn.get("shares", 0) or 0)
+        price = float(txn.get("price", 0) or 0)
+        if shares <= 0 or price <= 0:
+            continue
+
+        if asset_type == "US Stock":
+            target = us_map
+        elif asset_type == "Thai Stock":
+            target = thai_map
+        elif asset_type == "Mutual Fund":
+            target = fund_map
+        else:
+            continue
+
+        existing = target.get(ticker, {"qty": 0.0, "cost": 0.0})
+        qty = float(existing["qty"])
+        avg_cost = float(existing["cost"])
+
+        if txn_type == "Buy":
+            total_cost = (qty * avg_cost) + (shares * price)
+            new_qty = qty + shares
+            if new_qty > 0:
+                target[ticker] = {"qty": new_qty, "cost": total_cost / new_qty}
+        else:
+            new_qty = qty - shares
+            if new_qty <= 1e-9:
+                target.pop(ticker, None)
+            else:
+                target[ticker] = {"qty": new_qty, "cost": avg_cost}
+
+    st.session_state.us_portfolio = {
+        "Ticker": list(us_map.keys()),
+        "Shares": [float(us_map[t]["qty"]) for t in us_map.keys()],
+        "Avg_Cost": [float(us_map[t]["cost"]) for t in us_map.keys()]
+    }
+
+    st.session_state.thai_stocks = {
+        "Ticker": list(thai_map.keys()),
+        "Shares": [float(thai_map[t]["qty"]) for t in thai_map.keys()],
+        "Avg_Cost": [float(thai_map[t]["cost"]) for t in thai_map.keys()]
+    }
+
+    st.session_state.vault_portfolio = [
+        {
+            "Code": code,
+            "Units": float(fund_map[code]["qty"]),
+            "Cost": float(fund_map[code]["cost"]),
+            "Master": "N/A"
+        }
+        for code in fund_map.keys()
+    ]
+
 # Initialize session state for portfolios if not exists
 if 'us_portfolio' not in st.session_state:
     us_data, thai_data, vault_data = load_portfolio_from_secrets()
@@ -460,6 +540,9 @@ if 'us_portfolio' not in st.session_state:
 # Initialize transaction history
 if 'transaction_history' not in st.session_state:
     st.session_state.transaction_history = load_transaction_history()
+
+# Rebuild holdings from persisted history when session starts empty
+hydrate_portfolios_from_transaction_history()
 
 # Initialize alert state
 if 'alert_state' not in st.session_state:
@@ -1328,7 +1411,7 @@ def simulate_import_preview(parsed_df):
     }
     return pd.DataFrame(preview_rows), summary
 
-def apply_import_transaction(import_row):
+def apply_import_transaction(import_row, skip_existing_duplicates=True):
     """Apply one canonical imported transaction into session-state portfolios."""
     asset_class = import_row["asset_class"]
     action = import_row["action"]
@@ -1337,7 +1420,7 @@ def apply_import_transaction(import_row):
     transaction_date = import_row["transaction_date"]
     import_key = import_row.get("import_key", "")
 
-    if import_key_exists(import_key):
+    if skip_existing_duplicates and import_key_exists(import_key):
         return False, "Duplicate transaction skipped"
 
     if asset_class == "US Stock":
@@ -1449,6 +1532,53 @@ def apply_import_transaction(import_row):
         return True, "ok"
 
     return False, f"No existing position for {fund_code}"
+
+def reverse_transaction_by_index(txn_index, reason="Manual correction"):
+    """Create an opposite transaction to reverse a previous one (append-only audit trail)."""
+    if txn_index < 0 or txn_index >= len(st.session_state.transaction_history):
+        return False, "Invalid transaction selection"
+
+    original = st.session_state.transaction_history[txn_index]
+
+    if original.get("correction_of") is not None:
+        return False, "Selected row is already a correction transaction"
+
+    if original.get("reversed_by") is not None:
+        return False, "Selected transaction was already reversed"
+
+    original_type = str(original.get("type", "")).strip().title()
+    if original_type not in ["Buy", "Sell"]:
+        return False, "Only Buy/Sell transactions can be reversed"
+
+    reverse_action = "Sell" if original_type == "Buy" else "Buy"
+    asset_class = original.get("asset_type", "US Stock")
+    ticker = original.get("ticker", "")
+    shares = float(original.get("shares", 0))
+    price = float(original.get("price", 0))
+    if shares <= 0 or price <= 0 or not ticker:
+        return False, "Original transaction has invalid data"
+
+    reverse_row = {
+        "asset_class": asset_class,
+        "action": reverse_action,
+        "symbol": ticker if asset_class != "Mutual Fund" else "",
+        "fund_code": ticker if asset_class == "Mutual Fund" else "",
+        "quantity": shares,
+        "price": price,
+        "transaction_date": datetime.now().strftime("%Y-%m-%d"),
+        "master": "N/A"
+    }
+
+    ok, message = apply_import_transaction(reverse_row, skip_existing_duplicates=False)
+    if not ok:
+        return False, message
+
+    reverse_index = len(st.session_state.transaction_history) - 1
+    st.session_state.transaction_history[txn_index]["reversed_by"] = reverse_index
+    st.session_state.transaction_history[reverse_index]["correction_of"] = txn_index
+    st.session_state.transaction_history[reverse_index]["correction_reason"] = reason
+    save_transaction_history()
+    return True, "ok"
 
 # --- EXECUTION ---
 df_us = get_stock_data(us_portfolio)
@@ -1702,6 +1832,53 @@ with tab5:
     # Transaction history table
     if st.session_state.transaction_history:
         st.markdown("#### All Transactions")
+
+        reversible_options = []
+        for idx, txn in enumerate(st.session_state.transaction_history):
+            if txn.get("correction_of") is not None:
+                continue
+            if txn.get("reversed_by") is not None:
+                continue
+            txn_type = str(txn.get("type", "")).strip().title()
+            if txn_type not in ["Buy", "Sell"]:
+                continue
+            reversible_options.append((idx, txn))
+
+        if reversible_options:
+            st.markdown("#### Transaction Corrections")
+            option_map = {}
+            for idx, txn in reversed(reversible_options[-200:]):
+                label = (
+                    f"#{idx + 1} · {txn.get('date', 'N/A')} · "
+                    f"{txn.get('ticker', 'N/A')} · {txn.get('type', 'N/A')} "
+                    f"{float(txn.get('shares', 0)):,.4f} @ {float(txn.get('price', 0)):,.4f}"
+                )
+                option_map[label] = idx
+
+            correction_col1, correction_col2 = st.columns([3, 2])
+            with correction_col1:
+                selected_label = st.selectbox(
+                    "Select transaction to reverse",
+                    options=list(option_map.keys()),
+                    key="txn_reverse_select"
+                )
+            with correction_col2:
+                correction_reason = st.text_input(
+                    "Reason",
+                    value="Manual correction",
+                    key="txn_reverse_reason"
+                )
+
+            if st.button("Reverse Selected Transaction", key="txn_reverse_button"):
+                target_index = option_map[selected_label]
+                ok, message = reverse_transaction_by_index(target_index, correction_reason)
+                if ok:
+                    st.success("Transaction reversed and correction logged")
+                    st.rerun()
+                else:
+                    st.error(f"Unable to reverse transaction: {message}")
+        else:
+            st.caption("No reversible transactions available.")
         
         df_txn = get_transaction_dataframe()
         
@@ -1821,13 +1998,19 @@ with tab6:
 
             st.markdown("#### Step 3 — Commit")
             st.caption("Imports valid rows and skips duplicates automatically.")
+            skip_existing_duplicates = st.checkbox(
+                "Skip previously imported duplicates",
+                value=True,
+                help="Turn off to re-apply rows (useful if portfolio was reset but history still exists).",
+                key="csv_skip_existing_duplicates"
+            )
             if st.button("Import Transactions", key="run_csv_import"):
                 success_count = 0
                 skipped_duplicates = 0
                 failed_rows = []
 
                 for _, import_row in parsed_df.iterrows():
-                    ok, message = apply_import_transaction(import_row)
+                    ok, message = apply_import_transaction(import_row, skip_existing_duplicates=skip_existing_duplicates)
                     if ok:
                         success_count += 1
                     else:
@@ -1839,6 +2022,8 @@ with tab6:
                 st.success(f"Imported {success_count} transactions")
                 if skipped_duplicates > 0:
                     st.info(f"Skipped {skipped_duplicates} duplicate rows")
+                    if success_count == 0:
+                        st.caption("Tip: uncheck 'Skip previously imported duplicates' and import again to rebuild portfolio positions.")
                 if failed_rows:
                     st.warning(f"Failed rows: {len(failed_rows)}")
                     for failed in failed_rows[:20]:
