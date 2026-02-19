@@ -344,6 +344,11 @@ def get_master_data(fund_list):
 
 def get_stock_data(portfolio_dict):
     df = pd.DataFrame(portfolio_dict)
+    
+    # Handle empty portfolio - return empty dataframe with correct columns
+    if len(df) == 0:
+        return pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
+    
     tickers = df['Ticker'].tolist()
     with st.spinner('Scanning US/Thai Stocks...'):
         try:
@@ -466,6 +471,11 @@ def get_fund_data(fund_list):
 
     bar.empty()
     df = pd.DataFrame(data)
+    
+    # Handle empty portfolio - return empty dataframe with correct columns
+    if len(df) == 0:
+        return pd.DataFrame(columns=['Code', 'Units', 'Cost', 'Last Price', 'Previous Price', 'Fund Day Gain %', 'Master', 'Master Day Gain %', 'Master vs Fund %', 'Cost Basis', 'Value', 'P/L', 'P/L %'])
+    
     df['Value'] = df['Units'] * df['Last Price']
     df['Cost Basis'] = df['Units'] * df['Cost']
     df['P/L'] = df['Value'] - df['Cost Basis']
