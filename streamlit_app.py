@@ -824,6 +824,30 @@ def fetch_news_for_ticker(ticker):
     
     return []
 
+def format_news_timestamp(published_at):
+    """Format published timestamp into relative time and exact UTC time."""
+    try:
+        parsed = pd.to_datetime(published_at, utc=True, errors='coerce')
+        if pd.isna(parsed):
+            return ("Unknown", "Unknown")
+
+        now_utc = pd.Timestamp.utcnow()
+        delta_seconds = int((now_utc - parsed).total_seconds())
+
+        if delta_seconds < 60:
+            relative = "just now"
+        elif delta_seconds < 3600:
+            relative = f"{delta_seconds // 60}m ago"
+        elif delta_seconds < 86400:
+            relative = f"{delta_seconds // 3600}h ago"
+        else:
+            relative = f"{delta_seconds // 86400}d ago"
+
+        exact = parsed.strftime("%Y-%m-%d %H:%M UTC")
+        return (relative, exact)
+    except Exception:
+        return ("Unknown", "Unknown")
+
 def get_earnings_dates(tickers):
     """Fetch upcoming earnings dates for tickers using yfinance"""
     earnings = {}
@@ -1493,11 +1517,28 @@ with tab4:
                 news_articles = fetch_news_for_ticker(selected_ticker)
                 
                 if news_articles:
+                    summary_rows = []
+                    for article in news_articles:
+                        relative_time, exact_time = format_news_timestamp(article.get('publishedAt'))
+                        summary_rows.append({
+                            "When": relative_time,
+                            "Published (UTC)": exact_time,
+                            "Source": article.get('source', {}).get('name', 'Unknown'),
+                            "Headline": article.get('title', 'Untitled')
+                        })
+
+                    st.markdown("**At a glance**")
+                    st.dataframe(pd.DataFrame(summary_rows), hide_index=True, use_container_width=True)
+
+                    st.markdown("**Details**")
                     for i, article in enumerate(news_articles):
-                        with st.expander(f"📰 {article['title']} ({article['source']['name']})"):
-                            st.write(article['description'])
-                            st.caption(f"Published: {article['publishedAt']}")
-                            st.link_button("Read Full Article", article['url'])
+                        relative_time, exact_time = format_news_timestamp(article.get('publishedAt'))
+                        source_name = article.get('source', {}).get('name', 'Unknown')
+                        title = article.get('title', 'Untitled')
+                        with st.expander(f"📰 [{relative_time}] {title} ({source_name})"):
+                            st.caption(f"Published: {exact_time}")
+                            st.write(article.get('description') or "No description available.")
+                            st.link_button("Read Full Article", article.get('url', '#'), key=f"news_link_{selected_ticker}_{i}")
                 else:
                     st.info(f"No recent news found for {selected_ticker}")
 
