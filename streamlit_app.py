@@ -5,6 +5,7 @@ import requests
 import time
 import json
 from datetime import datetime
+from pathlib import Path
 from ratelimit import limits, sleep_and_retry
 
 # --- PAGE CONFIGURATION ---
@@ -120,12 +121,100 @@ def load_portfolio_from_secrets():
             []
         )
 
+def get_transactions_file_path():
+    """Local file path for persistent transaction history."""
+    return Path(".streamlit") / "transactions.json"
+
+def load_transaction_history():
+    """Load transaction history from local file with safe fallback."""
+    try:
+        file_path = get_transactions_file_path()
+        if file_path.exists():
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+                if isinstance(data, list):
+                    return data
+    except Exception:
+        pass
+    return []
+
+def save_transaction_history():
+    """Persist transaction history to local file."""
+    try:
+        file_path = get_transactions_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(st.session_state.transaction_history, file, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def log_transaction(ticker, transaction_type, shares, price, asset_type="US Stock", avg_cost_at_time=0):
+    """Log a transaction to history for P/L tracking"""
+    from datetime import datetime
+    
+    # Calculate realized P/L for sells
+    realized_pl = 0
+    if transaction_type == "Sell":
+        realized_pl = (price - avg_cost_at_time) * shares
+    
+    currency = "USD" if asset_type == "US Stock" else "THB"
+
+    transaction = {
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "ticker": ticker,
+        "type": transaction_type,
+        "shares": shares,
+        "price": price,
+        "total": shares * price,
+        "asset_type": asset_type,
+        "currency": currency,
+        "realized_pl": realized_pl
+    }
+    
+    st.session_state.transaction_history.append(transaction)
+    save_transaction_history()
+
+def get_realized_pl_summary():
+    """Calculate total realized P/L from transaction history by currency"""
+    realized_usd = 0.0
+    realized_thb = 0.0
+    for txn in st.session_state.transaction_history:
+        if txn["type"] == "Sell":
+            if txn.get("currency") == "USD":
+                realized_usd += txn.get("realized_pl", 0)
+            else:
+                realized_thb += txn.get("realized_pl", 0)
+    return realized_usd, realized_thb
+
+def get_transaction_dataframe():
+    """Convert transaction history to DataFrame"""
+    if not st.session_state.transaction_history:
+        return pd.DataFrame(columns=["Date", "Ticker", "Type", "Shares", "Price", "Total", "Asset Type", "Currency", "Realized P/L"])
+    
+    df = pd.DataFrame(st.session_state.transaction_history)
+    df = df.rename(columns={
+        "date": "Date",
+        "ticker": "Ticker",
+        "type": "Type",
+        "shares": "Shares",
+        "price": "Price",
+        "total": "Total",
+        "asset_type": "Asset Type",
+        "currency": "Currency",
+        "realized_pl": "Realized P/L"
+    })
+    return df
+
 # Initialize session state for portfolios if not exists
 if 'us_portfolio' not in st.session_state:
     us_data, thai_data, vault_data = load_portfolio_from_secrets()
     st.session_state.us_portfolio = us_data
     st.session_state.thai_stocks = thai_data
     st.session_state.vault_portfolio = vault_data
+
+# Initialize transaction history
+if 'transaction_history' not in st.session_state:
+    st.session_state.transaction_history = load_transaction_history()
 
 us_portfolio = st.session_state.us_portfolio
 thai_stocks = st.session_state.thai_stocks
@@ -596,7 +685,7 @@ with col3:
 
 st.markdown("""---""")
 st.markdown("")
-tab1, tab2, tab3, tab4 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER", "📜 TRANSACTION HISTORY"])
 
 def color_pl(val): return f'color: {"#3fb950" if val > 0 else "#f85149"}; font-weight: bold;'
 
@@ -702,6 +791,87 @@ with tab4:
                 else:
                     st.info(f"No recent news found for {selected_ticker}")
 
+with tab5:
+    st.subheader("📜 TRANSACTION HISTORY & REALIZED P/L")
+    
+    # Summary metrics
+    realized_usd, realized_thb = get_realized_pl_summary()
+    
+    col_summary1, col_summary2, col_summary3 = st.columns(3)
+    
+    with col_summary1:
+        st.metric("💵 Realized P/L (USD)", f"${realized_usd:,.2f}")
+    
+    with col_summary2:
+        st.metric("💶 Realized P/L (THB)", f"฿{realized_thb:,.2f}")
+    
+    with col_summary3:
+        total_transactions = len(st.session_state.transaction_history)
+        st.metric("📊 Total Transactions", total_transactions)
+    
+    st.markdown("---")
+    
+    # Transaction history table
+    if st.session_state.transaction_history:
+        st.markdown("#### All Transactions")
+        
+        df_txn = get_transaction_dataframe()
+        
+        # Sort by date descending (most recent first)
+        df_txn = df_txn.sort_values("Date", ascending=False)
+        
+        # Display with formatting
+        df_txn_display = df_txn.copy()
+        df_txn_display["Price Display"] = df_txn_display.apply(
+            lambda row: f"${row['Price']:,.2f}" if row["Currency"] == "USD" else f"฿{row['Price']:,.2f}",
+            axis=1
+        )
+        df_txn_display["Total Display"] = df_txn_display.apply(
+            lambda row: f"${row['Total']:,.2f}" if row["Currency"] == "USD" else f"฿{row['Total']:,.2f}",
+            axis=1
+        )
+        df_txn_display["Realized P/L Display"] = df_txn_display.apply(
+            lambda row: f"${row['Realized P/L']:,.2f}" if row["Currency"] == "USD" else f"฿{row['Realized P/L']:,.2f}",
+            axis=1
+        )
+
+        st.dataframe(
+            df_txn_display[[
+                "Date", "Ticker", "Type", "Shares", "Price Display", "Total Display",
+                "Asset Type", "Currency", "Realized P/L Display"
+            ]],
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # Export option
+        csv = df_txn.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Transaction History (CSV)",
+            data=csv,
+            file_name="sniper_transactions.csv",
+            mime="text/csv"
+        )
+    else:
+        st.info("📌 No transactions yet. Add buy/sell transactions using the sidebar to track your realized P/L.")
+    
+    # Explanation
+    with st.expander("ℹ️ Understanding Realized vs Unrealized P/L"):
+        st.markdown("""
+        **Unrealized P/L (Shown in portfolio tabs):**
+        - Paper gains/losses on positions you still hold
+        - Calculated as: (Current Price - Average Cost) × Shares
+        - Changes with market prices
+        
+        **Realized P/L (Shown here):**
+        - Actual gains/losses from completed sales
+        - Calculated as: (Sale Price - Average Cost at Time) × Shares Sold
+        - Locked in and doesn't change
+        - Used for tax reporting
+        
+        **Note:** Current implementation uses weighted average cost basis. Future updates will support FIFO/LIFO tax lot methods.
+        """)
+
 # --- TRANSACTION SIDEBAR ---
 st.sidebar.markdown("---")
 st.sidebar.header("💰 ADD TRANSACTIONS")
@@ -731,11 +901,13 @@ with st.sidebar.form("us_transaction_form"):
                 
                 st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
                 st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
+                log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
                 st.sidebar.success(f"✅ Added {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
             else:  # Sell
                 if us_shares > existing_shares:
                     st.sidebar.error(f"❌ Cannot sell {us_shares} shares. Only {existing_shares} available.")
                 else:
+                    log_transaction(us_ticker, "Sell", us_shares, us_price, "US Stock", existing_avg_cost)
                     new_shares = existing_shares - us_shares
                     if new_shares == 0:
                         # Remove the ticker entirely
@@ -754,6 +926,7 @@ with st.sidebar.form("us_transaction_form"):
                 st.session_state.us_portfolio['Ticker'].append(us_ticker)
                 st.session_state.us_portfolio['Shares'].append(us_shares)
                 st.session_state.us_portfolio['Avg_Cost'].append(us_price)
+                log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
                 st.sidebar.success(f"✅ Added new position: {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
             else:
                 st.sidebar.error(f"❌ Cannot sell {us_ticker}. No existing position found.")
@@ -788,11 +961,13 @@ if thai_vault_type == "Thai Stock":
                     
                     st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
                     st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
+                    log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
                     st.sidebar.success(f"✅ Added {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
                 else:
                     if thai_shares > existing_shares:
                         st.sidebar.error(f"❌ Cannot sell {thai_shares} shares. Only {existing_shares} available.")
                     else:
+                        log_transaction(thai_ticker, "Sell", thai_shares, thai_price, "Thai Stock", existing_avg_cost)
                         new_shares = existing_shares - thai_shares
                         if new_shares == 0:
                             del st.session_state.thai_stocks['Ticker'][ticker_idx]
@@ -808,6 +983,7 @@ if thai_vault_type == "Thai Stock":
                     st.session_state.thai_stocks['Ticker'].append(thai_ticker)
                     st.session_state.thai_stocks['Shares'].append(thai_shares)
                     st.session_state.thai_stocks['Avg_Cost'].append(thai_price)
+                    log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
                     st.sidebar.success(f"✅ Added new position: {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
                 else:
                     st.sidebar.error(f"❌ Cannot sell {thai_ticker}. No existing position found.")
@@ -841,11 +1017,13 @@ else:  # Mutual Fund
                     
                     st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
                     st.session_state.vault_portfolio[fund_idx]['Cost'] = new_avg_cost
+                    log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
                     st.sidebar.success(f"✅ Added {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
                 else:
                     if fund_units > existing_units:
                         st.sidebar.error(f"❌ Cannot sell {fund_units} units. Only {existing_units} available.")
                     else:
+                        log_transaction(fund_code, "Sell", fund_units, fund_price, "Mutual Fund", existing_cost)
                         new_units = existing_units - fund_units
                         if new_units == 0:
                             del st.session_state.vault_portfolio[fund_idx]
@@ -861,6 +1039,7 @@ else:  # Mutual Fund
                         "Cost": fund_price,
                         "Master": fund_master
                     })
+                    log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
                     st.sidebar.success(f"✅ Added new fund: {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
                 else:
                     st.sidebar.error(f"❌ Cannot sell {fund_code}. No existing position found.")
