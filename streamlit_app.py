@@ -118,38 +118,58 @@ st.markdown("""
         font-size: 0.82rem;
         line-height: 1.15;
     }
-    .sidebar-nav-link {
-        display: block;
-        width: 100%;
-        color: #d0d7de !important;
-        text-decoration: none !important;
-        border-radius: 7px;
-        padding: 0.24rem 0.4rem;
-        margin: 0.04rem 0;
-        font-size: 0.82rem;
-        line-height: 1.15;
-        font-weight: 550;
+    /* --- Sidebar nav buttons: borderless, compact --- */
+    div[data-testid="stSidebar"] [data-testid="stButton"] {
+        margin: 0 !important;
     }
-    .sidebar-nav-link:hover {
-        background: rgba(88, 166, 255, 0.12);
-        color: #f0f6fc !important;
-    }
-    div[data-testid="stSidebar"] [data-testid="stButton"] > button {
+    div[data-testid="stSidebar"] button[kind="secondary"],
+    div[data-testid="stSidebar"] button[kind="tertiary"] {
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
         border-radius: 7px !important;
-        padding: 0.24rem 0.4rem !important;
-        min-height: 1.85rem !important;
+        padding: 0.18rem 0.35rem !important;
+        min-height: 1.55rem !important;
         justify-content: flex-start !important;
+        outline: none !important;
+        margin: 0.02rem 0 !important;
     }
-    div[data-testid="stSidebar"] [data-testid="stButton"] > button:hover {
+    div[data-testid="stSidebar"] button[kind="secondary"]:hover,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:hover {
         background: rgba(88, 166, 255, 0.12) !important;
+        border-color: transparent !important;
     }
-    div[data-testid="stSidebar"] [data-testid="stButton"] > button p {
+    div[data-testid="stSidebar"] button[kind="secondary"]:focus,
+    div[data-testid="stSidebar"] button[kind="secondary"]:focus-visible,
+    div[data-testid="stSidebar"] button[kind="secondary"]:active,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:focus,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:focus-visible,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:active {
+        border-color: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    div[data-testid="stSidebar"] button[kind="secondary"] p,
+    div[data-testid="stSidebar"] button[kind="tertiary"] p {
         font-size: 0.82rem !important;
         line-height: 1.15 !important;
         font-weight: 550 !important;
+        margin: 0 !important;
+    }
+    /* --- Sidebar action button (Refresh): accent style --- */
+    div[data-testid="stSidebar"] button[kind="primary"] {
+        background: rgba(88, 166, 255, 0.15) !important;
+        border: 1px solid rgba(88, 166, 255, 0.35) !important;
+        border-radius: 7px !important;
+        padding: 0.32rem 0.5rem !important;
+        min-height: 1.75rem !important;
+        justify-content: center !important;
+        font-size: 0.8rem !important;
+        margin: 0.25rem 0 !important;
+    }
+    div[data-testid="stSidebar"] button[kind="primary"]:hover {
+        background: rgba(88, 166, 255, 0.28) !important;
+        border-color: rgba(88, 166, 255, 0.55) !important;
     }
     .sidebar-status-row {
         display: flex;
@@ -2830,8 +2850,7 @@ with col3:
         delta_color="normal" if vault_pct_mean > 0 else "inverse"
     )
 
-st.markdown("""---""")
-st.markdown("")
+st.markdown("---")
 
 menu_structure = {
     "Dashboard": ["Overview"],
@@ -2920,7 +2939,8 @@ def render_styled_table(df, formats=None, pl_columns=None, height=None, na_rep="
     st.dataframe(style, **dataframe_kwargs)
 
 if selected_view == "US Equities":
-    st.subheader("US Equities")
+    st.subheader("🦅 US EQUITIES")
+    st.caption("Live prices via yfinance · Sorted by ticker")
     render_styled_table(
         df_us,
         formats={
@@ -2936,7 +2956,7 @@ if selected_view == "US Equities":
     )
 
 if selected_view == "Thai Portfolio":
-    st.subheader("Mutual Funds (SEC Direct Data)")
+    st.subheader("🏦 MUTUAL FUNDS (SEC Direct Data)")
     st.caption("*Real-time NAV from api.sec.or.th · Sorted by Market Value · Master vs Fund % highlights daily relative performance*")
 
     if len(df_vault) > 0:
@@ -2990,7 +3010,7 @@ if selected_view == "Thai Portfolio":
         st.info("No mutual fund positions yet.")
     
     st.markdown("---")
-    st.subheader("Thai Equities")
+    st.markdown("#### 🏛️ Thai Equities")
     render_styled_table(
         df_thai,
         formats={
@@ -3006,7 +3026,8 @@ if selected_view == "Thai Portfolio":
     )
 
 if selected_view == "Analytics":
-    st.subheader("Performance Analysis")
+    st.subheader("📈 PERFORMANCE ANALYSIS")
+    st.caption("Portfolio charts, trade journal analytics, risk panel & rebalancing tools")
     col_a, col_b = st.columns(2)
     
     with col_a:
@@ -4592,6 +4613,7 @@ if selected_view == "CSV Import":
 
 if selected_view == "Calendar":
     st.subheader("🗓️ PORTFOLIO CALENDAR")
+    st.caption("Plan and track earnings, dividends, rebalances & custom reminders")
 
     planner_col, remove_col = st.columns([2, 1], gap="large")
     with planner_col:
@@ -5226,7 +5248,7 @@ st.sidebar.markdown(
 
 st.sidebar.markdown("---")
 st.sidebar.header("⚡ Data")
-if st.sidebar.button("Refresh market data", key="refresh_market_data", use_container_width=True):
+if st.sidebar.button("🔄 Refresh market data", key="refresh_market_data", type="primary", use_container_width=True):
     for cached_fn in [
         fetch_quote_snapshot,
         fetch_fundamental_snapshot,
