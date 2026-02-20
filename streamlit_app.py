@@ -7,8 +7,10 @@ import time
 import json
 import sqlite3
 import uuid
+import math
 from datetime import datetime
 from pathlib import Path
+from statistics import NormalDist
 from ratelimit import limits, sleep_and_retry
 
 def get_app_version():
@@ -91,6 +93,90 @@ st.markdown("""
         word-break: break-word !important;
     }
     .dataframe { font-size: 0.95em; }
+    .sidebar-label-muted {
+        color: #9aa4b2;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 0.08rem 0 0.24rem 0;
+    }
+    .sidebar-nav-section {
+        color: #9aa4b2;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin: 0.42rem 0 0.12rem 0;
+    }
+    .sidebar-nav-active {
+        background: rgba(63, 185, 80, 0.18);
+        color: #d7f7de;
+        border-left: 2px solid #3fb950;
+        border-radius: 7px;
+        padding: 0.24rem 0.4rem;
+        margin: 0.04rem 0;
+        font-weight: 550;
+        font-size: 0.82rem;
+        line-height: 1.15;
+    }
+    .sidebar-nav-link {
+        display: block;
+        width: 100%;
+        color: #d0d7de !important;
+        text-decoration: none !important;
+        border-radius: 7px;
+        padding: 0.24rem 0.4rem;
+        margin: 0.04rem 0;
+        font-size: 0.82rem;
+        line-height: 1.15;
+        font-weight: 550;
+    }
+    .sidebar-nav-link:hover {
+        background: rgba(88, 166, 255, 0.12);
+        color: #f0f6fc !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        border-radius: 7px !important;
+        padding: 0.24rem 0.4rem !important;
+        min-height: 1.85rem !important;
+        justify-content: flex-start !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:hover {
+        background: rgba(88, 166, 255, 0.12) !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button p {
+        font-size: 0.82rem !important;
+        line-height: 1.15 !important;
+        font-weight: 550 !important;
+    }
+    .sidebar-status-row {
+        display: flex;
+        align-items: center;
+        gap: 0.42rem;
+        padding: 0.22rem 0.15rem;
+        font-size: 0.8rem;
+        color: #c8d1dc;
+    }
+    .sidebar-status-dot {
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 999px;
+        display: inline-block;
+    }
+    .sidebar-status-ok .sidebar-status-dot {
+        background: #3fb950;
+    }
+    .sidebar-status-missing .sidebar-status-dot {
+        background: #f85149;
+    }
+    .sidebar-status-ok {
+        color: #d7f7de;
+    }
+    .sidebar-status-missing {
+        color: #f2b6b6;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -246,6 +332,515 @@ def save_saved_scenarios():
             json.dump(st.session_state.saved_scenarios, file, ensure_ascii=False, indent=2)
     except Exception:
         pass
+
+def get_watchlists_file_path():
+    """Local file path for persisted watchlists."""
+    return Path(".streamlit") / "watchlists.json"
+
+def load_watchlists():
+    """Load watchlists from local file."""
+    try:
+        file_path = get_watchlists_file_path()
+        if file_path.exists():
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+                if isinstance(data, dict):
+                    clean = {}
+                    for name, symbols in data.items():
+                        if not isinstance(name, str):
+                            continue
+                        if not isinstance(symbols, list):
+                            continue
+                        clean[name] = [str(s).strip().upper() for s in symbols if str(s).strip()]
+                    return clean
+    except Exception:
+        pass
+    return {}
+
+def save_watchlists():
+    """Persist watchlists to local file."""
+    try:
+        file_path = get_watchlists_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(st.session_state.watchlists, file, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def get_options_iv_history_file_path():
+    """Local file path for observed ATM IV history used by IV rank/percentile."""
+    return Path(".streamlit") / "options_iv_history.json"
+
+def load_options_iv_history():
+    """Load ATM IV history from local file."""
+    try:
+        file_path = get_options_iv_history_file_path()
+        if file_path.exists():
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+                if isinstance(data, dict):
+                    clean = {}
+                    for symbol, values in data.items():
+                        if not isinstance(symbol, str) or not isinstance(values, list):
+                            continue
+                        clean_values = []
+                        for row in values:
+                            if not isinstance(row, dict):
+                                continue
+                            day = str(row.get("date", "")).strip()
+                            iv_val = row.get("atm_iv", None)
+                            try:
+                                iv_float = float(iv_val)
+                            except Exception:
+                                continue
+                            if day:
+                                clean_values.append({"date": day, "atm_iv": iv_float})
+                        clean[symbol] = clean_values[-400:]
+                    return clean
+    except Exception:
+        pass
+    return {}
+
+def save_options_iv_history():
+    """Persist ATM IV history to local file."""
+    try:
+        file_path = get_options_iv_history_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(st.session_state.options_iv_history, file, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def get_calendar_events_file_path():
+    """Local file path for user-planned portfolio calendar events."""
+    return Path(".streamlit") / "calendar_events.json"
+
+def load_calendar_events():
+    """Load user-planned calendar events from local file."""
+    try:
+        file_path = get_calendar_events_file_path()
+        if file_path.exists():
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+                if isinstance(data, list):
+                    clean_events = []
+                    for item in data:
+                        if not isinstance(item, dict):
+                            continue
+                        event_date = str(item.get("date", "")).strip()
+                        if not event_date:
+                            continue
+                        clean_events.append({
+                            "id": str(item.get("id", str(uuid.uuid4()))),
+                            "date": event_date,
+                            "event_type": str(item.get("event_type", "Reminder") or "Reminder"),
+                            "title": str(item.get("title", "") or "").strip(),
+                            "instrument": str(item.get("instrument", "") or "").strip().upper(),
+                            "details": str(item.get("details", "") or "").strip(),
+                            "status": str(item.get("status", "Planned") or "Planned"),
+                        })
+                    return clean_events[-1200:]
+    except Exception:
+        pass
+    return []
+
+def save_calendar_events():
+    """Persist user-planned calendar events to local file."""
+    try:
+        file_path = get_calendar_events_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(st.session_state.calendar_events, file, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def _record_atm_iv(symbol, atm_iv):
+    """Record one ATM IV observation per local day for a symbol."""
+    if atm_iv is None:
+        return
+    clean_symbol = _normalize_market_symbol(symbol)
+    if not clean_symbol:
+        return
+    day_key = datetime.now().strftime("%Y-%m-%d")
+    history = st.session_state.options_iv_history.get(clean_symbol, [])
+    replaced = False
+    for row in history:
+        if str(row.get("date", "")) == day_key:
+            row["atm_iv"] = float(atm_iv)
+            replaced = True
+            break
+    if not replaced:
+        history.append({"date": day_key, "atm_iv": float(atm_iv)})
+    st.session_state.options_iv_history[clean_symbol] = history[-400:]
+    save_options_iv_history()
+
+def _compute_iv_rank_percentile(symbol, current_atm_iv):
+    """Compute IV rank and percentile from locally observed ATM IV history."""
+    if current_atm_iv is None:
+        return None, None, 0
+    clean_symbol = _normalize_market_symbol(symbol)
+    history = st.session_state.options_iv_history.get(clean_symbol, [])
+    values = [float(r.get("atm_iv")) for r in history if r.get("atm_iv") is not None]
+    if len(values) < 2:
+        return None, None, len(values)
+
+    min_iv = min(values)
+    max_iv = max(values)
+    iv_rank = None
+    if max_iv > min_iv:
+        iv_rank = (float(current_atm_iv) - min_iv) / (max_iv - min_iv) * 100.0
+        iv_rank = max(0.0, min(100.0, iv_rank))
+
+    less_equal = len([v for v in values if v <= float(current_atm_iv)])
+    iv_percentile = (less_equal / len(values)) * 100.0 if values else None
+    return iv_rank, iv_percentile, len(values)
+
+def _estimate_atm_iv(calls_df, puts_df, underlying_price):
+    """Estimate ATM IV by averaging nearest-strike call/put implied volatility."""
+    if underlying_price in [None, 0]:
+        return None
+    candidates = []
+    for chain_df in [calls_df, puts_df]:
+        if not isinstance(chain_df, pd.DataFrame) or len(chain_df) == 0:
+            continue
+        if "strike" not in chain_df.columns or "impliedVolatility" not in chain_df.columns:
+            continue
+        view = chain_df[["strike", "impliedVolatility"]].copy()
+        view["strike"] = pd.to_numeric(view["strike"], errors="coerce")
+        view["impliedVolatility"] = pd.to_numeric(view["impliedVolatility"], errors="coerce")
+        view = view.dropna(subset=["strike", "impliedVolatility"])
+        if len(view) == 0:
+            continue
+        view["dist"] = (view["strike"] - float(underlying_price)).abs()
+        nearest = view.sort_values("dist").head(1)
+        if len(nearest) > 0:
+            candidates.append(float(nearest.iloc[0]["impliedVolatility"]))
+
+    if not candidates:
+        return None
+    return float(sum(candidates) / len(candidates))
+
+def _annotate_black_scholes_greeks(chain_df, option_type, underlying_price, expiry_text, risk_free_rate=0.04):
+    """Annotate options rows with Black-Scholes greek estimates using implied volatility."""
+    if not isinstance(chain_df, pd.DataFrame) or len(chain_df) == 0:
+        return pd.DataFrame()
+    if underlying_price in [None, 0]:
+        return chain_df.copy()
+
+    try:
+        expiry_dt = datetime.strptime(str(expiry_text), "%Y-%m-%d")
+    except Exception:
+        return chain_df.copy()
+
+    days_to_expiry = max((expiry_dt - datetime.now()).days, 1)
+    time_years = max(days_to_expiry / 365.0, 1 / 365.0)
+    normal = NormalDist()
+
+    df = chain_df.copy()
+    if "strike" not in df.columns or "impliedVolatility" not in df.columns:
+        return df
+
+    df["strike"] = pd.to_numeric(df["strike"], errors="coerce")
+    df["impliedVolatility"] = pd.to_numeric(df["impliedVolatility"], errors="coerce")
+
+    deltas = []
+    gammas = []
+    thetas = []
+    vegas = []
+
+    for _, row in df.iterrows():
+        strike = row.get("strike", None)
+        sigma = row.get("impliedVolatility", None)
+        if strike in [None, 0] or sigma in [None, 0] or pd.isna(strike) or pd.isna(sigma):
+            deltas.append(None)
+            gammas.append(None)
+            thetas.append(None)
+            vegas.append(None)
+            continue
+
+        s = float(underlying_price)
+        k = float(strike)
+        vol = max(float(sigma), 0.0001)
+        t = time_years
+        r = float(risk_free_rate)
+
+        try:
+            d1 = (math.log(s / k) + (r + 0.5 * vol * vol) * t) / (vol * math.sqrt(t))
+            d2 = d1 - vol * math.sqrt(t)
+        except Exception:
+            deltas.append(None)
+            gammas.append(None)
+            thetas.append(None)
+            vegas.append(None)
+            continue
+
+        pdf_d1 = normal.pdf(d1)
+        cdf_d1 = normal.cdf(d1)
+        cdf_d2 = normal.cdf(d2)
+
+        gamma = pdf_d1 / (s * vol * math.sqrt(t))
+        vega = s * pdf_d1 * math.sqrt(t) / 100.0
+
+        if option_type.lower() == "call":
+            delta = cdf_d1
+            theta = (-(s * pdf_d1 * vol) / (2 * math.sqrt(t)) - r * k * math.exp(-r * t) * cdf_d2) / 365.0
+        else:
+            delta = cdf_d1 - 1
+            theta = (-(s * pdf_d1 * vol) / (2 * math.sqrt(t)) + r * k * math.exp(-r * t) * normal.cdf(-d2)) / 365.0
+
+        deltas.append(delta)
+        gammas.append(gamma)
+        thetas.append(theta)
+        vegas.append(vega)
+
+    df["Delta"] = deltas
+    df["Gamma"] = gammas
+    df["Theta/day"] = thetas
+    df["Vega"] = vegas
+    return df
+
+def _normalize_market_symbol(raw_text):
+    text = str(raw_text or "").strip().upper()
+    if not text:
+        return ""
+    return text
+
+def _get_base_symbol_universe():
+    symbols = set()
+    symbols.update([str(t).strip().upper() for t in us_portfolio.get("Ticker", []) if str(t).strip()])
+    symbols.update([str(t).strip().upper() for t in thai_stocks.get("Ticker", []) if str(t).strip()])
+    symbols.update([str(f.get("Master", "")).strip().upper() for f in vault_portfolio if str(f.get("Master", "")).strip() and str(f.get("Master", "")).strip().upper() != "N/A"])
+    for watch_symbols in st.session_state.get("watchlists", {}).values():
+        if isinstance(watch_symbols, list):
+            symbols.update([str(t).strip().upper() for t in watch_symbols if str(t).strip()])
+    return sorted(symbols)
+
+@st.cache_data(ttl=300)
+def fetch_quote_snapshot(symbols):
+    """Fetch quote snapshot rows for a list of symbols."""
+    rows = []
+    for symbol in symbols:
+        clean_symbol = _normalize_market_symbol(symbol)
+        if not clean_symbol:
+            continue
+        try:
+            ticker = yf.Ticker(clean_symbol)
+            info = ticker.info if isinstance(ticker.info, dict) else {}
+            fast = getattr(ticker, "fast_info", {}) or {}
+
+            current_price = info.get("regularMarketPrice", None)
+            if current_price is None:
+                current_price = fast.get("lastPrice", None)
+
+            prev_close = info.get("regularMarketPreviousClose", None)
+            if prev_close is None:
+                prev_close = fast.get("previousClose", None)
+
+            change_pct = None
+            if current_price not in [None, 0] and prev_close not in [None, 0]:
+                change_pct = (float(current_price) - float(prev_close)) / float(prev_close) * 100.0
+
+            rows.append({
+                "Symbol": clean_symbol,
+                "Price": float(current_price) if current_price not in [None, ""] else None,
+                "Change %": float(change_pct) if change_pct is not None else None,
+                "Market Cap": info.get("marketCap", None),
+                "P/E": info.get("trailingPE", None),
+                "Forward P/E": info.get("forwardPE", None),
+                "Div Yield %": (float(info.get("dividendYield", 0.0)) * 100.0) if info.get("dividendYield", None) is not None else None,
+                "Beta": info.get("beta", None),
+                "52W High": info.get("fiftyTwoWeekHigh", None),
+                "52W Low": info.get("fiftyTwoWeekLow", None),
+                "Avg Vol": info.get("averageVolume", None),
+                "Sector": info.get("sector", None),
+            })
+        except Exception:
+            rows.append({"Symbol": clean_symbol})
+
+    return pd.DataFrame(rows)
+
+@st.cache_data(ttl=900)
+def fetch_fundamental_snapshot(symbol):
+    """Fetch Phase 2 fundamentals package for a symbol."""
+    clean_symbol = _normalize_market_symbol(symbol)
+    if not clean_symbol:
+        return {
+            "metrics": {},
+            "trend_df": pd.DataFrame(),
+            "income_df": pd.DataFrame(),
+            "balance_df": pd.DataFrame(),
+            "cashflow_df": pd.DataFrame(),
+            "recommendations_df": pd.DataFrame(),
+            "earnings_dates_df": pd.DataFrame(),
+            "analyst_snapshot": {},
+            "factor_scores": {},
+        }
+
+    def _to_float(value):
+        try:
+            if value is None:
+                return None
+            return float(value)
+        except Exception:
+            return None
+
+    def _score_linear(value, min_val, max_val, invert=False):
+        if value is None:
+            return None
+        if max_val == min_val:
+            return None
+        clamped = max(min(value, max_val), min_val)
+        ratio = (clamped - min_val) / (max_val - min_val)
+        if invert:
+            ratio = 1.0 - ratio
+        return ratio * 100.0
+
+    try:
+        ticker = yf.Ticker(clean_symbol)
+        info = ticker.info if isinstance(ticker.info, dict) else {}
+
+        revenue = _to_float(info.get("totalRevenue", None))
+        net_income = _to_float(info.get("netIncomeToCommon", None))
+        trailing_eps = _to_float(info.get("trailingEps", None))
+        gross_margin_pct = _to_float(info.get("grossMargins", None))
+        operating_margin_pct = _to_float(info.get("operatingMargins", None))
+        roe_pct = _to_float(info.get("returnOnEquity", None))
+        debt_to_equity = _to_float(info.get("debtToEquity", None))
+        earnings_growth_pct = _to_float(info.get("earningsGrowth", None))
+        revenue_growth_pct = _to_float(info.get("revenueGrowth", None))
+        trailing_pe = _to_float(info.get("trailingPE", None))
+        forward_pe = _to_float(info.get("forwardPE", None))
+        price_to_book = _to_float(info.get("priceToBook", None))
+        market_price = _to_float(info.get("regularMarketPrice", None))
+        low_52w = _to_float(info.get("fiftyTwoWeekLow", None))
+        high_52w = _to_float(info.get("fiftyTwoWeekHigh", None))
+
+        metrics = {
+            "Revenue": revenue,
+            "Net Income": net_income,
+            "EPS": trailing_eps,
+            "Gross Margin %": (gross_margin_pct * 100.0) if gross_margin_pct is not None else None,
+            "Operating Margin %": (operating_margin_pct * 100.0) if operating_margin_pct is not None else None,
+            "ROE %": (roe_pct * 100.0) if roe_pct is not None else None,
+            "Debt/Equity": debt_to_equity,
+            "Earnings Growth %": (earnings_growth_pct * 100.0) if earnings_growth_pct is not None else None,
+        }
+
+        income_statement = ticker.financials
+        balance_sheet = ticker.balance_sheet
+        cashflow_statement = ticker.cashflow
+        recommendations = ticker.recommendations
+        earnings_dates = ticker.earnings_dates
+
+        trend_df = pd.DataFrame()
+        if isinstance(income_statement, pd.DataFrame) and not income_statement.empty:
+            working = income_statement.T.reset_index().rename(columns={"index": "Period"})
+            selected_cols = ["Period"]
+            if "Total Revenue" in working.columns:
+                selected_cols.append("Total Revenue")
+            if "Net Income" in working.columns:
+                selected_cols.append("Net Income")
+            if len(selected_cols) > 1:
+                trend_df = working[selected_cols].copy()
+
+        analyst_snapshot = {
+            "Recommendation": str(info.get("recommendationKey", "")).replace("_", " ").title() if info.get("recommendationKey", None) else None,
+            "Target Mean": _to_float(info.get("targetMeanPrice", None)),
+            "Target Low": _to_float(info.get("targetLowPrice", None)),
+            "Target High": _to_float(info.get("targetHighPrice", None)),
+            "Analyst Opinions": _to_float(info.get("numberOfAnalystOpinions", None)),
+        }
+
+        rec_df = recommendations.copy() if isinstance(recommendations, pd.DataFrame) and not recommendations.empty else pd.DataFrame()
+        if len(rec_df) > 0 and isinstance(rec_df.index, pd.DatetimeIndex):
+            rec_df = rec_df.reset_index().rename(columns={"index": "Date"})
+
+        earn_df = earnings_dates.copy() if isinstance(earnings_dates, pd.DataFrame) and not earnings_dates.empty else pd.DataFrame()
+        if len(earn_df) > 0 and isinstance(earn_df.index, pd.DatetimeIndex):
+            earn_df = earn_df.reset_index().rename(columns={"index": "Date"})
+
+        statement_to_frame = lambda df: (df.T.reset_index().rename(columns={"index": "Period"}) if isinstance(df, pd.DataFrame) and not df.empty else pd.DataFrame())
+        income_df = statement_to_frame(income_statement)
+        balance_df = statement_to_frame(balance_sheet)
+        cashflow_df = statement_to_frame(cashflow_statement)
+
+        quality_candidates = [
+            _score_linear((gross_margin_pct * 100.0) if gross_margin_pct is not None else None, 20, 60),
+            _score_linear((operating_margin_pct * 100.0) if operating_margin_pct is not None else None, 5, 35),
+            _score_linear((roe_pct * 100.0) if roe_pct is not None else None, 5, 30),
+            _score_linear(debt_to_equity, 0, 200, invert=True),
+        ]
+        growth_candidates = [
+            _score_linear((earnings_growth_pct * 100.0) if earnings_growth_pct is not None else None, -10, 35),
+            _score_linear((revenue_growth_pct * 100.0) if revenue_growth_pct is not None else None, -5, 25),
+        ]
+        value_candidates = [
+            _score_linear(trailing_pe, 8, 45, invert=True),
+            _score_linear(forward_pe, 8, 40, invert=True),
+            _score_linear(price_to_book, 0.5, 8, invert=True),
+        ]
+
+        momentum_score = None
+        if market_price is not None and low_52w is not None and high_52w is not None and high_52w > low_52w:
+            momentum_score = ((market_price - low_52w) / (high_52w - low_52w)) * 100.0
+            momentum_score = max(0.0, min(100.0, momentum_score))
+
+        def _avg(items):
+            valid = [v for v in items if v is not None]
+            if not valid:
+                return None
+            return sum(valid) / len(valid)
+
+        factor_scores = {
+            "Quality": _avg(quality_candidates),
+            "Growth": _avg(growth_candidates),
+            "Value": _avg(value_candidates),
+            "Momentum": momentum_score,
+        }
+
+        return {
+            "metrics": metrics,
+            "trend_df": trend_df,
+            "income_df": income_df,
+            "balance_df": balance_df,
+            "cashflow_df": cashflow_df,
+            "recommendations_df": rec_df,
+            "earnings_dates_df": earn_df,
+            "analyst_snapshot": analyst_snapshot,
+            "factor_scores": factor_scores,
+        }
+    except Exception:
+        return {
+            "metrics": {},
+            "trend_df": pd.DataFrame(),
+            "income_df": pd.DataFrame(),
+            "balance_df": pd.DataFrame(),
+            "cashflow_df": pd.DataFrame(),
+            "recommendations_df": pd.DataFrame(),
+            "earnings_dates_df": pd.DataFrame(),
+            "analyst_snapshot": {},
+            "factor_scores": {},
+        }
+
+@st.cache_data(ttl=900)
+def fetch_options_snapshot(symbol, expiration=None):
+    """Fetch options chain scaffold data for a symbol (Phase 3 prep)."""
+    clean_symbol = _normalize_market_symbol(symbol)
+    if not clean_symbol:
+        return [], pd.DataFrame(), pd.DataFrame()
+    try:
+        ticker = yf.Ticker(clean_symbol)
+        expiries = list(getattr(ticker, "options", []) or [])
+        if not expiries:
+            return [], pd.DataFrame(), pd.DataFrame()
+
+        selected_exp = expiration if expiration in expiries else expiries[0]
+        chain = ticker.option_chain(selected_exp)
+        calls = chain.calls if hasattr(chain, "calls") else pd.DataFrame()
+        puts = chain.puts if hasattr(chain, "puts") else pd.DataFrame()
+        return expiries, calls, puts
+    except Exception:
+        return [], pd.DataFrame(), pd.DataFrame()
 
 def build_import_key(asset_class, action, symbol, fund_code, quantity, price, transaction_date):
     """Build deterministic key for idempotent CSV imports."""
@@ -627,16 +1222,17 @@ def log_transaction(
     transaction_date=None,
     import_key=None,
     total_override=None,
-    notes=None
+    notes=None,
+    journal_meta=None,
+    master=None,
 ):
     """Log a transaction to history for P/L tracking"""
     from datetime import datetime
-    
+
     currency = "USD" if asset_type == "US Stock" else "THB"
     if transaction_date is None:
         transaction_date = datetime.now().strftime("%Y-%m-%d")
 
-    # Calculate realized P/L using lot tracking (FIFO), fallback to average-cost method.
     realized_pl = 0
     lot_method_used = ""
     if transaction_type == "Buy":
@@ -656,7 +1252,6 @@ def log_transaction(
             realized_pl = realized_result
 
     transaction_total = shares * price if total_override is None else float(total_override)
-
     transaction = {
         "date": f"{transaction_date} {datetime.now().strftime('%H:%M:%S')}",
         "ticker": ticker,
@@ -666,7 +1261,7 @@ def log_transaction(
         "total": transaction_total,
         "asset_type": asset_type,
         "currency": currency,
-        "realized_pl": realized_pl
+        "realized_pl": realized_pl,
     }
 
     if import_key:
@@ -675,6 +1270,38 @@ def log_transaction(
         transaction["notes"] = notes
     if lot_method_used:
         transaction["lot_method"] = lot_method_used
+    if asset_type == "Mutual Fund":
+        master_value = str(master or "").strip().upper()
+        if master_value:
+            transaction["master"] = master_value
+
+    if isinstance(journal_meta, dict):
+        allowed_journal_fields = {
+            "strategy",
+            "session",
+            "direction",
+            "followed_rules",
+            "confidence",
+            "risk_amount",
+            "entry_window",
+            "mental_state",
+            "journal_note",
+        }
+        for key, value in journal_meta.items():
+            if key not in allowed_journal_fields:
+                continue
+            if value is None:
+                continue
+            if isinstance(value, str) and str(value).strip() == "":
+                continue
+            transaction[key] = value
+
+    risk_amount = transaction.get("risk_amount", None)
+    if transaction_type == "Sell" and risk_amount not in [None, 0, 0.0]:
+        try:
+            transaction["r_multiple"] = float(realized_pl) / float(risk_amount)
+        except Exception:
+            pass
     
     st.session_state.transaction_history.append(transaction)
     save_transaction_history()
@@ -710,7 +1337,34 @@ def get_transaction_dataframe():
     })
     if "lot_method" not in df.columns:
         df["lot_method"] = ""
+    optional_defaults = {
+        "strategy": "",
+        "session": "",
+        "direction": "",
+        "followed_rules": "",
+        "confidence": "",
+        "risk_amount": "",
+        "entry_window": "",
+        "mental_state": "",
+        "journal_note": "",
+        "r_multiple": "",
+    }
+    for col, default_value in optional_defaults.items():
+        if col not in df.columns:
+            df[col] = default_value
     df = df.rename(columns={"lot_method": "Lot Method"})
+    df = df.rename(columns={
+        "strategy": "Strategy",
+        "session": "Session",
+        "direction": "Direction",
+        "followed_rules": "Followed Rules",
+        "confidence": "Confidence",
+        "risk_amount": "Risk Amount",
+        "entry_window": "Entry Window",
+        "mental_state": "Mental State",
+        "journal_note": "Journal Note",
+        "r_multiple": "R-Multiple",
+    })
     return df
 
 def hydrate_portfolios_from_transaction_history():
@@ -730,6 +1384,11 @@ def hydrate_portfolios_from_transaction_history():
     us_map = {}
     thai_map = {}
     fund_map = {}
+    existing_master_map = {
+        str(fund.get("Code", "")).strip().upper(): str(fund.get("Master", "N/A") or "N/A").strip().upper()
+        for fund in st.session_state.get("vault_portfolio", [])
+        if str(fund.get("Code", "")).strip()
+    }
 
     for txn in history:
         txn_type = str(txn.get("type", "")).strip().title()
@@ -768,6 +1427,10 @@ def hydrate_portfolios_from_transaction_history():
             continue
 
         existing = target.get(ticker, {"qty": 0.0, "cost": 0.0})
+        default_existing = {"qty": 0.0, "cost": 0.0}
+        if target is fund_map:
+            default_existing["master"] = existing_master_map.get(ticker, "N/A")
+        existing = target.get(ticker, default_existing)
         qty = float(existing["qty"])
         avg_cost = float(existing["cost"])
 
@@ -775,13 +1438,26 @@ def hydrate_portfolios_from_transaction_history():
             total_cost = (qty * avg_cost) + (shares * price)
             new_qty = qty + shares
             if new_qty > 0:
-                target[ticker] = {"qty": new_qty, "cost": total_cost / new_qty}
+                if target is fund_map:
+                    txn_master = str(txn.get("master", "")).strip().upper()
+                    existing_master = str(existing.get("master", "N/A") or "N/A").strip().upper()
+                    resolved_master = txn_master if txn_master and txn_master != "N/A" else existing_master
+                    target[ticker] = {"qty": new_qty, "cost": total_cost / new_qty, "master": resolved_master or "N/A"}
+                else:
+                    target[ticker] = {"qty": new_qty, "cost": total_cost / new_qty}
         else:
             new_qty = qty - shares
             if new_qty <= 1e-9:
                 target.pop(ticker, None)
             else:
-                target[ticker] = {"qty": new_qty, "cost": avg_cost}
+                if target is fund_map:
+                    target[ticker] = {
+                        "qty": new_qty,
+                        "cost": avg_cost,
+                        "master": str(existing.get("master", "N/A") or "N/A").strip().upper(),
+                    }
+                else:
+                    target[ticker] = {"qty": new_qty, "cost": avg_cost}
 
     st.session_state.us_portfolio = {
         "Ticker": list(us_map.keys()),
@@ -800,7 +1476,7 @@ def hydrate_portfolios_from_transaction_history():
             "Code": code,
             "Units": float(fund_map[code]["qty"]),
             "Cost": float(fund_map[code]["cost"]),
-            "Master": "N/A"
+            "Master": str(fund_map[code].get("master", existing_master_map.get(code, "N/A")) or "N/A").strip().upper()
         }
         for code in fund_map.keys()
     ]
@@ -838,6 +1514,18 @@ if 'analytics_snapshots' not in st.session_state:
 # Initialize saved scenario library
 if 'saved_scenarios' not in st.session_state:
     st.session_state.saved_scenarios = load_saved_scenarios()
+
+# Initialize watchlists
+if 'watchlists' not in st.session_state:
+    st.session_state.watchlists = load_watchlists()
+
+# Initialize options IV history
+if 'options_iv_history' not in st.session_state:
+    st.session_state.options_iv_history = load_options_iv_history()
+
+# Initialize user calendar events
+if 'calendar_events' not in st.session_state:
+    st.session_state.calendar_events = load_calendar_events()
 
 init_lot_database()
 seed_opening_lots_from_portfolios(st.session_state.us_portfolio, st.session_state.thai_stocks, st.session_state.vault_portfolio)
@@ -1114,6 +1802,36 @@ def fetch_fund_nav(proj_id, fund_class=None):
 
 
 # --- MASTER CORRELATION ENGINE ---
+@st.cache_data(ttl=300)
+def _fetch_master_trends_cached(masters):
+    symbols = tuple(sorted({str(m).strip().upper() for m in masters if str(m).strip() and str(m).strip().upper() != "N/A"}))
+    if not symbols:
+        return {}
+
+    result = {symbol: 0.0 for symbol in symbols}
+    try:
+        history = yf.download(list(symbols), period="2d", progress=False)
+        if isinstance(history, pd.DataFrame) and not history.empty:
+            close_frame = history.get("Close")
+            if isinstance(close_frame, pd.Series):
+                if len(symbols) == 1:
+                    closes = close_frame.dropna()
+                    if len(closes) >= 2 and float(closes.iloc[-2]) != 0.0:
+                        result[symbols[0]] = float(((closes.iloc[-1] - closes.iloc[-2]) / closes.iloc[-2]) * 100.0)
+            elif isinstance(close_frame, pd.DataFrame):
+                for symbol in symbols:
+                    series = close_frame.get(symbol)
+                    if series is None:
+                        continue
+                    closes = pd.Series(series).dropna()
+                    if len(closes) >= 2 and float(closes.iloc[-2]) != 0.0:
+                        result[symbol] = float(((closes.iloc[-1] - closes.iloc[-2]) / closes.iloc[-2]) * 100.0)
+    except Exception:
+        pass
+
+    return result
+
+
 def get_master_data(fund_list):
     """
     Fetches live percent-change for master ETFs/indices from yfinance.
@@ -1121,35 +1839,43 @@ def get_master_data(fund_list):
     Handles US tickers (VOO, QQQ) and Thai indices (^SET.BK).
     Returns dict: {"VOO": 0.24, "^SET.BK": -0.12}
     """
-    masters = list({f.get('Master') for f in fund_list if f.get('Master') and f.get('Master') != 'N/A'})
-    master_map = {}
-
+    masters = [f.get('Master') for f in fund_list if f.get('Master') and f.get('Master') != 'N/A']
     if not masters:
-        return master_map
+        return {}
 
     with st.spinner('🔮 Tracking Master ETFs...'):
-        for m in masters:
-            try:
-                ticker = yf.Ticker(m)
-                
-                # Try to get regularMarketChangePercent from info (most reliable for live data)
-                info = ticker.info
-                if 'regularMarketChangePercent' in info and info['regularMarketChangePercent'] is not None:
-                    master_map[m] = float(info['regularMarketChangePercent'])
-                else:
-                    # Fallback: Calculate from recent history
-                    hist = ticker.history(period='2d')
-                    if len(hist) >= 2:
-                        last_price = hist['Close'].iloc[-1]
-                        prev_price = hist['Close'].iloc[-2]
-                        pct_change = ((last_price - prev_price) / prev_price) * 100
-                        master_map[m] = float(pct_change)
-                    else:
-                        master_map[m] = 0.0
-            except Exception:
-                master_map[m] = 0.0
+        return _fetch_master_trends_cached(tuple(masters))
 
-    return master_map
+
+@st.cache_data(ttl=120)
+def _fetch_latest_close_prices(tickers):
+    if not tickers:
+        return {}
+    try:
+        downloaded = yf.download(list(tickers), period="1d", progress=False)
+        if downloaded is None or downloaded.empty:
+            return {ticker: 0.0 for ticker in tickers}
+
+        close_frame = downloaded.get("Close") if isinstance(downloaded, pd.DataFrame) else None
+        if close_frame is None:
+            return {ticker: 0.0 for ticker in tickers}
+
+        if isinstance(close_frame, pd.Series):
+            if len(tickers) == 1 and not close_frame.empty:
+                return {tickers[0]: float(close_frame.iloc[-1])}
+            return {ticker: 0.0 for ticker in tickers}
+
+        latest = close_frame.iloc[-1] if not close_frame.empty else pd.Series(dtype=float)
+        prices = {}
+        for ticker in tickers:
+            value = latest.get(ticker, 0.0)
+            try:
+                prices[ticker] = float(value)
+            except Exception:
+                prices[ticker] = 0.0
+        return prices
+    except Exception:
+        return {ticker: 0.0 for ticker in tickers}
 
 def get_stock_data(portfolio_dict):
     df = pd.DataFrame(portfolio_dict)
@@ -1160,11 +1886,8 @@ def get_stock_data(portfolio_dict):
     
     tickers = df['Ticker'].tolist()
     with st.spinner('Scanning US/Thai Stocks...'):
-        try:
-            data = yf.download(tickers, period="1d", progress=False)['Close'].iloc[-1]
-            if len(tickers) == 1: current_prices = [data.item()]
-            else: current_prices = [data.get(t, 0.0) for t in tickers]
-        except: current_prices = [0.0] * len(tickers)
+        price_map = _fetch_latest_close_prices(tuple(tickers))
+        current_prices = [float(price_map.get(t, 0.0) or 0.0) for t in tickers]
     df['Live Price'] = current_prices
     df['Value'] = df['Shares'] * df['Live Price']
     df['Cost Basis'] = df['Shares'] * df['Avg_Cost']
@@ -1275,25 +1998,56 @@ def get_fund_data(fund_list):
 
 # --- NEWS & ALERTS ENGINE ---
 
+def get_newsapi_key():
+    """Resolve NewsAPI key from secrets or environment with placeholder filtering."""
+    candidates = []
+    try:
+        candidates.append(str(st.secrets.get("news_alerts", {}).get("newsapi_key", "")).strip())
+    except Exception:
+        pass
+    candidates.append(str(os.getenv("NEWSAPI_KEY", "")).strip())
+
+    for candidate in candidates:
+        if not candidate:
+            continue
+        low = candidate.lower()
+        if "your_" in low or "placeholder" in low or "newsapi_key_here" in low:
+            continue
+        return candidate
+    return ""
+
 @st.cache_data(ttl=3600)
 def fetch_news_for_ticker(ticker):
     """Fetch latest news for a ticker using NewsAPI (free tier)"""
     try:
-        newsapi_key = st.secrets.get("news_alerts", {}).get("newsapi_key", "")
+        newsapi_key = get_newsapi_key()
         if not newsapi_key:
             return []
         
         # Remove .BK extension for Thai stocks
-        search_ticker = ticker.replace(".BK", "")
-        
-        url = f"https://newsapi.org/v2/everything?q={search_ticker}&sortBy=publishedAt&language=en&pageSize=5"
-        headers = {"Authorization": newsapi_key}
-        
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            articles = response.json().get("articles", [])
-            return articles
-    except Exception as e:
+        search_ticker = str(ticker or "").replace(".BK", "").strip().upper()
+        if not search_ticker:
+            return []
+
+        headers = {"X-Api-Key": newsapi_key}
+        query_candidates = [
+            search_ticker,
+            f"{search_ticker} stock",
+        ]
+
+        for query_text in query_candidates:
+            url = (
+                "https://newsapi.org/v2/everything"
+                f"?q={query_text}&sortBy=publishedAt&language=en&pageSize=8"
+            )
+            response = requests.get(url, headers=headers, timeout=8)
+            if response.status_code != 200:
+                continue
+            payload = response.json() if response.content else {}
+            articles = payload.get("articles", []) if isinstance(payload, dict) else []
+            if articles:
+                return articles
+    except Exception:
         pass
     
     return []
@@ -1863,17 +2617,40 @@ def apply_import_transaction(import_row, skip_existing_duplicates=True):
     if fund_idx is not None:
         existing_units = float(st.session_state.vault_portfolio[fund_idx]['Units'])
         existing_cost = float(st.session_state.vault_portfolio[fund_idx]['Cost'])
+        existing_master = str(st.session_state.vault_portfolio[fund_idx].get('Master', 'N/A') or 'N/A').strip().upper()
+        normalized_master = str(master or "N/A").strip().upper()
         if action == "Buy":
             total_cost = (existing_units * existing_cost) + (quantity * price)
             new_units = existing_units + quantity
             st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
             st.session_state.vault_portfolio[fund_idx]['Cost'] = total_cost / new_units
-            log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date, import_key=import_key)
+            if existing_master in ["", "N/A"] and normalized_master not in ["", "N/A"]:
+                st.session_state.vault_portfolio[fund_idx]['Master'] = normalized_master
+            log_transaction(
+                fund_code,
+                "Buy",
+                quantity,
+                price,
+                "Mutual Fund",
+                transaction_date=transaction_date,
+                import_key=import_key,
+                master=st.session_state.vault_portfolio[fund_idx].get('Master', normalized_master),
+            )
             return True, "ok"
 
         if quantity > existing_units:
             return False, f"Insufficient units for {fund_code}"
-        log_transaction(fund_code, "Sell", quantity, price, "Mutual Fund", existing_cost, transaction_date=transaction_date, import_key=import_key)
+        log_transaction(
+            fund_code,
+            "Sell",
+            quantity,
+            price,
+            "Mutual Fund",
+            existing_cost,
+            transaction_date=transaction_date,
+            import_key=import_key,
+            master=existing_master,
+        )
         new_units = existing_units - quantity
         if new_units == 0:
             del st.session_state.vault_portfolio[fund_idx]
@@ -1888,7 +2665,16 @@ def apply_import_transaction(import_row, skip_existing_duplicates=True):
             "Cost": price,
             "Master": master
         })
-        log_transaction(fund_code, "Buy", quantity, price, "Mutual Fund", transaction_date=transaction_date, import_key=import_key)
+        log_transaction(
+            fund_code,
+            "Buy",
+            quantity,
+            price,
+            "Mutual Fund",
+            transaction_date=transaction_date,
+            import_key=import_key,
+            master=master,
+        )
         return True, "ok"
 
     return False, f"No existing position for {fund_code}"
@@ -2046,17 +2832,110 @@ with col3:
 
 st.markdown("""---""")
 st.markdown("")
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["🦅 US ATTACK", "🏰 THAI VAULT", "📊 ANALYTICS", "📰 NEWS WATCHTOWER", "📜 TRANSACTION HISTORY", "📥 CSV IMPORT", "🗓️ CALENDAR"])
+
+menu_structure = {
+    "Dashboard": ["Overview"],
+    "Portfolio": ["US Equities", "Thai Portfolio", "Analytics"],
+    "Market Intelligence": ["News Watchtower", "Market Tools"],
+    "Trading Journal": ["Transaction History", "Trade Entry", "CSV Import", "Calendar"],
+}
+
+view_to_main_menu = {
+    view_name: main_name
+    for main_name, view_names in menu_structure.items()
+    for view_name in view_names
+}
+
+st.sidebar.header("🧭 Navigation")
+st.sidebar.markdown('<div class="sidebar-label-muted">Template includes</div>', unsafe_allow_html=True)
+
+view_icons = {
+    "Overview": "📊",
+    "US Equities": "🦅",
+    "Thai Portfolio": "🏦",
+    "Analytics": "📈",
+    "News Watchtower": "📰",
+    "Market Tools": "🧠",
+    "Transaction History": "📚",
+    "Trade Entry": "✍️",
+    "CSV Import": "📥",
+    "Calendar": "🗓️",
+}
+
+all_views = [view for view_names in menu_structure.values() for view in view_names]
+query_view = st.query_params.get("view", "")
+if isinstance(query_view, list):
+    query_view = query_view[0] if query_view else ""
+if query_view in all_views:
+    st.session_state.nav_sub_menu = query_view
+
+if "nav_sub_menu" not in st.session_state or st.session_state.nav_sub_menu not in all_views:
+    st.session_state.nav_sub_menu = "Overview"
+
+if query_view != st.session_state.nav_sub_menu:
+    st.query_params["view"] = st.session_state.nav_sub_menu
+
+for main_name, view_names in menu_structure.items():
+    st.sidebar.markdown(f'<div class="sidebar-nav-section">{main_name}</div>', unsafe_allow_html=True)
+    for view_name in view_names:
+        is_active = st.session_state.nav_sub_menu == view_name
+        icon = view_icons.get(view_name, "•")
+        display_label = f"{icon}  {view_name.upper()}"
+        if is_active:
+            st.sidebar.markdown(f'<div class="sidebar-nav-active">{display_label}</div>', unsafe_allow_html=True)
+            continue
+        if st.sidebar.button(display_label, key=f"nav_btn_{main_name}_{view_name}", use_container_width=True):
+            st.session_state.nav_sub_menu = view_name
+            st.query_params["view"] = view_name
+            st.rerun()
+
+selected_view = st.session_state.nav_sub_menu
+main_menu = view_to_main_menu.get(selected_view, "Dashboard")
+
+st.caption(f"📍 {main_menu} · {selected_view}")
+
+if selected_view == "Overview":
+    st.info("Use the Navigation menu in the sidebar to switch between modules.")
 
 def color_pl(val): return f'color: {"#3fb950" if val > 0 else "#f85149"}; font-weight: bold;'
 
-with tab1:
-    st.subheader("US Equities Portfolio")
-    st.dataframe(df_us.style.applymap(color_pl, subset=['P/L %'])
-                 .format({"Shares":"{:,.2f}", "Avg_Cost":"${:,.2f}", "Live Price":"${:,.2f}", "Value":"${:,.2f}", "Cost Basis":"${:,.2f}", "P/L":"${:,.2f}", "P/L %":"{:.2f}%"}),
-                 hide_index=True, width='stretch')
+def render_styled_table(df, formats=None, pl_columns=None, height=None, na_rep="—"):
+    style = df.style
+    if pl_columns:
+        existing_pl_columns = [col for col in pl_columns if col in df.columns]
+        if existing_pl_columns:
+            style = style.map(color_pl, subset=existing_pl_columns)
+    if formats:
+        existing_formats = {col: fmt for col, fmt in formats.items() if col in df.columns}
+        if existing_formats:
+            style = style.format(existing_formats, na_rep=na_rep)
 
-with tab2:
+    dataframe_kwargs = {
+        "hide_index": True,
+        "width": "stretch",
+    }
+    if height is not None:
+        dataframe_kwargs["height"] = height
+
+    st.dataframe(style, **dataframe_kwargs)
+
+if selected_view == "US Equities":
+    st.subheader("US Equities")
+    render_styled_table(
+        df_us,
+        formats={
+            "Shares": "{:,.2f}",
+            "Avg_Cost": "${:,.2f}",
+            "Live Price": "${:,.2f}",
+            "Value": "${:,.2f}",
+            "Cost Basis": "${:,.2f}",
+            "P/L": "${:,.2f}",
+            "P/L %": "{:.2f}%"
+        },
+        pl_columns=["P/L %"]
+    )
+
+if selected_view == "Thai Portfolio":
     st.subheader("Mutual Funds (SEC Direct Data)")
     st.caption("*Real-time NAV from api.sec.or.th · Sorted by Market Value · Master vs Fund % highlights daily relative performance*")
 
@@ -2090,27 +2969,21 @@ with tab2:
 
         table_height = min(40 + len(df_vault_display) * 35 + 12, 820)
 
-        st.dataframe(
-            df_vault_display.style.applymap(
-                color_pl,
-                subset=['Unrealized P/L %', 'Fund Day %', 'Master Day %', 'Fund vs Master %']
-            ).format(
-                {
-                    "Units": "{:,.2f}",
-                    "Avg Cost": "฿{:,.4f}",
-                    "NAV": "฿{:,.4f}",
-                    "Fund Day %": "{:+.2f}%",
-                    "Master Day %": "{:+.2f}%",
-                    "Fund vs Master %": "{:+.2f}%",
-                    "Cost Basis": "฿{:,.2f}",
-                    "Market Value": "฿{:,.2f}",
-                    "Unrealized P/L": "฿{:,.2f}",
-                    "Unrealized P/L %": "{:+.2f}%"
-                },
-                na_rep="—"
-            ),
-            hide_index=True,
-            width='stretch',
+        render_styled_table(
+            df_vault_display,
+            formats={
+                "Units": "{:,.2f}",
+                "Avg Cost": "฿{:,.4f}",
+                "NAV": "฿{:,.4f}",
+                "Fund Day %": "{:+.2f}%",
+                "Master Day %": "{:+.2f}%",
+                "Fund vs Master %": "{:+.2f}%",
+                "Cost Basis": "฿{:,.2f}",
+                "Market Value": "฿{:,.2f}",
+                "Unrealized P/L": "฿{:,.2f}",
+                "Unrealized P/L %": "{:+.2f}%"
+            },
+            pl_columns=["Unrealized P/L %", "Fund Day %", "Master Day %", "Fund vs Master %"],
             height=table_height
         )
     else:
@@ -2118,11 +2991,21 @@ with tab2:
     
     st.markdown("---")
     st.subheader("Thai Equities")
-    st.dataframe(df_thai.style.applymap(color_pl, subset=['P/L %'])
-                 .format({"Shares":"{:,.2f}", "Avg_Cost":"฿{:,.2f}", "Live Price":"฿{:,.2f}", "Value":"฿{:,.2f}", "Cost Basis":"฿{:,.2f}", "P/L":"฿{:,.2f}", "P/L %":"{:.2f}%"}),
-                 hide_index=True, width='stretch')
+    render_styled_table(
+        df_thai,
+        formats={
+            "Shares": "{:,.2f}",
+            "Avg_Cost": "฿{:,.2f}",
+            "Live Price": "฿{:,.2f}",
+            "Value": "฿{:,.2f}",
+            "Cost Basis": "฿{:,.2f}",
+            "P/L": "฿{:,.2f}",
+            "P/L %": "{:.2f}%"
+        },
+        pl_columns=["P/L %"]
+    )
 
-with tab3:
+if selected_view == "Analytics":
     st.subheader("Performance Analysis")
     col_a, col_b = st.columns(2)
     
@@ -2133,6 +3016,104 @@ with tab3:
     with col_b:
         st.markdown("**Mutual Funds P/L %**")
         st.bar_chart(df_vault.set_index('Code')['P/L %'])
+
+    st.markdown("---")
+    st.markdown("#### Trade Journal Analytics · Phase 1")
+
+    trade_rows = []
+    for txn in st.session_state.transaction_history:
+        txn_type = str(txn.get("type", "")).strip().title()
+        if txn_type != "Sell":
+            continue
+        txn_date = pd.to_datetime(str(txn.get("date", "")).split(" ")[0], errors="coerce")
+        if pd.isna(txn_date):
+            continue
+        realized = float(txn.get("realized_pl", 0.0) or 0.0)
+        risk_amount = txn.get("risk_amount", None)
+        risk_float = None
+        try:
+            risk_float = float(risk_amount) if risk_amount not in [None, ""] else None
+        except Exception:
+            risk_float = None
+
+        r_multiple = txn.get("r_multiple", None)
+        if r_multiple in [None, ""] and risk_float not in [None, 0, 0.0]:
+            try:
+                r_multiple = realized / risk_float
+            except Exception:
+                r_multiple = None
+
+        trade_rows.append({
+            "Date": txn_date,
+            "Ticker": str(txn.get("ticker", "")).strip().upper(),
+            "Asset Type": str(txn.get("asset_type", "")).strip(),
+            "Session": str(txn.get("session", "N/A") or "N/A").strip(),
+            "Strategy": str(txn.get("strategy", "N/A") or "N/A").strip(),
+            "Direction": str(txn.get("direction", "N/A") or "N/A").strip(),
+            "Followed Rules": bool(txn.get("followed_rules", False)),
+            "Confidence": pd.to_numeric(txn.get("confidence", None), errors="coerce"),
+            "Realized P/L": realized,
+            "Risk Amount": risk_float,
+            "R-Multiple": pd.to_numeric(r_multiple, errors="coerce"),
+        })
+
+    if trade_rows:
+        df_trade = pd.DataFrame(trade_rows).sort_values("Date")
+        total_trades = int(len(df_trade))
+        win_trades = int((df_trade["Realized P/L"] > 0).sum())
+        win_rate = (win_trades / total_trades) * 100.0 if total_trades > 0 else 0.0
+
+        gross_profit = float(df_trade[df_trade["Realized P/L"] > 0]["Realized P/L"].sum())
+        gross_loss = float(df_trade[df_trade["Realized P/L"] < 0]["Realized P/L"].sum())
+        profit_factor = (gross_profit / abs(gross_loss)) if gross_loss < 0 else None
+        expectancy = float(df_trade["Realized P/L"].mean()) if total_trades > 0 else 0.0
+
+        daily_pl = df_trade.groupby(df_trade["Date"].dt.date, as_index=False)["Realized P/L"].sum()
+        profitable_days = int((daily_pl["Realized P/L"] > 0).sum()) if len(daily_pl) > 0 else 0
+        consistency_score = ((profitable_days / len(daily_pl)) * 100.0) if len(daily_pl) > 0 else 0.0
+
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            st.metric("Closed Trades", total_trades)
+        with c2:
+            st.metric("Win Rate", f"{win_rate:,.1f}%")
+        with c3:
+            st.metric("Profit Factor", f"{profit_factor:,.2f}" if profit_factor is not None else "—")
+        with c4:
+            st.metric("Expectancy/Trade", f"{expectancy:,.2f}")
+        with c5:
+            st.metric("Consistency", f"{consistency_score:,.1f}%")
+
+        d1, d2 = st.columns(2)
+        with d1:
+            st.markdown("**Session Performance (P/L)**")
+            session_pl = df_trade.groupby("Session", as_index=False)["Realized P/L"].sum().sort_values("Realized P/L", ascending=False)
+            st.dataframe(session_pl, hide_index=True, width="stretch")
+        with d2:
+            st.markdown("**Top Symbols (P/L)**")
+            symbol_pl = df_trade.groupby("Ticker", as_index=False)["Realized P/L"].sum().sort_values("Realized P/L", ascending=False).head(15)
+            st.dataframe(symbol_pl, hide_index=True, width="stretch")
+
+        st.markdown("**Discipline Impact (Followed Rules vs Not)**")
+        discipline_rows = []
+        for followed, group in df_trade.groupby("Followed Rules"):
+            trade_count = int(len(group))
+            discipline_rows.append({
+                "Followed Rules": "Yes" if followed else "No",
+                "Trades": trade_count,
+                "Win Rate %": ((group["Realized P/L"] > 0).sum() / trade_count) * 100.0 if trade_count > 0 else 0.0,
+                "Avg P/L": float(group["Realized P/L"].mean()) if trade_count > 0 else 0.0,
+            })
+        if discipline_rows:
+            st.dataframe(pd.DataFrame(discipline_rows), hide_index=True, width="stretch")
+
+        if len(daily_pl) > 1:
+            daily_pl = daily_pl.sort_values("Date")
+            daily_pl["Cumulative P/L"] = daily_pl["Realized P/L"].cumsum()
+            st.markdown("**Cumulative Closed-Trade P/L**")
+            st.line_chart(daily_pl.set_index("Date")[["Cumulative P/L"]])
+    else:
+        st.info("No closed trades yet for Phase 1 journal analytics. Log Sell transactions to populate this section.")
 
     st.markdown("---")
     st.markdown("#### P/L Attribution")
@@ -2735,7 +3716,7 @@ with tab3:
     else:
         st.info("No positions available yet for risk analysis.")
 
-with tab4:
+if selected_view == "News Watchtower":
     st.subheader("📰 NEWS WATCHTOWER")
     st.caption("Real-time news and alerts for your holdings")
     
@@ -2746,10 +3727,14 @@ with tab4:
         st.info("📌 Add holdings to see news and alerts for your positions")
     else:
         # Check if NewsAPI key is configured
-        newsapi_key = st.secrets.get("news_alerts", {}).get("newsapi_key", "")
+        newsapi_key = get_newsapi_key()
         
         if not newsapi_key:
-            st.warning("⚠️ NewsAPI key not configured. Add your free key from https://newsapi.org/ to `.streamlit/secrets.toml` under `[news_alerts]` → `newsapi_key`")
+            st.warning(
+                "⚠️ NewsAPI key not configured. Add your free key from https://newsapi.org/ "
+                "in `.streamlit/secrets.toml` (`[news_alerts] -> newsapi_key`) "
+                "or set environment variable `NEWSAPI_KEY`."
+            )
         else:
             # Price Alerts Section
             st.markdown("#### 🚨 PRICE ALERTS")
@@ -2791,7 +3776,7 @@ with tab4:
                         })
 
                     st.markdown("**At a glance**")
-                    st.dataframe(pd.DataFrame(summary_rows), hide_index=True, use_container_width=True)
+                    st.dataframe(pd.DataFrame(summary_rows), hide_index=True, width="stretch")
 
                     st.markdown("**Details**")
                     for i, article in enumerate(news_articles):
@@ -2809,7 +3794,7 @@ with tab4:
                 else:
                     st.info(f"No recent news found for {selected_ticker}")
 
-with tab5:
+if selected_view == "Transaction History":
     st.subheader("📜 TRANSACTION HISTORY & REALIZED P/L")
     
     # Summary metrics
@@ -2903,10 +3888,11 @@ with tab5:
         st.dataframe(
             df_txn_display[[
                 "Date", "Ticker", "Type", "Shares", "Price Display", "Total Display",
-                "Asset Type", "Currency", "Lot Method", "Realized P/L Display"
+                "Asset Type", "Currency", "Lot Method", "Realized P/L Display",
+                "Strategy", "Session", "Direction", "Followed Rules", "Confidence", "R-Multiple"
             ]],
             hide_index=True,
-            use_container_width=True
+            width="stretch"
         )
         
         # Export option
@@ -2918,7 +3904,7 @@ with tab5:
             mime="text/csv"
         )
     else:
-        st.info("📌 No transactions yet. Add buy/sell transactions using the sidebar to track your realized P/L.")
+        st.info("📌 No transactions yet. Use the Trade Entry tab to log buy/sell activity and track realized P/L.")
     
     # Explanation
     with st.expander("ℹ️ Understanding Realized vs Unrealized P/L"):
@@ -2937,7 +3923,546 @@ with tab5:
         **Note:** Current implementation uses weighted average cost basis. Future updates will support FIFO/LIFO tax lot methods.
         """)
 
-with tab6:
+if selected_view == "Market Tools":
+    st.subheader("🔎 MARKET TOOLS")
+    st.caption("Phase 1 live: Watchlists, Compare, Screener · Phase 2/3 scaffolded: Fundamentals and Options workflows")
+
+    mt1, mt2, mt3, mt4, mt5 = st.tabs([
+        "📋 WATCHLISTS",
+        "⚖️ COMPARE",
+        "🧪 SCREENER",
+        "📈 FUNDAMENTALS (PHASE 2)",
+        "📉 OPTIONS (PHASE 3)",
+    ])
+
+    with mt1:
+        st.markdown("#### Manage Watchlists")
+        watchlists = st.session_state.watchlists
+        list_names = sorted(list(watchlists.keys()))
+
+        create_col, select_col = st.columns([2, 3])
+        with create_col:
+            new_list_name = st.text_input("New watchlist name", key="wl_new_name")
+            if st.button("Create Watchlist", key="wl_create_btn"):
+                clean_name = str(new_list_name).strip()
+                if not clean_name:
+                    st.error("Enter a watchlist name.")
+                elif clean_name in watchlists:
+                    st.warning("Watchlist already exists.")
+                else:
+                    watchlists[clean_name] = []
+                    save_watchlists()
+                    st.success(f"Created watchlist: {clean_name}")
+                    st.rerun()
+
+        selected_watchlist = None
+        with select_col:
+            if list_names:
+                selected_watchlist = st.selectbox("Select watchlist", list_names, key="wl_select")
+            else:
+                st.info("Create your first watchlist to start tracking symbols.")
+
+        if selected_watchlist:
+            symbols = watchlists.get(selected_watchlist, [])
+            add_col, remove_col = st.columns([2, 3])
+
+            with add_col:
+                symbol_to_add = st.text_input("Add symbol", key="wl_add_symbol")
+                if st.button("Add Symbol", key="wl_add_btn"):
+                    clean_symbol = _normalize_market_symbol(symbol_to_add)
+                    if not clean_symbol:
+                        st.error("Enter a valid symbol.")
+                    elif clean_symbol in symbols:
+                        st.warning("Symbol already in watchlist.")
+                    else:
+                        watchlists[selected_watchlist] = symbols + [clean_symbol]
+                        save_watchlists()
+                        st.success(f"Added {clean_symbol} to {selected_watchlist}")
+                        st.rerun()
+
+            with remove_col:
+                symbols_to_remove = st.multiselect(
+                    "Remove symbols",
+                    options=symbols,
+                    key="wl_remove_symbols"
+                )
+                if st.button("Remove Selected", key="wl_remove_btn"):
+                    keep = [s for s in symbols if s not in symbols_to_remove]
+                    watchlists[selected_watchlist] = keep
+                    save_watchlists()
+                    st.success("Watchlist updated")
+                    st.rerun()
+
+            if symbols:
+                st.markdown("#### Watchlist Snapshot")
+                df_watch = fetch_quote_snapshot(symbols)
+                if len(df_watch) > 0:
+                    render_styled_table(
+                        df_watch,
+                        formats={
+                            "Price": "{:,.2f}",
+                            "Change %": "{:+.2f}%",
+                            "Market Cap": "{:,.0f}",
+                            "P/E": "{:,.2f}",
+                            "Forward P/E": "{:,.2f}",
+                            "Div Yield %": "{:,.2f}%",
+                            "Beta": "{:,.2f}",
+                            "52W High": "{:,.2f}",
+                            "52W Low": "{:,.2f}",
+                            "Avg Vol": "{:,.0f}",
+                        },
+                        pl_columns=["Change %"]
+                    )
+            else:
+                st.info("No symbols yet in this watchlist.")
+
+    with mt2:
+        st.markdown("#### Multi-Symbol Compare")
+        base_universe = _get_base_symbol_universe()
+        selected_compare = st.multiselect(
+            "Select symbols",
+            options=base_universe,
+            default=base_universe[: min(6, len(base_universe))],
+            key="compare_symbols_select"
+        )
+
+        if selected_compare:
+            df_compare = fetch_quote_snapshot(selected_compare)
+            compare_cols = [
+                c for c in [
+                    "Symbol", "Price", "Change %", "Market Cap", "P/E", "Forward P/E",
+                    "Div Yield %", "Beta", "52W High", "52W Low", "Avg Vol", "Sector"
+                ] if c in df_compare.columns
+            ]
+            if len(df_compare) > 0 and compare_cols:
+                render_styled_table(
+                    df_compare[compare_cols],
+                    formats={
+                        "Price": "{:,.2f}",
+                        "Change %": "{:+.2f}%",
+                        "Market Cap": "{:,.0f}",
+                        "P/E": "{:,.2f}",
+                        "Forward P/E": "{:,.2f}",
+                        "Div Yield %": "{:,.2f}%",
+                        "Beta": "{:,.2f}",
+                        "52W High": "{:,.2f}",
+                        "52W Low": "{:,.2f}",
+                        "Avg Vol": "{:,.0f}",
+                    },
+                    pl_columns=["Change %"]
+                )
+        else:
+            st.info("Select at least one symbol to compare.")
+
+    with mt3:
+        st.markdown("#### Rule-Based Screener")
+        base_universe = _get_base_symbol_universe()
+        default_universe_text = ", ".join(base_universe[: min(40, len(base_universe))])
+        universe_text = st.text_area(
+            "Universe symbols (comma-separated)",
+            value=default_universe_text,
+            key="screener_universe_text"
+        )
+
+        f1, f2, f3 = st.columns(3)
+        with f1:
+            min_market_cap_bn = st.number_input("Min Market Cap (USD bn)", min_value=0.0, value=0.0, step=1.0, key="scr_min_mcap")
+            max_pe = st.number_input("Max P/E", min_value=0.0, value=1000.0, step=1.0, key="scr_max_pe")
+        with f2:
+            min_div_yield = st.number_input("Min Dividend Yield %", min_value=0.0, value=0.0, step=0.1, key="scr_min_div")
+            max_beta = st.number_input("Max Beta", min_value=0.0, value=10.0, step=0.1, key="scr_max_beta")
+        with f3:
+            min_change_pct = st.number_input("Min Daily Change %", value=-100.0, step=0.5, key="scr_min_change")
+            max_change_pct = st.number_input("Max Daily Change %", value=100.0, step=0.5, key="scr_max_change")
+
+        raw_symbols = [s.strip().upper() for s in universe_text.split(",") if s.strip()]
+        screened_symbols = sorted(list(dict.fromkeys(raw_symbols)))
+
+        if st.button("Run Screener", key="run_screener_btn"):
+            if not screened_symbols:
+                st.error("Provide at least one symbol in the screener universe.")
+            else:
+                df_screen = fetch_quote_snapshot(screened_symbols)
+                if len(df_screen) == 0:
+                    st.warning("No quote data available for provided symbols.")
+                else:
+                    working = df_screen.copy()
+                    if "Market Cap" in working.columns:
+                        working = working[(working["Market Cap"].isna()) | (working["Market Cap"] >= min_market_cap_bn * 1_000_000_000)]
+                    if "P/E" in working.columns:
+                        working = working[(working["P/E"].isna()) | (working["P/E"] <= max_pe)]
+                    if "Div Yield %" in working.columns:
+                        working = working[(working["Div Yield %"].isna()) | (working["Div Yield %"] >= min_div_yield)]
+                    if "Beta" in working.columns:
+                        working = working[(working["Beta"].isna()) | (working["Beta"] <= max_beta)]
+                    if "Change %" in working.columns:
+                        working = working[(working["Change %"].isna()) | ((working["Change %"] >= min_change_pct) & (working["Change %"] <= max_change_pct))]
+
+                    st.success(f"Matched {len(working)} / {len(df_screen)} symbols")
+                    if len(working) > 0:
+                        render_styled_table(
+                            working,
+                            formats={
+                                "Price": "{:,.2f}",
+                                "Change %": "{:+.2f}%",
+                                "Market Cap": "{:,.0f}",
+                                "P/E": "{:,.2f}",
+                                "Forward P/E": "{:,.2f}",
+                                "Div Yield %": "{:,.2f}%",
+                                "Beta": "{:,.2f}",
+                                "52W High": "{:,.2f}",
+                                "52W Low": "{:,.2f}",
+                                "Avg Vol": "{:,.0f}",
+                            },
+                            pl_columns=["Change %"]
+                        )
+
+    with mt4:
+        st.markdown("#### Fundamentals Snapshot")
+        st.caption("Phase 2 live: full statements, analyst context, earnings surprise tracking, and factor scorecard.")
+
+        fundamentals_universe = _get_base_symbol_universe()
+        selected_fund_symbol = st.selectbox(
+            "Symbol",
+            options=fundamentals_universe if fundamentals_universe else ["AAPL"],
+            key="fundamentals_symbol_select"
+        )
+
+        fundamentals_package = fetch_fundamental_snapshot(selected_fund_symbol)
+        metrics = fundamentals_package.get("metrics", {}) if isinstance(fundamentals_package, dict) else {}
+        trend_df = fundamentals_package.get("trend_df", pd.DataFrame()) if isinstance(fundamentals_package, dict) else pd.DataFrame()
+        income_df = fundamentals_package.get("income_df", pd.DataFrame()) if isinstance(fundamentals_package, dict) else pd.DataFrame()
+        balance_df = fundamentals_package.get("balance_df", pd.DataFrame()) if isinstance(fundamentals_package, dict) else pd.DataFrame()
+        cashflow_df = fundamentals_package.get("cashflow_df", pd.DataFrame()) if isinstance(fundamentals_package, dict) else pd.DataFrame()
+        recommendations_df = fundamentals_package.get("recommendations_df", pd.DataFrame()) if isinstance(fundamentals_package, dict) else pd.DataFrame()
+        earnings_dates_df = fundamentals_package.get("earnings_dates_df", pd.DataFrame()) if isinstance(fundamentals_package, dict) else pd.DataFrame()
+        analyst_snapshot = fundamentals_package.get("analyst_snapshot", {}) if isinstance(fundamentals_package, dict) else {}
+        factor_scores = fundamentals_package.get("factor_scores", {}) if isinstance(fundamentals_package, dict) else {}
+
+        if metrics:
+            metric_items = list(metrics.items())
+            m_cols = st.columns(4)
+            for idx, (label, value) in enumerate(metric_items):
+                with m_cols[idx % 4]:
+                    if value is None:
+                        st.metric(label, "—")
+                    elif "%" in label:
+                        st.metric(label, f"{value:,.2f}%")
+                    elif label in ["Revenue", "Net Income"]:
+                        st.metric(label, f"{value:,.0f}")
+                    else:
+                        st.metric(label, f"{value:,.2f}")
+        else:
+            st.info("Fundamental metrics unavailable for this symbol.")
+
+        st.markdown("---")
+        st.markdown("**Analyst Context**")
+        ac1, ac2, ac3, ac4 = st.columns(4)
+        with ac1:
+            st.metric("Recommendation", analyst_snapshot.get("Recommendation") or "—")
+        with ac2:
+            target_mean = analyst_snapshot.get("Target Mean", None)
+            st.metric("Target Mean", f"{target_mean:,.2f}" if target_mean is not None else "—")
+        with ac3:
+            target_low = analyst_snapshot.get("Target Low", None)
+            target_high = analyst_snapshot.get("Target High", None)
+            if target_low is not None and target_high is not None:
+                st.metric("Target Range", f"{target_low:,.2f} - {target_high:,.2f}")
+            else:
+                st.metric("Target Range", "—")
+        with ac4:
+            analyst_count = analyst_snapshot.get("Analyst Opinions", None)
+            st.metric("Analyst Opinions", f"{int(analyst_count)}" if analyst_count is not None else "—")
+
+        if isinstance(recommendations_df, pd.DataFrame) and len(recommendations_df) > 0:
+            rec_cols = [c for c in ["Date", "Firm", "To Grade", "From Grade", "Action"] if c in recommendations_df.columns]
+            if rec_cols:
+                st.markdown("**Latest Recommendation Changes**")
+                rec_view = recommendations_df.copy()
+                if "Date" in rec_view.columns:
+                    rec_view["Date"] = pd.to_datetime(rec_view["Date"], errors="coerce")
+                    rec_view = rec_view.sort_values("Date", ascending=False)
+                st.dataframe(rec_view[rec_cols].head(20), hide_index=True, width="stretch")
+
+        st.markdown("---")
+        if len(trend_df) > 0:
+            st.markdown("**Income Trend**")
+            render_styled_table(
+                trend_df,
+                formats={
+                    "Total Revenue": "{:,.0f}",
+                    "Net Income": "{:,.0f}",
+                }
+            )
+
+        st.markdown("**Financial Statements**")
+        statement_view = st.selectbox(
+            "Statement",
+            ["Income Statement", "Balance Sheet", "Cash Flow"],
+            key="fund_statement_view"
+        )
+
+        statement_map = {
+            "Income Statement": income_df,
+            "Balance Sheet": balance_df,
+            "Cash Flow": cashflow_df,
+        }
+        selected_statement_df = statement_map.get(statement_view, pd.DataFrame())
+
+        if isinstance(selected_statement_df, pd.DataFrame) and len(selected_statement_df) > 0:
+            preferred_rows = {
+                "Income Statement": [
+                    "Period", "Total Revenue", "Gross Profit", "Operating Income", "Net Income", "Diluted EPS", "EBITDA"
+                ],
+                "Balance Sheet": [
+                    "Period", "Total Assets", "Total Liabilities Net Minority Interest", "Stockholders Equity", "Cash And Cash Equivalents", "Current Assets", "Current Liabilities"
+                ],
+                "Cash Flow": [
+                    "Period", "Operating Cash Flow", "Investing Cash Flow", "Financing Cash Flow", "Free Cash Flow", "Capital Expenditure"
+                ],
+            }
+            keep_cols = [c for c in preferred_rows.get(statement_view, []) if c in selected_statement_df.columns]
+            if len(keep_cols) < 2:
+                keep_cols = selected_statement_df.columns[: min(8, len(selected_statement_df.columns))].tolist()
+
+            render_styled_table(
+                selected_statement_df[keep_cols].head(12),
+                formats={
+                    col: "{:,.0f}" for col in keep_cols if col != "Period"
+                }
+            )
+        else:
+            st.info("Statement data unavailable for this symbol.")
+
+        st.markdown("---")
+        st.markdown("**Earnings Surprise & Revisions**")
+        if isinstance(earnings_dates_df, pd.DataFrame) and len(earnings_dates_df) > 0:
+            earn_view = earnings_dates_df.copy()
+            if "Date" in earn_view.columns:
+                earn_view["Date"] = pd.to_datetime(earn_view["Date"], errors="coerce")
+                earn_view = earn_view.sort_values("Date", ascending=False)
+
+            keep_cols = [c for c in ["Date", "EPS Estimate", "Reported EPS", "Surprise(%)"] if c in earn_view.columns]
+            if keep_cols:
+                st.dataframe(earn_view[keep_cols].head(8), hide_index=True, width="stretch")
+
+            if "Surprise(%)" in earn_view.columns:
+                surprise_series = pd.to_numeric(earn_view["Surprise(%)"], errors="coerce").dropna().head(8)
+                if len(surprise_series) > 0:
+                    st.bar_chart(pd.DataFrame({"Surprise %": surprise_series.values}))
+        else:
+            st.info("No earnings surprise history available.")
+
+        st.markdown("---")
+        st.markdown("**Factor Scorecard**")
+        factor_rows = []
+        for factor_name in ["Quality", "Growth", "Value", "Momentum"]:
+            score = factor_scores.get(factor_name, None)
+            bucket = "N/A"
+            if score is not None:
+                if score >= 70:
+                    bucket = "Strong"
+                elif score >= 45:
+                    bucket = "Neutral"
+                else:
+                    bucket = "Weak"
+            factor_rows.append({
+                "Factor": factor_name,
+                "Score": score,
+                "Signal": bucket,
+            })
+
+        df_factors = pd.DataFrame(factor_rows)
+        render_styled_table(
+            df_factors,
+            formats={"Score": "{:,.1f}"},
+            pl_columns=[]
+        )
+
+    with mt5:
+        st.markdown("#### Options Chain Snapshot")
+        st.caption("Phase 3 live: IV analytics, strategy templates, Greeks monitor, and event-driven options alerts.")
+
+        options_universe = _get_base_symbol_universe()
+        selected_opt_symbol = st.selectbox(
+            "Underlying symbol",
+            options=options_universe if options_universe else ["AAPL"],
+            key="options_symbol_select"
+        )
+
+        expiries, _, _ = fetch_options_snapshot(selected_opt_symbol)
+        if expiries:
+            selected_expiry = st.selectbox("Expiration", options=expiries, key="options_expiry_select")
+            _, calls_df, puts_df = fetch_options_snapshot(selected_opt_symbol, selected_expiry)
+
+            quote_df = fetch_quote_snapshot([selected_opt_symbol])
+            underlying_price = None
+            if len(quote_df) > 0 and "Price" in quote_df.columns:
+                try:
+                    underlying_price = float(quote_df.iloc[0]["Price"])
+                except Exception:
+                    underlying_price = None
+
+            atm_iv = _estimate_atm_iv(calls_df, puts_df, underlying_price)
+            _record_atm_iv(selected_opt_symbol, atm_iv)
+            iv_rank, iv_percentile, iv_sample = _compute_iv_rank_percentile(selected_opt_symbol, atm_iv)
+
+            ivc1, ivc2, ivc3, ivc4 = st.columns(4)
+            with ivc1:
+                st.metric("Underlying", f"{underlying_price:,.2f}" if underlying_price is not None else "—")
+            with ivc2:
+                st.metric("ATM IV", f"{atm_iv * 100:,.2f}%" if atm_iv is not None else "—")
+            with ivc3:
+                st.metric("IV Rank", f"{iv_rank:,.1f}" if iv_rank is not None else "—")
+            with ivc4:
+                st.metric("IV Percentile", f"{iv_percentile:,.1f}" if iv_percentile is not None else "—", delta=f"{iv_sample} obs")
+
+            if st.session_state.options_iv_history.get(selected_opt_symbol):
+                iv_hist_df = pd.DataFrame(st.session_state.options_iv_history.get(selected_opt_symbol, []))
+                if len(iv_hist_df) > 1:
+                    iv_hist_df["date"] = pd.to_datetime(iv_hist_df["date"], errors="coerce")
+                    iv_hist_df = iv_hist_df.dropna(subset=["date"]).sort_values("date")
+                    if len(iv_hist_df) > 1:
+                        st.line_chart(iv_hist_df.set_index("date")[["atm_iv"]] * 100.0)
+
+            st.markdown("---")
+            st.markdown("**Strategy Templates**")
+            strategy_choice = st.selectbox(
+                "Template",
+                ["Covered Call", "Cash-Secured Put", "Bull Call Spread"],
+                key="opt_strategy_template"
+            )
+
+            if strategy_choice == "Covered Call":
+                s1, s2, s3, s4 = st.columns(4)
+                with s1:
+                    shares_owned = st.number_input("Shares owned", min_value=100, value=100, step=100, key="cc_shares")
+                with s2:
+                    cc_cost_basis = st.number_input("Cost basis per share", min_value=0.0, value=float(underlying_price or 0.0), step=0.01, key="cc_cost")
+                with s3:
+                    cc_strike = st.number_input("Short call strike", min_value=0.0, value=float(underlying_price or 0.0), step=0.5, key="cc_strike")
+                with s4:
+                    cc_premium = st.number_input("Premium received/share", min_value=0.0, value=1.0, step=0.01, key="cc_premium")
+
+                contracts = shares_owned // 100
+                total_premium = contracts * 100 * cc_premium
+                max_profit = contracts * 100 * max((cc_strike - cc_cost_basis), 0) + total_premium
+                breakeven = cc_cost_basis - cc_premium
+                st.caption(f"Contracts: {contracts}")
+                st.metric("Total Premium", f"{total_premium:,.2f}")
+                st.metric("Max Profit", f"{max_profit:,.2f}")
+                st.metric("Breakeven", f"{breakeven:,.2f}")
+
+            elif strategy_choice == "Cash-Secured Put":
+                s1, s2, s3 = st.columns(3)
+                with s1:
+                    csp_contracts = st.number_input("Contracts", min_value=1, value=1, step=1, key="csp_contracts")
+                with s2:
+                    csp_strike = st.number_input("Put strike", min_value=0.0, value=float(underlying_price or 0.0), step=0.5, key="csp_strike")
+                with s3:
+                    csp_premium = st.number_input("Premium received/share", min_value=0.0, value=1.0, step=0.01, key="csp_premium")
+
+                cash_required = csp_contracts * 100 * csp_strike
+                max_profit = csp_contracts * 100 * csp_premium
+                breakeven = csp_strike - csp_premium
+                st.metric("Cash Required", f"{cash_required:,.2f}")
+                st.metric("Max Profit", f"{max_profit:,.2f}")
+                st.metric("Breakeven", f"{breakeven:,.2f}")
+
+            else:
+                s1, s2, s3, s4, s5 = st.columns(5)
+                with s1:
+                    spread_contracts = st.number_input("Contracts", min_value=1, value=1, step=1, key="bcs_contracts")
+                with s2:
+                    long_strike = st.number_input("Long strike", min_value=0.0, value=max(float(underlying_price or 0.0) - 5.0, 0.0), step=0.5, key="bcs_long_strike")
+                with s3:
+                    long_premium = st.number_input("Long premium/share", min_value=0.0, value=2.0, step=0.01, key="bcs_long_premium")
+                with s4:
+                    short_strike = st.number_input("Short strike", min_value=0.0, value=float(underlying_price or 0.0) + 5.0, step=0.5, key="bcs_short_strike")
+                with s5:
+                    short_premium = st.number_input("Short premium/share", min_value=0.0, value=0.8, step=0.01, key="bcs_short_premium")
+
+                net_debit = max((long_premium - short_premium), 0.0)
+                width = max(short_strike - long_strike, 0.0)
+                max_loss = spread_contracts * 100 * net_debit
+                max_profit = spread_contracts * 100 * max(width - net_debit, 0.0)
+                breakeven = long_strike + net_debit
+                st.metric("Net Debit", f"{net_debit:,.2f}/share")
+                st.metric("Max Profit", f"{max_profit:,.2f}")
+                st.metric("Max Loss", f"{max_loss:,.2f}")
+                st.metric("Breakeven", f"{breakeven:,.2f}")
+
+            oc1, oc2 = st.columns(2)
+            with oc1:
+                st.markdown("**Top Calls by Open Interest**")
+                if isinstance(calls_df, pd.DataFrame) and len(calls_df) > 0:
+                    calls_greeks = _annotate_black_scholes_greeks(calls_df, "call", underlying_price, selected_expiry)
+                    calls_view = calls_greeks.sort_values("openInterest", ascending=False).head(20)
+                    keep_cols = [c for c in ["contractSymbol", "strike", "lastPrice", "impliedVolatility", "Delta", "Gamma", "Theta/day", "Vega", "openInterest", "volume"] if c in calls_view.columns]
+                    st.dataframe(calls_view[keep_cols], hide_index=True, width="stretch")
+                else:
+                    st.info("No calls available")
+
+            with oc2:
+                st.markdown("**Top Puts by Open Interest**")
+                if isinstance(puts_df, pd.DataFrame) and len(puts_df) > 0:
+                    puts_greeks = _annotate_black_scholes_greeks(puts_df, "put", underlying_price, selected_expiry)
+                    puts_view = puts_greeks.sort_values("openInterest", ascending=False).head(20)
+                    keep_cols = [c for c in ["contractSymbol", "strike", "lastPrice", "impliedVolatility", "Delta", "Gamma", "Theta/day", "Vega", "openInterest", "volume"] if c in puts_view.columns]
+                    st.dataframe(puts_view[keep_cols], hide_index=True, width="stretch")
+                else:
+                    st.info("No puts available")
+
+            st.markdown("---")
+            st.markdown("**Event-Driven Options Alerts**")
+            alert_col1, alert_col2, alert_col3 = st.columns(3)
+            with alert_col1:
+                iv_percentile_threshold = st.slider("IV percentile alert ≥", min_value=50, max_value=99, value=80, step=1, key="opt_iv_pct_threshold")
+            with alert_col2:
+                vol_oi_ratio_threshold = st.slider("Volume/OI ratio alert ≥", min_value=0.5, max_value=5.0, value=1.5, step=0.1, key="opt_vol_oi_threshold")
+            with alert_col3:
+                earnings_days_window = st.slider("Earnings window (days)", min_value=1, max_value=45, value=14, step=1, key="opt_earnings_window")
+
+            options_alerts = []
+            if iv_percentile is not None and iv_percentile >= iv_percentile_threshold:
+                options_alerts.append(f"IV percentile is elevated at {iv_percentile:.1f} (threshold {iv_percentile_threshold}).")
+
+            for chain_name, chain_df in [("Calls", calls_df), ("Puts", puts_df)]:
+                if not isinstance(chain_df, pd.DataFrame) or len(chain_df) == 0:
+                    continue
+                if "volume" not in chain_df.columns or "openInterest" not in chain_df.columns:
+                    continue
+                work = chain_df[["contractSymbol", "volume", "openInterest"]].copy()
+                work["volume"] = pd.to_numeric(work["volume"], errors="coerce").fillna(0.0)
+                work["openInterest"] = pd.to_numeric(work["openInterest"], errors="coerce").fillna(0.0)
+                work = work[work["openInterest"] > 0]
+                if len(work) == 0:
+                    continue
+                work["ratio"] = work["volume"] / work["openInterest"]
+                hot = work.sort_values("ratio", ascending=False).head(1)
+                if len(hot) > 0 and float(hot.iloc[0]["ratio"]) >= vol_oi_ratio_threshold:
+                    options_alerts.append(
+                        f"{chain_name} unusual activity: {hot.iloc[0]['contractSymbol']} volume/OI {float(hot.iloc[0]['ratio']):.2f}."
+                    )
+
+            earnings_map = get_earnings_dates([selected_opt_symbol])
+            evt = earnings_map.get(selected_opt_symbol, None)
+            evt_value = evt[0] if isinstance(evt, list) and len(evt) > 0 else evt
+            evt_dt = pd.to_datetime(evt_value, errors='coerce')
+            if not pd.isna(evt_dt):
+                days_to_earnings = int((evt_dt.normalize() - pd.Timestamp.now().normalize()).days)
+                if 0 <= days_to_earnings <= earnings_days_window:
+                    options_alerts.append(f"Earnings expected in {days_to_earnings} day(s) on {evt_dt.strftime('%Y-%m-%d')}.")
+
+            if options_alerts:
+                for alert_msg in options_alerts[:8]:
+                    st.warning(f"⚠️ {alert_msg}")
+            else:
+                st.success("✅ No options alerts triggered by current thresholds.")
+        else:
+            st.info("No options chain available for this symbol.")
+
+if selected_view == "CSV Import":
     st.subheader("📥 CSV IMPORT (Yahoo-style)")
     st.caption("Import transactions or holdings snapshots for US stocks, Thai stocks, or Thai mutual funds. Extra columns are ignored.")
     st.caption("Auto-normalization: if Yahoo row hints indicate Thailand (THB/SET/Thailand), symbols like ADVANC are converted to ADVANC.BK.")
@@ -2979,7 +4504,7 @@ with tab6:
         if parsed_df is not None and len(parsed_df) > 0:
             st.success(f"Parsed {len(parsed_df)} valid rows")
             st.info("Only relevant fields are extracted: instrument, action, quantity, price/cost basis, and date.")
-            st.dataframe(parsed_df, hide_index=True, use_container_width=True)
+            st.dataframe(parsed_df, hide_index=True, width="stretch")
 
             st.markdown("#### Dry Run Preview")
             preview_df, preview_summary = simulate_import_preview(parsed_df)
@@ -2994,7 +4519,7 @@ with tab6:
             with col_p4:
                 st.metric("Will Fail", preview_summary["fail"])
 
-            st.dataframe(preview_df, hide_index=True, use_container_width=True)
+            st.dataframe(preview_df, hide_index=True, width="stretch")
 
             st.markdown("#### Step 3 — Commit")
             st.caption("Imports valid rows and skips duplicates automatically.")
@@ -3065,11 +4590,83 @@ with tab6:
         ```
         """)
 
-with tab7:
+if selected_view == "Calendar":
     st.subheader("🗓️ PORTFOLIO CALENDAR")
+
+    planner_col, remove_col = st.columns([2, 1], gap="large")
+    with planner_col:
+        with st.form("calendar_event_form"):
+            st.markdown("**Add Upcoming Event**")
+            evt_c1, evt_c2 = st.columns(2)
+            with evt_c1:
+                planned_date = st.date_input("Event Date", value=datetime.now().date(), key="planned_event_date")
+                planned_type = st.selectbox(
+                    "Event Type",
+                    ["Reminder", "Earnings", "Macro", "Rebalance", "Dividend", "Risk Check", "Other"],
+                    key="planned_event_type"
+                )
+            with evt_c2:
+                planned_instrument = st.text_input("Instrument (optional)", key="planned_event_instrument")
+                planned_title = st.text_input("Title", key="planned_event_title")
+            planned_details = st.text_area("Details", key="planned_event_details")
+            planned_submit = st.form_submit_button("Add Event")
+
+            if planned_submit:
+                clean_title = str(planned_title).strip()
+                if not clean_title:
+                    st.error("Event title is required.")
+                else:
+                    st.session_state.calendar_events.append({
+                        "id": str(uuid.uuid4()),
+                        "date": planned_date.strftime("%Y-%m-%d"),
+                        "event_type": planned_type,
+                        "title": clean_title,
+                        "instrument": str(planned_instrument).strip().upper(),
+                        "details": str(planned_details).strip(),
+                        "status": "Planned",
+                    })
+                    st.session_state.calendar_events = st.session_state.calendar_events[-1200:]
+                    save_calendar_events()
+                    st.success("Event added")
+                    st.rerun()
+
+    with remove_col:
+        st.markdown("**Manage Planned**")
+        deletable = st.session_state.calendar_events[-200:]
+        if deletable:
+            delete_map = {
+                f"{e.get('date', '')} · {e.get('event_type', 'Reminder')} · {e.get('title', '')}": e.get("id", "")
+                for e in deletable
+            }
+            selected_delete = st.multiselect("Select events", options=list(delete_map.keys()), key="calendar_delete_events")
+            if st.button("Delete Selected", key="calendar_delete_btn"):
+                remove_ids = {delete_map[label] for label in selected_delete}
+                st.session_state.calendar_events = [
+                    e for e in st.session_state.calendar_events if e.get("id", "") not in remove_ids
+                ]
+                save_calendar_events()
+                st.success("Selected events removed")
+                st.rerun()
+        else:
+            st.caption("No planned events yet.")
+
+    st.markdown("---")
 
     events = []
     today = pd.Timestamp.now().normalize()
+
+    for event_item in st.session_state.calendar_events:
+        parsed_event = pd.to_datetime(str(event_item.get("date", "")), errors='coerce')
+        if pd.isna(parsed_event):
+            continue
+        events.append({
+            "Date": parsed_event.normalize(),
+            "Source": "Planned",
+            "Event": str(event_item.get("event_type", "Reminder") or "Reminder"),
+            "Instrument": str(event_item.get("instrument", "") or "").strip().upper(),
+            "Details": str(event_item.get("title", "") or "").strip(),
+            "Notes": str(event_item.get("details", "") or "").strip(),
+        })
 
     # Upcoming earnings (US holdings)
     try:
@@ -3081,15 +4678,17 @@ with tab7:
                 event_date = parsed_event.normalize()
                 events.append({
                     "Date": event_date,
+                    "Source": "Market",
                     "Event": "Earnings",
                     "Instrument": ticker,
                     "Details": "Upcoming earnings date",
+                    "Notes": "",
                 })
     except Exception:
         pass
 
     # Recent and upcoming transaction activity
-    for txn in st.session_state.transaction_history[-300:]:
+    for txn in st.session_state.transaction_history[-500:]:
         date_text = str(txn.get("date", "")).split(" ")[0]
         parsed_date = pd.to_datetime(date_text, errors='coerce')
         if pd.isna(parsed_date):
@@ -3097,9 +4696,11 @@ with tab7:
         event_date = parsed_date.normalize()
         events.append({
             "Date": event_date,
+            "Source": "Journal",
             "Event": f"Transaction · {txn.get('type', 'N/A')}",
             "Instrument": txn.get("ticker", "N/A"),
             "Details": f"{float(txn.get('shares', 0) or 0):,.4f} @ {float(txn.get('price', 0) or 0):,.4f}",
+            "Notes": str(txn.get("strategy", "") or "").strip(),
         })
 
     if events:
@@ -3107,15 +4708,25 @@ with tab7:
         if len(df_events) > 0:
             df_events["Days"] = (df_events["Date"] - today).dt.days
 
-            upcoming_events = df_events[df_events["Days"] >= 0].sort_values("Date").head(40)
-            recent_events = df_events[df_events["Days"] < 0].sort_values("Date", ascending=False).head(40)
+            upcoming_events = df_events[df_events["Days"] >= 0].sort_values(["Date", "Source"]).head(80)
+            recent_events = df_events[df_events["Days"] < 0].sort_values("Date", ascending=False).head(80)
+
+            next_event_days = int(upcoming_events.iloc[0]["Days"]) if len(upcoming_events) > 0 else None
+            next_event_label = str(upcoming_events.iloc[0]["Event"]) if len(upcoming_events) > 0 else "—"
+            k1, k2, k3 = st.columns(3)
+            with k1:
+                st.metric("Upcoming (7d)", int((upcoming_events["Days"] <= 7).sum()) if len(upcoming_events) > 0 else 0)
+            with k2:
+                st.metric("Upcoming (30d)", int((upcoming_events["Days"] <= 30).sum()) if len(upcoming_events) > 0 else 0)
+            with k3:
+                st.metric("Next Event", next_event_label, delta=(f"in {next_event_days} day(s)" if next_event_days is not None else ""))
 
             cal_col1, cal_col2 = st.columns(2)
             with cal_col1:
-                st.markdown("**Upcoming**")
+                st.markdown("**Upcoming Timeline**")
                 if len(upcoming_events) > 0:
                     st.dataframe(
-                        upcoming_events[["Date", "Days", "Event", "Instrument", "Details"]],
+                        upcoming_events[["Date", "Days", "Source", "Event", "Instrument", "Details", "Notes"]],
                         hide_index=True,
                         width='stretch'
                     )
@@ -3126,7 +4737,7 @@ with tab7:
                 st.markdown("**Recent Activity**")
                 if len(recent_events) > 0:
                     st.dataframe(
-                        recent_events[["Date", "Days", "Event", "Instrument", "Details"]],
+                        recent_events[["Date", "Days", "Source", "Event", "Instrument", "Details", "Notes"]],
                         hide_index=True,
                         width='stretch'
                     )
@@ -3137,357 +4748,500 @@ with tab7:
     else:
         st.info("No calendar events available.")
 
-# --- TRANSACTION SIDEBAR ---
-st.sidebar.markdown("---")
-st.sidebar.header("💰 ADD TRANSACTIONS")
+if selected_view == "Trade Entry":
+    st.subheader("📝 TRADE ENTRY")
+    st.caption("Execute Buy/Sell/Dividend/Fee/Split actions in one dedicated workflow.")
 
-with st.sidebar.expander("⚙️ Lot Method Policies", expanded=False):
-    st.caption("Choose cost-basis method used for Sell realized P/L by asset class.")
-    st.session_state.lot_method_policies["US Stock"] = st.selectbox(
-        "US Stock method",
-        ["FIFO", "LIFO", "AVERAGE"],
-        index=["FIFO", "LIFO", "AVERAGE"].index(st.session_state.lot_method_policies.get("US Stock", "FIFO")),
-        key="lot_policy_us"
-    )
-    st.session_state.lot_method_policies["Thai Stock"] = st.selectbox(
-        "Thai Stock method",
-        ["FIFO", "LIFO", "AVERAGE"],
-        index=["FIFO", "LIFO", "AVERAGE"].index(st.session_state.lot_method_policies.get("Thai Stock", "FIFO")),
-        key="lot_policy_thai"
-    )
-    st.session_state.lot_method_policies["Mutual Fund"] = st.selectbox(
-        "Mutual Fund method",
-        ["AVERAGE", "FIFO", "LIFO"],
-        index=["AVERAGE", "FIFO", "LIFO"].index(st.session_state.lot_method_policies.get("Mutual Fund", "AVERAGE")),
-        key="lot_policy_fund"
-    )
-
-# US VAULT TRANSACTIONS
-st.sidebar.subheader("🦅 US Vault")
-us_transaction_type = st.sidebar.radio("US Transaction Type", ["Buy", "Sell", "Dividend", "Fee", "Split"], key="us_trans_type")
-
-with st.sidebar.form("us_transaction_form"):
-    us_ticker = st.text_input("Ticker Symbol (e.g., AAPL)", key="us_ticker")
-
-    us_shares = 0.0
-    us_price = 0.0
-    us_cash_amount = 0.0
-    us_split_ratio = 0.0
-
-    if us_transaction_type in ["Buy", "Sell"]:
-        us_shares = st.number_input("Shares", min_value=0.0, step=0.01, key="us_shares")
-        us_price = st.number_input("Price per Share ($)", min_value=0.0, step=0.01, key="us_price")
-    elif us_transaction_type in ["Dividend", "Fee"]:
-        us_cash_amount = st.number_input("Cash Amount ($)", min_value=0.0, step=0.01, key="us_cash_amount")
-    else:
-        us_split_ratio = st.number_input("Split Ratio (new shares / old shares)", min_value=0.0001, step=0.0001, value=2.0, key="us_split_ratio")
-
-    us_submit = st.form_submit_button(f"Add US {us_transaction_type}")
-
-    if us_submit and us_ticker:
-        us_ticker = us_ticker.strip().upper()
-
-        if us_transaction_type in ["Dividend", "Fee"]:
-            if us_cash_amount <= 0:
-                st.sidebar.error("❌ Amount must be greater than 0.")
-            else:
-                event_total = us_cash_amount if us_transaction_type == "Dividend" else -us_cash_amount
-                log_transaction(
-                    us_ticker,
-                    us_transaction_type,
-                    0,
-                    us_cash_amount,
-                    "US Stock",
-                    total_override=event_total,
-                    notes=f"{us_transaction_type} cash event"
+    def _collect_journal_meta(prefix, transaction_type):
+        with st.expander("📓 Journal Fields (Phase 1)", expanded=False):
+            j1, j2 = st.columns(2)
+            with j1:
+                strategy = st.text_input("Strategy", key=f"{prefix}_strategy")
+                session_name = st.selectbox(
+                    "Session",
+                    ["N/A", "Asia", "London", "New York", "Pre-market", "After-hours"],
+                    key=f"{prefix}_session"
                 )
-                sign = "+" if us_transaction_type == "Dividend" else "-"
-                st.sidebar.success(f"✅ Logged {us_transaction_type} for {us_ticker}: {sign}${us_cash_amount:.2f}")
-                st.rerun()
+                entry_window = st.selectbox(
+                    "Entry Window",
+                    ["N/A", "Open", "Mid-session", "Close"],
+                    key=f"{prefix}_entry_window"
+                )
+            with j2:
+                direction_default = "Long" if transaction_type == "Buy" else ("Short" if transaction_type == "Sell" else "N/A")
+                direction = st.selectbox("Direction", ["N/A", "Long", "Short"], index=["N/A", "Long", "Short"].index(direction_default), key=f"{prefix}_direction")
+                confidence = st.slider("Confidence (1-5)", min_value=1, max_value=5, value=3, key=f"{prefix}_confidence")
+                followed_rules = st.checkbox("Followed Rules", value=True, key=f"{prefix}_followed_rules")
+            risk_amount = st.number_input("Risk Amount", min_value=0.0, step=0.01, value=0.0, key=f"{prefix}_risk_amount")
+            mental_state = st.selectbox(
+                "Mental State",
+                ["Neutral", "Calm", "Focused", "Anxious", "FOMO", "Revenge", "Overconfident"],
+                key=f"{prefix}_mental_state"
+            )
+            journal_note = st.text_area("Journal Note", key=f"{prefix}_journal_note")
 
-        elif us_transaction_type == "Split":
-            try:
-                ticker_idx = st.session_state.us_portfolio['Ticker'].index(us_ticker)
-                existing_shares = float(st.session_state.us_portfolio['Shares'][ticker_idx])
-                existing_avg_cost = float(st.session_state.us_portfolio['Avg_Cost'][ticker_idx])
+        return {
+            "strategy": strategy,
+            "session": session_name,
+            "direction": direction,
+            "followed_rules": followed_rules,
+            "confidence": int(confidence),
+            "risk_amount": float(risk_amount) if risk_amount > 0 else None,
+            "entry_window": entry_window,
+            "mental_state": mental_state,
+            "journal_note": journal_note,
+        }
 
-                if us_split_ratio <= 0:
-                    st.sidebar.error("❌ Split ratio must be greater than 0.")
-                else:
-                    new_shares = existing_shares * us_split_ratio
-                    new_avg_cost = existing_avg_cost / us_split_ratio
-                    st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
-                    st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
-                    lot_apply_split(us_ticker, "US Stock", "USD", us_split_ratio)
-                    log_transaction(
-                        us_ticker,
-                        "Split",
-                        us_split_ratio,
-                        0,
-                        "US Stock",
-                        total_override=0,
-                        notes=f"Split ratio {us_split_ratio:g}:1"
-                    )
-                    st.sidebar.success(f"✅ Applied split for {us_ticker}: {us_split_ratio:g}:1")
-                    st.rerun()
-            except ValueError:
-                st.sidebar.error(f"❌ Cannot apply split for {us_ticker}. No existing position found.")
+    with st.expander("⚙️ Lot Method Policies", expanded=False):
+        st.caption("Choose cost-basis method used for Sell realized P/L by asset class.")
+        st.session_state.lot_method_policies["US Stock"] = st.selectbox(
+            "US Stock method",
+            ["FIFO", "LIFO", "AVERAGE"],
+            index=["FIFO", "LIFO", "AVERAGE"].index(st.session_state.lot_method_policies.get("US Stock", "FIFO")),
+            key="lot_policy_us"
+        )
+        st.session_state.lot_method_policies["Thai Stock"] = st.selectbox(
+            "Thai Stock method",
+            ["FIFO", "LIFO", "AVERAGE"],
+            index=["FIFO", "LIFO", "AVERAGE"].index(st.session_state.lot_method_policies.get("Thai Stock", "FIFO")),
+            key="lot_policy_thai"
+        )
+        st.session_state.lot_method_policies["Mutual Fund"] = st.selectbox(
+            "Mutual Fund method",
+            ["AVERAGE", "FIFO", "LIFO"],
+            index=["AVERAGE", "FIFO", "LIFO"].index(st.session_state.lot_method_policies.get("Mutual Fund", "AVERAGE")),
+            key="lot_policy_fund"
+        )
 
-        elif us_shares > 0 and us_price > 0:
-        # Find if ticker exists
-            try:
-                ticker_idx = st.session_state.us_portfolio['Ticker'].index(us_ticker)
-                existing_shares = st.session_state.us_portfolio['Shares'][ticker_idx]
-                existing_avg_cost = st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
+    trade_col1, trade_col2 = st.columns(2, gap="large")
 
-                if us_transaction_type == "Buy":
-                    total_cost = (existing_shares * existing_avg_cost) + (us_shares * us_price)
-                    new_shares = existing_shares + us_shares
-                    new_avg_cost = total_cost / new_shares
+    with trade_col1:
+        st.markdown("#### 🦅 US Equities")
+        us_transaction_type = st.radio("US Transaction Type", ["Buy", "Sell", "Dividend", "Fee", "Split"], key="us_trans_type")
 
-                    st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
-                    st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
-                    log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
-                    st.sidebar.success(f"✅ Added {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
-                else:
-                    if us_shares > existing_shares:
-                        st.sidebar.error(f"❌ Cannot sell {us_shares} shares. Only {existing_shares} available.")
+        with st.form("us_transaction_form"):
+            us_ticker = st.text_input("Ticker Symbol (e.g., AAPL)", key="us_ticker")
+            us_trade_date = st.date_input("Transaction Date", value=datetime.now().date(), key="us_trade_date")
+
+            us_shares = 0.0
+            us_price = 0.0
+            us_cash_amount = 0.0
+            us_split_ratio = 0.0
+
+            if us_transaction_type in ["Buy", "Sell"]:
+                us_shares = st.number_input("Shares", min_value=0.0, step=0.01, key="us_shares")
+                us_price = st.number_input("Price per Share ($)", min_value=0.0, step=0.01, key="us_price")
+            elif us_transaction_type in ["Dividend", "Fee"]:
+                us_cash_amount = st.number_input("Cash Amount ($)", min_value=0.0, step=0.01, key="us_cash_amount")
+            else:
+                us_split_ratio = st.number_input("Split Ratio (new shares / old shares)", min_value=0.0001, step=0.0001, value=2.0, key="us_split_ratio")
+
+            us_submit = st.form_submit_button(f"Add US {us_transaction_type}")
+            us_journal_meta = _collect_journal_meta("us", us_transaction_type)
+
+            if us_submit and us_ticker:
+                us_ticker = us_ticker.strip().upper()
+
+                if us_transaction_type in ["Dividend", "Fee"]:
+                    if us_cash_amount <= 0:
+                        st.error("❌ Amount must be greater than 0.")
                     else:
-                        log_transaction(us_ticker, "Sell", us_shares, us_price, "US Stock", existing_avg_cost)
-                        new_shares = existing_shares - us_shares
-                        if new_shares == 0:
-                            del st.session_state.us_portfolio['Ticker'][ticker_idx]
-                            del st.session_state.us_portfolio['Shares'][ticker_idx]
-                            del st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
-                            st.sidebar.success(f"✅ Sold all {us_ticker} shares")
+                        event_total = us_cash_amount if us_transaction_type == "Dividend" else -us_cash_amount
+                        log_transaction(
+                            us_ticker,
+                            us_transaction_type,
+                            0,
+                            us_cash_amount,
+                            "US Stock",
+                            transaction_date=us_trade_date.strftime("%Y-%m-%d"),
+                            total_override=event_total,
+                            notes=f"{us_transaction_type} cash event",
+                            journal_meta=us_journal_meta,
+                        )
+                        sign = "+" if us_transaction_type == "Dividend" else "-"
+                        st.success(f"✅ Logged {us_transaction_type} for {us_ticker}: {sign}${us_cash_amount:.2f}")
+                        st.rerun()
+
+                elif us_transaction_type == "Split":
+                    try:
+                        ticker_idx = st.session_state.us_portfolio['Ticker'].index(us_ticker)
+                        existing_shares = float(st.session_state.us_portfolio['Shares'][ticker_idx])
+                        existing_avg_cost = float(st.session_state.us_portfolio['Avg_Cost'][ticker_idx])
+
+                        if us_split_ratio <= 0:
+                            st.error("❌ Split ratio must be greater than 0.")
                         else:
+                            new_shares = existing_shares * us_split_ratio
+                            new_avg_cost = existing_avg_cost / us_split_ratio
                             st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
-                            st.sidebar.success(f"✅ Sold {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+                            st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
+                            lot_apply_split(us_ticker, "US Stock", "USD", us_split_ratio)
+                            log_transaction(
+                                us_ticker,
+                                "Split",
+                                us_split_ratio,
+                                0,
+                                "US Stock",
+                                transaction_date=us_trade_date.strftime("%Y-%m-%d"),
+                                total_override=0,
+                                notes=f"Split ratio {us_split_ratio:g}:1",
+                                journal_meta=us_journal_meta,
+                            )
+                            st.success(f"✅ Applied split for {us_ticker}: {us_split_ratio:g}:1")
+                            st.rerun()
+                    except ValueError:
+                        st.error(f"❌ Cannot apply split for {us_ticker}. No existing position found.")
 
-            except ValueError:
-                if us_transaction_type == "Buy":
-                    st.session_state.us_portfolio['Ticker'].append(us_ticker)
-                    st.session_state.us_portfolio['Shares'].append(us_shares)
-                    st.session_state.us_portfolio['Avg_Cost'].append(us_price)
-                    log_transaction(us_ticker, "Buy", us_shares, us_price, "US Stock")
-                    st.sidebar.success(f"✅ Added new position: {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+                elif us_shares > 0 and us_price > 0:
+                    try:
+                        ticker_idx = st.session_state.us_portfolio['Ticker'].index(us_ticker)
+                        existing_shares = st.session_state.us_portfolio['Shares'][ticker_idx]
+                        existing_avg_cost = st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
+
+                        if us_transaction_type == "Buy":
+                            total_cost = (existing_shares * existing_avg_cost) + (us_shares * us_price)
+                            new_shares = existing_shares + us_shares
+                            new_avg_cost = total_cost / new_shares
+
+                            st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
+                            st.session_state.us_portfolio['Avg_Cost'][ticker_idx] = new_avg_cost
+                            log_transaction(
+                                us_ticker, "Buy", us_shares, us_price, "US Stock",
+                                transaction_date=us_trade_date.strftime("%Y-%m-%d"),
+                                journal_meta=us_journal_meta,
+                            )
+                            st.success(f"✅ Added {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+                        else:
+                            if us_shares > existing_shares:
+                                st.error(f"❌ Cannot sell {us_shares} shares. Only {existing_shares} available.")
+                            else:
+                                log_transaction(
+                                    us_ticker, "Sell", us_shares, us_price, "US Stock", existing_avg_cost,
+                                    transaction_date=us_trade_date.strftime("%Y-%m-%d"),
+                                    journal_meta=us_journal_meta,
+                                )
+                                new_shares = existing_shares - us_shares
+                                if new_shares == 0:
+                                    del st.session_state.us_portfolio['Ticker'][ticker_idx]
+                                    del st.session_state.us_portfolio['Shares'][ticker_idx]
+                                    del st.session_state.us_portfolio['Avg_Cost'][ticker_idx]
+                                    st.success(f"✅ Sold all {us_ticker} shares")
+                                else:
+                                    st.session_state.us_portfolio['Shares'][ticker_idx] = new_shares
+                                    st.success(f"✅ Sold {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+
+                    except ValueError:
+                        if us_transaction_type == "Buy":
+                            st.session_state.us_portfolio['Ticker'].append(us_ticker)
+                            st.session_state.us_portfolio['Shares'].append(us_shares)
+                            st.session_state.us_portfolio['Avg_Cost'].append(us_price)
+                            log_transaction(
+                                us_ticker, "Buy", us_shares, us_price, "US Stock",
+                                transaction_date=us_trade_date.strftime("%Y-%m-%d"),
+                                journal_meta=us_journal_meta,
+                            )
+                            st.success(f"✅ Added new position: {us_shares} shares of {us_ticker} @ ${us_price:.2f}")
+                        else:
+                            st.error(f"❌ Cannot sell {us_ticker}. No existing position found.")
+
+                    st.rerun()
                 else:
-                    st.sidebar.error(f"❌ Cannot sell {us_ticker}. No existing position found.")
+                    st.error("❌ Enter valid amount/price values.")
 
-            st.rerun()
+    with trade_col2:
+        st.markdown("#### 🏰 Thailand")
+        thai_transaction_type = st.radio("Thai Transaction Type", ["Buy", "Sell", "Dividend", "Fee", "Split"], key="thai_trans_type")
+        thai_vault_type = st.radio("Asset Type", ["Thai Stock", "Mutual Fund"], key="thai_vault_type")
+
+        if thai_vault_type == "Thai Stock":
+            with st.form("thai_stock_form"):
+                thai_ticker = st.text_input("Ticker (e.g., TISCO.BK)", key="thai_ticker")
+                thai_trade_date = st.date_input("Transaction Date", value=datetime.now().date(), key="thai_trade_date")
+                thai_shares = 0.0
+                thai_price = 0.0
+                thai_cash_amount = 0.0
+                thai_split_ratio = 0.0
+
+                if thai_transaction_type in ["Buy", "Sell"]:
+                    thai_shares = st.number_input("Shares", min_value=0.0, step=1.0, key="thai_shares")
+                    thai_price = st.number_input("Price per Share (฿)", min_value=0.0, step=0.01, key="thai_price")
+                elif thai_transaction_type in ["Dividend", "Fee"]:
+                    thai_cash_amount = st.number_input("Cash Amount (฿)", min_value=0.0, step=0.01, key="thai_cash_amount")
+                else:
+                    thai_split_ratio = st.number_input("Split Ratio (new shares / old shares)", min_value=0.0001, step=0.0001, value=2.0, key="thai_split_ratio")
+
+                thai_submit = st.form_submit_button(f"Add Thai {thai_transaction_type}")
+                thai_journal_meta = _collect_journal_meta("thai_stock", thai_transaction_type)
+
+                if thai_submit and thai_ticker:
+                    thai_ticker = thai_ticker.strip().upper()
+                    if not thai_ticker.endswith(".BK"):
+                        thai_ticker = f"{thai_ticker}.BK"
+
+                    if thai_transaction_type in ["Dividend", "Fee"]:
+                        if thai_cash_amount <= 0:
+                            st.error("❌ Amount must be greater than 0.")
+                        else:
+                            event_total = thai_cash_amount if thai_transaction_type == "Dividend" else -thai_cash_amount
+                            log_transaction(
+                                thai_ticker,
+                                thai_transaction_type,
+                                0,
+                                thai_cash_amount,
+                                "Thai Stock",
+                                transaction_date=thai_trade_date.strftime("%Y-%m-%d"),
+                                total_override=event_total,
+                                notes=f"{thai_transaction_type} cash event",
+                                journal_meta=thai_journal_meta,
+                            )
+                            sign = "+" if thai_transaction_type == "Dividend" else "-"
+                            st.success(f"✅ Logged {thai_transaction_type} for {thai_ticker}: {sign}฿{thai_cash_amount:.2f}")
+                            st.rerun()
+
+                    elif thai_transaction_type == "Split":
+                        try:
+                            ticker_idx = st.session_state.thai_stocks['Ticker'].index(thai_ticker)
+                            existing_shares = float(st.session_state.thai_stocks['Shares'][ticker_idx])
+                            existing_avg_cost = float(st.session_state.thai_stocks['Avg_Cost'][ticker_idx])
+
+                            if thai_split_ratio <= 0:
+                                st.error("❌ Split ratio must be greater than 0.")
+                            else:
+                                new_shares = existing_shares * thai_split_ratio
+                                new_avg_cost = existing_avg_cost / thai_split_ratio
+                                st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
+                                st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
+                                lot_apply_split(thai_ticker, "Thai Stock", "THB", thai_split_ratio)
+                                log_transaction(
+                                    thai_ticker,
+                                    "Split",
+                                    thai_split_ratio,
+                                    0,
+                                    "Thai Stock",
+                                    transaction_date=thai_trade_date.strftime("%Y-%m-%d"),
+                                    total_override=0,
+                                    notes=f"Split ratio {thai_split_ratio:g}:1",
+                                    journal_meta=thai_journal_meta,
+                                )
+                                st.success(f"✅ Applied split for {thai_ticker}: {thai_split_ratio:g}:1")
+                                st.rerun()
+                        except ValueError:
+                            st.error(f"❌ Cannot apply split for {thai_ticker}. No existing position found.")
+
+                    elif thai_shares > 0 and thai_price > 0:
+                        try:
+                            ticker_idx = st.session_state.thai_stocks['Ticker'].index(thai_ticker)
+                            existing_shares = st.session_state.thai_stocks['Shares'][ticker_idx]
+                            existing_avg_cost = st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
+
+                            if thai_transaction_type == "Buy":
+                                total_cost = (existing_shares * existing_avg_cost) + (thai_shares * thai_price)
+                                new_shares = existing_shares + thai_shares
+                                new_avg_cost = total_cost / new_shares
+
+                                st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
+                                st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
+                                log_transaction(
+                                    thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock",
+                                    transaction_date=thai_trade_date.strftime("%Y-%m-%d"),
+                                    journal_meta=thai_journal_meta,
+                                )
+                                st.success(f"✅ Added {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
+                            else:
+                                if thai_shares > existing_shares:
+                                    st.error(f"❌ Cannot sell {thai_shares} shares. Only {existing_shares} available.")
+                                else:
+                                    log_transaction(
+                                        thai_ticker, "Sell", thai_shares, thai_price, "Thai Stock", existing_avg_cost,
+                                        transaction_date=thai_trade_date.strftime("%Y-%m-%d"),
+                                        journal_meta=thai_journal_meta,
+                                    )
+                                    new_shares = existing_shares - thai_shares
+                                    if new_shares == 0:
+                                        del st.session_state.thai_stocks['Ticker'][ticker_idx]
+                                        del st.session_state.thai_stocks['Shares'][ticker_idx]
+                                        del st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
+                                        st.success(f"✅ Sold all {thai_ticker} shares")
+                                    else:
+                                        st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
+                                        st.success(f"✅ Sold {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
+
+                        except ValueError:
+                            if thai_transaction_type == "Buy":
+                                st.session_state.thai_stocks['Ticker'].append(thai_ticker)
+                                st.session_state.thai_stocks['Shares'].append(thai_shares)
+                                st.session_state.thai_stocks['Avg_Cost'].append(thai_price)
+                                log_transaction(
+                                    thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock",
+                                    transaction_date=thai_trade_date.strftime("%Y-%m-%d"),
+                                    journal_meta=thai_journal_meta,
+                                )
+                                st.success(f"✅ Added new position: {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
+                            else:
+                                st.error(f"❌ Cannot sell {thai_ticker}. No existing position found.")
+
+                        st.rerun()
+                    else:
+                        st.error("❌ Enter valid amount/price values.")
+
         else:
-            st.sidebar.error("❌ Enter valid amount/price values.")
+            with st.form("thai_fund_form"):
+                fund_code = st.text_input("Fund Code (e.g., SCBNDQ(E))", key="fund_code")
+                fund_trade_date = st.date_input("Transaction Date", value=datetime.now().date(), key="fund_trade_date")
+                fund_units = 0.0
+                fund_price = 0.0
+                fund_cash_amount = 0.0
+
+                if thai_transaction_type in ["Buy", "Sell"]:
+                    fund_units = st.number_input("Units", min_value=0.0, step=0.01, key="fund_units")
+                    fund_price = st.number_input("NAV per Unit (฿)", min_value=0.0, step=0.0001, key="fund_price")
+                elif thai_transaction_type in ["Dividend", "Fee"]:
+                    fund_cash_amount = st.number_input("Cash Amount (฿)", min_value=0.0, step=0.01, key="fund_cash_amount")
+                else:
+                    st.caption("Split is available for Thai Stock only.")
+
+                fund_master = st.selectbox("Master ETF", ["QQQ", "VOO", "VTI", "SOXX", "ICLN", "GLD", "^SET.BK", "N/A"], key="fund_master")
+                fund_submit = st.form_submit_button(f"Add Fund {thai_transaction_type}")
+                fund_journal_meta = _collect_journal_meta("thai_fund", thai_transaction_type)
+
+                if fund_submit and fund_code:
+                    fund_code = fund_code.strip().upper()
+
+                    if thai_transaction_type in ["Dividend", "Fee"]:
+                        if fund_cash_amount <= 0:
+                            st.error("❌ Amount must be greater than 0.")
+                        else:
+                            event_total = fund_cash_amount if thai_transaction_type == "Dividend" else -fund_cash_amount
+                            log_transaction(
+                                fund_code,
+                                thai_transaction_type,
+                                0,
+                                fund_cash_amount,
+                                "Mutual Fund",
+                                transaction_date=fund_trade_date.strftime("%Y-%m-%d"),
+                                total_override=event_total,
+                                notes=f"{thai_transaction_type} cash event",
+                                journal_meta=fund_journal_meta,
+                            )
+                            sign = "+" if thai_transaction_type == "Dividend" else "-"
+                            st.success(f"✅ Logged {thai_transaction_type} for {fund_code}: {sign}฿{fund_cash_amount:.2f}")
+                            st.rerun()
+
+                    elif thai_transaction_type == "Split":
+                        st.error("❌ Split is only supported for Thai Stock positions.")
+
+                    elif fund_units > 0 and fund_price > 0:
+                        fund_idx = None
+                        for i, fund in enumerate(st.session_state.vault_portfolio):
+                            if fund['Code'] == fund_code:
+                                fund_idx = i
+                                break
+
+                        if fund_idx is not None:
+                            existing_units = st.session_state.vault_portfolio[fund_idx]['Units']
+                            existing_cost = st.session_state.vault_portfolio[fund_idx]['Cost']
+                            existing_master = str(st.session_state.vault_portfolio[fund_idx].get('Master', 'N/A') or 'N/A').strip().upper()
+
+                            if thai_transaction_type == "Buy":
+                                total_cost = (existing_units * existing_cost) + (fund_units * fund_price)
+                                new_units = existing_units + fund_units
+                                new_avg_cost = total_cost / new_units
+
+                                st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
+                                st.session_state.vault_portfolio[fund_idx]['Cost'] = new_avg_cost
+                                if existing_master in ["", "N/A"] and fund_master not in ["", "N/A"]:
+                                    st.session_state.vault_portfolio[fund_idx]['Master'] = fund_master
+                                log_transaction(
+                                    fund_code, "Buy", fund_units, fund_price, "Mutual Fund",
+                                    transaction_date=fund_trade_date.strftime("%Y-%m-%d"),
+                                    journal_meta=fund_journal_meta,
+                                    master=st.session_state.vault_portfolio[fund_idx].get('Master', fund_master),
+                                )
+                                st.success(f"✅ Added {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
+                            else:
+                                if fund_units > existing_units:
+                                    st.error(f"❌ Cannot sell {fund_units} units. Only {existing_units} available.")
+                                else:
+                                    log_transaction(
+                                        fund_code, "Sell", fund_units, fund_price, "Mutual Fund", existing_cost,
+                                        transaction_date=fund_trade_date.strftime("%Y-%m-%d"),
+                                        journal_meta=fund_journal_meta,
+                                        master=existing_master,
+                                    )
+                                    new_units = existing_units - fund_units
+                                    if new_units == 0:
+                                        del st.session_state.vault_portfolio[fund_idx]
+                                        st.success(f"✅ Sold all {fund_code} units")
+                                    else:
+                                        st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
+                                        st.success(f"✅ Sold {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
+                        else:
+                            if thai_transaction_type == "Buy":
+                                st.session_state.vault_portfolio.append({
+                                    "Code": fund_code,
+                                    "Units": fund_units,
+                                    "Cost": fund_price,
+                                    "Master": fund_master
+                                })
+                                log_transaction(
+                                    fund_code, "Buy", fund_units, fund_price, "Mutual Fund",
+                                    transaction_date=fund_trade_date.strftime("%Y-%m-%d"),
+                                    journal_meta=fund_journal_meta,
+                                    master=fund_master,
+                                )
+                                st.success(f"✅ Added new fund: {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
+                            else:
+                                st.error(f"❌ Cannot sell {fund_code}. No existing position found.")
+
+                        st.rerun()
+                    else:
+                        st.error("❌ Enter valid amount/price values.")
 
 st.sidebar.markdown("---")
+st.sidebar.header("🔐 Config Status")
 
-# THAI VAULT TRANSACTIONS
-st.sidebar.subheader("🏰 Thai Vault")
-thai_transaction_type = st.sidebar.radio("Thai Transaction Type", ["Buy", "Sell", "Dividend", "Fee", "Split"], key="thai_trans_type")
+sec_ok = bool(get_sec_api_keys())
+news_ok = bool(get_newsapi_key())
 
-thai_vault_type = st.sidebar.radio("Asset Type", ["Thai Stock", "Mutual Fund"], key="thai_vault_type")
+st.sidebar.markdown(
+    (
+        '<div class="sidebar-status-row '
+        + ('sidebar-status-ok' if sec_ok else 'sidebar-status-missing')
+        + '"><span class="sidebar-status-dot"></span>Thai SEC API '
+        + ('Configured' if sec_ok else 'Missing')
+        + '</div>'
+    ),
+    unsafe_allow_html=True,
+)
+st.sidebar.markdown(
+    (
+        '<div class="sidebar-status-row '
+        + ('sidebar-status-ok' if news_ok else 'sidebar-status-missing')
+        + '"><span class="sidebar-status-dot"></span>NewsAPI '
+        + ('Configured' if news_ok else 'Missing')
+        + '</div>'
+    ),
+    unsafe_allow_html=True,
+)
 
-if thai_vault_type == "Thai Stock":
-    with st.sidebar.form("thai_stock_form"):
-        thai_ticker = st.text_input("Ticker (e.g., TISCO.BK)", key="thai_ticker")
-        thai_shares = 0.0
-        thai_price = 0.0
-        thai_cash_amount = 0.0
-        thai_split_ratio = 0.0
-
-        if thai_transaction_type in ["Buy", "Sell"]:
-            thai_shares = st.number_input("Shares", min_value=0.0, step=1.0, key="thai_shares")
-            thai_price = st.number_input("Price per Share (฿)", min_value=0.0, step=0.01, key="thai_price")
-        elif thai_transaction_type in ["Dividend", "Fee"]:
-            thai_cash_amount = st.number_input("Cash Amount (฿)", min_value=0.0, step=0.01, key="thai_cash_amount")
-        else:
-            thai_split_ratio = st.number_input("Split Ratio (new shares / old shares)", min_value=0.0001, step=0.0001, value=2.0, key="thai_split_ratio")
-
-        thai_submit = st.form_submit_button(f"Add Thai {thai_transaction_type}")
-
-        if thai_submit and thai_ticker:
-            thai_ticker = thai_ticker.strip().upper()
-            if not thai_ticker.endswith(".BK"):
-                thai_ticker = f"{thai_ticker}.BK"
-
-            if thai_transaction_type in ["Dividend", "Fee"]:
-                if thai_cash_amount <= 0:
-                    st.sidebar.error("❌ Amount must be greater than 0.")
-                else:
-                    event_total = thai_cash_amount if thai_transaction_type == "Dividend" else -thai_cash_amount
-                    log_transaction(
-                        thai_ticker,
-                        thai_transaction_type,
-                        0,
-                        thai_cash_amount,
-                        "Thai Stock",
-                        total_override=event_total,
-                        notes=f"{thai_transaction_type} cash event"
-                    )
-                    sign = "+" if thai_transaction_type == "Dividend" else "-"
-                    st.sidebar.success(f"✅ Logged {thai_transaction_type} for {thai_ticker}: {sign}฿{thai_cash_amount:.2f}")
-                    st.rerun()
-
-            elif thai_transaction_type == "Split":
-                try:
-                    ticker_idx = st.session_state.thai_stocks['Ticker'].index(thai_ticker)
-                    existing_shares = float(st.session_state.thai_stocks['Shares'][ticker_idx])
-                    existing_avg_cost = float(st.session_state.thai_stocks['Avg_Cost'][ticker_idx])
-
-                    if thai_split_ratio <= 0:
-                        st.sidebar.error("❌ Split ratio must be greater than 0.")
-                    else:
-                        new_shares = existing_shares * thai_split_ratio
-                        new_avg_cost = existing_avg_cost / thai_split_ratio
-                        st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
-                        st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
-                        lot_apply_split(thai_ticker, "Thai Stock", "THB", thai_split_ratio)
-                        log_transaction(
-                            thai_ticker,
-                            "Split",
-                            thai_split_ratio,
-                            0,
-                            "Thai Stock",
-                            total_override=0,
-                            notes=f"Split ratio {thai_split_ratio:g}:1"
-                        )
-                        st.sidebar.success(f"✅ Applied split for {thai_ticker}: {thai_split_ratio:g}:1")
-                        st.rerun()
-                except ValueError:
-                    st.sidebar.error(f"❌ Cannot apply split for {thai_ticker}. No existing position found.")
-
-            elif thai_shares > 0 and thai_price > 0:
-                try:
-                    ticker_idx = st.session_state.thai_stocks['Ticker'].index(thai_ticker)
-                    existing_shares = st.session_state.thai_stocks['Shares'][ticker_idx]
-                    existing_avg_cost = st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
-
-                    if thai_transaction_type == "Buy":
-                        total_cost = (existing_shares * existing_avg_cost) + (thai_shares * thai_price)
-                        new_shares = existing_shares + thai_shares
-                        new_avg_cost = total_cost / new_shares
-
-                        st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
-                        st.session_state.thai_stocks['Avg_Cost'][ticker_idx] = new_avg_cost
-                        log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
-                        st.sidebar.success(f"✅ Added {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
-                    else:
-                        if thai_shares > existing_shares:
-                            st.sidebar.error(f"❌ Cannot sell {thai_shares} shares. Only {existing_shares} available.")
-                        else:
-                            log_transaction(thai_ticker, "Sell", thai_shares, thai_price, "Thai Stock", existing_avg_cost)
-                            new_shares = existing_shares - thai_shares
-                            if new_shares == 0:
-                                del st.session_state.thai_stocks['Ticker'][ticker_idx]
-                                del st.session_state.thai_stocks['Shares'][ticker_idx]
-                                del st.session_state.thai_stocks['Avg_Cost'][ticker_idx]
-                                st.sidebar.success(f"✅ Sold all {thai_ticker} shares")
-                            else:
-                                st.session_state.thai_stocks['Shares'][ticker_idx] = new_shares
-                                st.sidebar.success(f"✅ Sold {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
-
-                except ValueError:
-                    if thai_transaction_type == "Buy":
-                        st.session_state.thai_stocks['Ticker'].append(thai_ticker)
-                        st.session_state.thai_stocks['Shares'].append(thai_shares)
-                        st.session_state.thai_stocks['Avg_Cost'].append(thai_price)
-                        log_transaction(thai_ticker, "Buy", thai_shares, thai_price, "Thai Stock")
-                        st.sidebar.success(f"✅ Added new position: {thai_shares} shares of {thai_ticker} @ ฿{thai_price:.2f}")
-                    else:
-                        st.sidebar.error(f"❌ Cannot sell {thai_ticker}. No existing position found.")
-
-                st.rerun()
-            else:
-                st.sidebar.error("❌ Enter valid amount/price values.")
-
-else:  # Mutual Fund
-    with st.sidebar.form("thai_fund_form"):
-        fund_code = st.text_input("Fund Code (e.g., SCBNDQ(E))", key="fund_code")
-        fund_units = 0.0
-        fund_price = 0.0
-        fund_cash_amount = 0.0
-
-        if thai_transaction_type in ["Buy", "Sell"]:
-            fund_units = st.number_input("Units", min_value=0.0, step=0.01, key="fund_units")
-            fund_price = st.number_input("NAV per Unit (฿)", min_value=0.0, step=0.0001, key="fund_price")
-        elif thai_transaction_type in ["Dividend", "Fee"]:
-            fund_cash_amount = st.number_input("Cash Amount (฿)", min_value=0.0, step=0.01, key="fund_cash_amount")
-        else:
-            st.caption("Split is available for Thai Stock only.")
-
-        fund_master = st.selectbox("Master ETF", ["QQQ", "VOO", "VTI", "SOXX", "ICLN", "GLD", "^SET.BK", "N/A"], key="fund_master")
-        fund_submit = st.form_submit_button(f"Add Fund {thai_transaction_type}")
-
-        if fund_submit and fund_code:
-            fund_code = fund_code.strip().upper()
-
-            if thai_transaction_type in ["Dividend", "Fee"]:
-                if fund_cash_amount <= 0:
-                    st.sidebar.error("❌ Amount must be greater than 0.")
-                else:
-                    event_total = fund_cash_amount if thai_transaction_type == "Dividend" else -fund_cash_amount
-                    log_transaction(
-                        fund_code,
-                        thai_transaction_type,
-                        0,
-                        fund_cash_amount,
-                        "Mutual Fund",
-                        total_override=event_total,
-                        notes=f"{thai_transaction_type} cash event"
-                    )
-                    sign = "+" if thai_transaction_type == "Dividend" else "-"
-                    st.sidebar.success(f"✅ Logged {thai_transaction_type} for {fund_code}: {sign}฿{fund_cash_amount:.2f}")
-                    st.rerun()
-
-            elif thai_transaction_type == "Split":
-                st.sidebar.error("❌ Split is only supported for Thai Stock positions.")
-
-            elif fund_units > 0 and fund_price > 0:
-            # Find if fund exists
-                fund_idx = None
-                for i, fund in enumerate(st.session_state.vault_portfolio):
-                    if fund['Code'] == fund_code:
-                        fund_idx = i
-                        break
-
-                if fund_idx is not None:
-                    existing_units = st.session_state.vault_portfolio[fund_idx]['Units']
-                    existing_cost = st.session_state.vault_portfolio[fund_idx]['Cost']
-
-                    if thai_transaction_type == "Buy":
-                        total_cost = (existing_units * existing_cost) + (fund_units * fund_price)
-                        new_units = existing_units + fund_units
-                        new_avg_cost = total_cost / new_units
-
-                        st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
-                        st.session_state.vault_portfolio[fund_idx]['Cost'] = new_avg_cost
-                        log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
-                        st.sidebar.success(f"✅ Added {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
-                    else:
-                        if fund_units > existing_units:
-                            st.sidebar.error(f"❌ Cannot sell {fund_units} units. Only {existing_units} available.")
-                        else:
-                            log_transaction(fund_code, "Sell", fund_units, fund_price, "Mutual Fund", existing_cost)
-                            new_units = existing_units - fund_units
-                            if new_units == 0:
-                                del st.session_state.vault_portfolio[fund_idx]
-                                st.sidebar.success(f"✅ Sold all {fund_code} units")
-                            else:
-                                st.session_state.vault_portfolio[fund_idx]['Units'] = new_units
-                                st.sidebar.success(f"✅ Sold {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
-                else:
-                    if thai_transaction_type == "Buy":
-                        st.session_state.vault_portfolio.append({
-                            "Code": fund_code,
-                            "Units": fund_units,
-                            "Cost": fund_price,
-                            "Master": fund_master
-                        })
-                        log_transaction(fund_code, "Buy", fund_units, fund_price, "Mutual Fund")
-                        st.sidebar.success(f"✅ Added new fund: {fund_units} units of {fund_code} @ ฿{fund_price:.4f}")
-                    else:
-                        st.sidebar.error(f"❌ Cannot sell {fund_code}. No existing position found.")
-
-                st.rerun()
-            else:
-                st.sidebar.error("❌ Enter valid amount/price values.")
+st.sidebar.markdown("---")
+st.sidebar.header("⚡ Data")
+if st.sidebar.button("Refresh market data", key="refresh_market_data", use_container_width=True):
+    for cached_fn in [
+        fetch_quote_snapshot,
+        fetch_fundamental_snapshot,
+        fetch_options_snapshot,
+        build_fund_registry,
+        fetch_fund_nav_with_previous,
+        fetch_fund_nav,
+        fetch_news_for_ticker,
+        _fetch_master_trends_cached,
+        _fetch_latest_close_prices,
+    ]:
+        try:
+            cached_fn.clear()
+        except Exception:
+            pass
+    st.sidebar.success("Market data refreshed")
+    st.rerun()
 
