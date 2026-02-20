@@ -1,9 +1,24 @@
 .streamlit/secrets.toml
+.streamlit/secrets*.toml
 .streamlit/transactions.json
 .streamlit/portfolio_lots.db
 .streamlit/alert_state.json
 .streamlit/analytics_snapshots.json
 .streamlit/scenario_library.json
+
+# Secret material / key artifacts
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+.env.*
+!.env.example
+
+# Research notes
+*_RESEARCH.md
+RESEARCH_*.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
