@@ -95,32 +95,32 @@ st.markdown("""
     }
     .dataframe { font-size: 0.95em; }
     .sidebar-label-muted {
-        color: #9aa4b2;
-        font-size: 0.72rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        margin: 0.08rem 0 0.24rem 0;
+        color: #9B9A97;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        margin: 0.5rem 0 0.2rem 0.5rem;
     }
     .sidebar-nav-section {
-        color: #9aa4b2;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        margin: 0.42rem 0 0.12rem 0;
+        color: #9B9A97;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        margin: 1rem 0 0.2rem 0.5rem;
     }
     .sidebar-nav-active {
-        background: rgba(63, 185, 80, 0.18);
-        color: #d7f7de;
-        border-left: 2px solid #3fb950;
-        border-radius: 7px;
-        padding: 0.18rem 0.35rem;
-        margin: 0.02rem 0;
-        font-weight: 550;
-        font-size: 0.82rem;
-        line-height: 1.15;
-        min-height: 1.55rem;
+        background: rgba(255, 255, 255, 0.055);
+        color: #FFFFFF;
+        border-radius: 6px;
+        padding: 0.25rem 0.5rem;
+        margin: 0.1rem 0;
+        font-weight: 500;
+        font-size: 0.875rem;
+        line-height: 1.2;
+        min-height: 1.75rem;
         display: flex;
         align-items: center;
+        cursor: default;
     }
     /* --- ALL sidebar buttons: borderless, compact, uniform height --- */
     div[data-testid="stSidebar"] [data-testid="stButton"] {
@@ -130,15 +130,18 @@ st.markdown("""
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
-        border-radius: 7px !important;
-        padding: 0.18rem 0.35rem !important;
-        min-height: 1.55rem !important;
+        border-radius: 6px !important;
+        padding: 0.25rem 0.5rem !important;
+        min-height: 1.75rem !important;
         justify-content: flex-start !important;
         outline: none !important;
-        margin: 0.02rem 0 !important;
+        margin: 0.1rem 0 !important;
+        color: #9B9A97 !important;
+        transition: background 20ms ease-in 0s !important;
     }
     div[data-testid="stSidebar"] [data-testid="stButton"] > button:hover {
-        background: rgba(88, 166, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.055) !important;
+        color: #FFFFFF !important;
     }
     div[data-testid="stSidebar"] [data-testid="stButton"] > button:focus,
     div[data-testid="stSidebar"] [data-testid="stButton"] > button:focus-visible,
@@ -146,20 +149,23 @@ st.markdown("""
         border: none !important;
         box-shadow: none !important;
         outline: none !important;
+        background: rgba(255, 255, 255, 0.055) !important;
+        color: #FFFFFF !important;
     }
     div[data-testid="stSidebar"] [data-testid="stButton"] > button p {
-        font-size: 0.82rem !important;
-        line-height: 1.15 !important;
-        font-weight: 550 !important;
+        font-size: 0.875rem !important;
+        line-height: 1.2 !important;
+        font-weight: 500 !important;
         margin: 0 !important;
+        color: inherit !important;
     }
     .sidebar-status-row {
         display: flex;
         align-items: center;
         gap: 0.42rem;
-        padding: 0.22rem 0.15rem;
+        padding: 0.25rem 0.5rem;
         font-size: 0.8rem;
-        color: #c8d1dc;
+        color: #9B9A97;
     }
     .sidebar-status-dot {
         width: 0.45rem;
@@ -174,10 +180,10 @@ st.markdown("""
         background: #f85149;
     }
     .sidebar-status-ok {
-        color: #d7f7de;
+        color: #9B9A97;
     }
     .sidebar-status-missing {
-        color: #f2b6b6;
+        color: #f85149;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -2880,8 +2886,12 @@ view_to_main_menu = {
     for view_name in view_names
 }
 
-st.sidebar.header("🧭 Navigation")
-st.sidebar.markdown('<div class="sidebar-label-muted">Template includes</div>', unsafe_allow_html=True)
+st.sidebar.markdown("""
+<div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; margin-bottom: 0.5rem;">
+    <div style="background: #3fb950; color: white; width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">S</div>
+    <div style="font-weight: 600; font-size: 0.9rem; color: #EAEAEA;">Sniper OS</div>
+</div>
+""", unsafe_allow_html=True)
 
 view_icons = {
     "Overview": "📊",
@@ -2914,7 +2924,7 @@ for main_name, view_names in menu_structure.items():
     for view_name in view_names:
         is_active = st.session_state.nav_sub_menu == view_name
         icon = view_icons.get(view_name, "•")
-        display_label = f"{icon}  {view_name.upper()}"
+        display_label = f"{icon}  {view_name}"
         if is_active:
             st.sidebar.markdown(f'<div class="sidebar-nav-active">{display_label}</div>', unsafe_allow_html=True)
             continue
@@ -5234,8 +5244,8 @@ if selected_view == "Trade Entry":
                     else:
                         st.error("❌ Enter valid amount/price values.")
 
-st.sidebar.markdown("---")
-st.sidebar.header("🔐 Config Status")
+st.sidebar.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="sidebar-nav-section">Config Status</div>', unsafe_allow_html=True)
 
 sec_ok = bool(get_sec_api_keys())
 news_ok = bool(get_newsapi_key())
@@ -5261,8 +5271,8 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
-st.sidebar.markdown("---")
-st.sidebar.header("⚡ Data")
+st.sidebar.markdown('<div style="margin-top: 1rem;"></div>', unsafe_allow_html=True)
+st.sidebar.markdown('<div class="sidebar-nav-section">Data</div>', unsafe_allow_html=True)
 if st.sidebar.button("🔄 Refresh market data", key="refresh_market_data", use_container_width=True):
     # Clear disk fund registry cache
     try:
