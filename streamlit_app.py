@@ -8,9 +8,10 @@ import json
 import sqlite3
 import uuid
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from statistics import NormalDist
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from ratelimit import limits, sleep_and_retry
 
 def get_app_version():
@@ -112,18 +113,20 @@ st.markdown("""
         color: #d7f7de;
         border-left: 2px solid #3fb950;
         border-radius: 7px;
-        padding: 0.24rem 0.4rem;
-        margin: 0.04rem 0;
+        padding: 0.18rem 0.35rem;
+        margin: 0.02rem 0;
         font-weight: 550;
         font-size: 0.82rem;
         line-height: 1.15;
+        min-height: 1.55rem;
+        display: flex;
+        align-items: center;
     }
-    /* --- Sidebar nav buttons: borderless, compact --- */
+    /* --- ALL sidebar buttons: borderless, compact, uniform height --- */
     div[data-testid="stSidebar"] [data-testid="stButton"] {
         margin: 0 !important;
     }
-    div[data-testid="stSidebar"] button[kind="secondary"],
-    div[data-testid="stSidebar"] button[kind="tertiary"] {
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button {
         border: none !important;
         box-shadow: none !important;
         background: transparent !important;
@@ -134,42 +137,21 @@ st.markdown("""
         outline: none !important;
         margin: 0.02rem 0 !important;
     }
-    div[data-testid="stSidebar"] button[kind="secondary"]:hover,
-    div[data-testid="stSidebar"] button[kind="tertiary"]:hover {
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:hover {
         background: rgba(88, 166, 255, 0.12) !important;
-        border-color: transparent !important;
     }
-    div[data-testid="stSidebar"] button[kind="secondary"]:focus,
-    div[data-testid="stSidebar"] button[kind="secondary"]:focus-visible,
-    div[data-testid="stSidebar"] button[kind="secondary"]:active,
-    div[data-testid="stSidebar"] button[kind="tertiary"]:focus,
-    div[data-testid="stSidebar"] button[kind="tertiary"]:focus-visible,
-    div[data-testid="stSidebar"] button[kind="tertiary"]:active {
-        border-color: transparent !important;
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:focus,
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:focus-visible,
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:active {
+        border: none !important;
         box-shadow: none !important;
         outline: none !important;
     }
-    div[data-testid="stSidebar"] button[kind="secondary"] p,
-    div[data-testid="stSidebar"] button[kind="tertiary"] p {
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button p {
         font-size: 0.82rem !important;
         line-height: 1.15 !important;
         font-weight: 550 !important;
         margin: 0 !important;
-    }
-    /* --- Sidebar action button (Refresh): accent style --- */
-    div[data-testid="stSidebar"] button[kind="primary"] {
-        background: rgba(88, 166, 255, 0.15) !important;
-        border: 1px solid rgba(88, 166, 255, 0.35) !important;
-        border-radius: 7px !important;
-        padding: 0.32rem 0.5rem !important;
-        min-height: 1.75rem !important;
-        justify-content: center !important;
-        font-size: 0.8rem !important;
-        margin: 0.25rem 0 !important;
-    }
-    div[data-testid="stSidebar"] button[kind="primary"]:hover {
-        background: rgba(88, 166, 255, 0.28) !important;
-        border-color: rgba(88, 166, 255, 0.55) !important;
     }
     .sidebar-status-row {
         display: flex;
@@ -1682,12 +1664,43 @@ def call_sec_api(url):
             pass
     return None
 
+_FUND_REGISTRY_CACHE_PATH = Path(".streamlit/fund_registry_cache.json")
+_FUND_REGISTRY_CACHE_MAX_AGE = 86400  # 24 hours
+
+def _load_disk_fund_registry():
+    """Load fund registry from disk cache if fresh enough."""
+    try:
+        if _FUND_REGISTRY_CACHE_PATH.exists():
+            data = json.loads(_FUND_REGISTRY_CACHE_PATH.read_text())
+            saved_ts = data.get("ts", 0)
+            if time.time() - saved_ts < _FUND_REGISTRY_CACHE_MAX_AGE:
+                registry = data.get("registry", {})
+                if registry:
+                    return registry
+    except Exception:
+        pass
+    return None
+
+def _save_disk_fund_registry(registry):
+    """Persist fund registry to disk for fast cold starts."""
+    try:
+        _FUND_REGISTRY_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _FUND_REGISTRY_CACHE_PATH.write_text(json.dumps({"ts": time.time(), "registry": registry}))
+    except Exception:
+        pass
+
 @st.cache_data(ttl=3600)
 def build_fund_registry():
     """
     Build complete fund registry by querying all AMCs.
+    Uses a 24-hour disk cache so cold starts are instant.
     Returns: {"SCBNDQ(E)": "M0000_2553", ...}
     """
+    # Fast path: disk cache
+    cached = _load_disk_fund_registry()
+    if cached:
+        return cached
+
     fund_registry = {}
     
     try:
@@ -1696,7 +1709,6 @@ def build_fund_registry():
         r_amc = call_sec_api(amc_url)
         
         if r_amc is None:
-            # st.warning("⚠️ SEC API authentication failed. Using cost basis for fund prices.")
             return fund_registry
         
         amc_list = json.loads(r_amc.content)
@@ -1713,37 +1725,30 @@ def build_fund_registry():
             if r_funds is not None:
                 try:
                     funds_list = json.loads(r_funds.content)
-                    # Create mapping: abbreviation -> proj_id
                     for fund in funds_list:
                         abbr = fund.get('proj_abbr_name')
                         proj_id = fund.get('proj_id')
                         if abbr and proj_id:
                             fund_registry[abbr] = proj_id
-                except:
+                except Exception:
                     pass
-    except Exception as e:
+    except Exception:
         pass
     
+    # Persist to disk for next cold start
+    if fund_registry:
+        _save_disk_fund_registry(fund_registry)
+
     return fund_registry
 
 @st.cache_data(ttl=3600)
 def fetch_fund_nav_with_previous(proj_id, fund_class=None):
     """
     Fetch latest NAV and previous day NAV for a fund by proj_id using FundDailyInfo endpoint.
-    Format: /FundDailyInfo/{proj_id}/dailynav/{nav_date}
+    Skips weekends to reduce unnecessary API calls.
     Returns tuple: (last_val, previous_val) for day gain calculation.
-    
-    Strategy:
-    1. Try to get previous_val from API response (if available)
-    2. If not available, fetch two consecutive trading days separately
-    
-    Args:
-        proj_id: Fund project ID (e.g., "M0311_2564")
-        fund_class: Optional fund class suffix (e.g., "(E)", "(SSF)", "(SSFE)")
     """
     try:
-        from datetime import datetime, timedelta
-        
         def extract_nav(nav_data, fund_class):
             """Helper to extract NAV from response data"""
             if isinstance(nav_data, list) and len(nav_data) > 0:
@@ -1757,20 +1762,25 @@ def fetch_fund_nav_with_previous(proj_id, fund_class=None):
                             if last_val:
                                 return (last_val, previous_val)
                 
-                # Fallback: get first record
                 latest = nav_data[0]
                 return (latest.get('last_val'), latest.get('previous_val'))
             elif isinstance(nav_data, dict):
                 return (nav_data.get('last_val'), nav_data.get('previous_val'))
             return (None, None)
         
-        # Try to find the most recent available trading day
-        current_nav = None
-        prev_nav = None
+        # Build list of candidate dates, skipping weekends (Sat=5, Sun=6)
+        candidate_dates = []
+        now = datetime.now()
+        days_back = 0
+        while len(candidate_dates) < 7 and days_back < 14:
+            d = now - timedelta(days=days_back)
+            if d.weekday() < 5:  # Mon-Fri only
+                candidate_dates.append(d.strftime("%Y-%m-%d"))
+            days_back += 1
+
         found_dates = []
         
-        for days_back in range(0, 15):
-            nav_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        for nav_date in candidate_dates:
             nav_url = f"https://api.sec.or.th/FundDailyInfo/{proj_id}/dailynav/{nav_date}"
             r = call_sec_api(nav_url)
             
@@ -1782,26 +1792,22 @@ def fetch_fund_nav_with_previous(proj_id, fund_class=None):
                     try:
                         last_price = float(last_val)
                         
-                        # Check if API provides previous_val
                         if previous_val and str(previous_val).strip() and previous_val not in ['0', 0, '0.0', 0.0, '']:
                             prev_price = float(previous_val)
                             return (last_price, prev_price)
                         
-                        # API doesn't provide previous_val, collect dates manually
                         found_dates.append((nav_date, last_price))
                         
-                        # If we have 2 trading days, calculate from them
                         if len(found_dates) >= 2:
                             return (found_dates[0][1], found_dates[1][1])
                         
-                    except Exception as e:
+                    except Exception:
                         pass
         
-        # If only found 1 day, return same value for both
         if len(found_dates) == 1:
             return (found_dates[0][1], 0.0)
             
-    except Exception as e:
+    except Exception:
         pass
     
     return (0.0, 0.0)
@@ -1944,47 +1950,61 @@ def get_fund_data(fund_list):
     data = []
     bar = st.progress(0, text="Building Fund Registry & Fetching NAVs...")
 
-    # Build registry once (cached)
+    # Build registry once (cached / disk-cached)
     registry = build_fund_registry()
 
-    # Fetch master ETF trends
+    # Fetch master ETF trends (batch yfinance call)
     master_trends = get_master_data(fund_list)
 
-    for i, fund in enumerate(fund_list):
-        # Resolve imported fund code variants into SEC proj_id/class
+    # Pre-resolve all proj_ids before parallel fetch
+    resolved = []
+    for fund in fund_list:
         proj_id, class_suffix = _resolve_fund_proj_id_and_class(fund.get('Code', ''), registry)
-        
-        # Use efficient single API call to get both last_val and previous_val
-        fund_day_gain = 0.0
-        nav = 0.0
-        prev_nav = 0.0
-        
+        resolved.append((fund, proj_id, class_suffix))
+
+    bar.progress(0.15, text="Fetching fund NAVs in parallel...")
+
+    # Parallel NAV fetch for all funds at once
+    nav_results = {}  # index -> (current_nav, prev_nav)
+
+    def _fetch_nav(idx, proj_id, class_suffix):
         if proj_id:
-            current_nav, previous_nav = fetch_fund_nav_with_previous(proj_id, class_suffix)
-            
-            nav = current_nav
-            prev_nav = previous_nav
-            
-            # Calculate Fund Day Gain % using last_val and previous_val
-            # If prev_nav is 0 or not available, try alternative approach or keep 0%
-            if current_nav > 0 and prev_nav > 0:
-                fund_day_gain = ((current_nav - prev_nav) / prev_nav) * 100
-        
+            return idx, fetch_fund_nav_with_previous(proj_id, class_suffix)
+        return idx, (0.0, 0.0)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(_fetch_nav, i, proj_id, class_suffix): i
+            for i, (fund, proj_id, class_suffix) in enumerate(resolved)
+        }
+        done_count = 0
+        total = len(futures)
+        for future in as_completed(futures):
+            idx, nav_pair = future.result()
+            nav_results[idx] = nav_pair
+            done_count += 1
+            bar.progress(0.15 + 0.75 * done_count / max(total, 1), text=f"Fetched NAV {done_count}/{total}")
+
+    # Assemble rows
+    for i, (fund, proj_id, class_suffix) in enumerate(resolved):
+        current_nav, prev_nav = nav_results.get(i, (0.0, 0.0))
+
+        fund_day_gain = 0.0
+        nav = current_nav
+        if current_nav > 0 and prev_nav > 0:
+            fund_day_gain = ((current_nav - prev_nav) / prev_nav) * 100
+
         # Fallback with class suffix variations if not found
         if nav == 0:
             nav = get_fund_nav_by_code(fund['Code'], registry)
-        
         if nav == 0:
-            nav = fund['Cost']  # Final fallback to cost basis
+            nav = fund['Cost']
 
         row = fund.copy()
         row['Last Price'] = nav
-        # Only show previous price if it's actually different from last price
-        # If prev_nav is 0 or not available, show None (will display as empty in table)
         row['Previous Price'] = prev_nav if (prev_nav > 0 and prev_nav != nav) else None
         row['Fund Day Gain %'] = fund_day_gain
 
-        # Attach master trend if available (rename to Master Day Gain %)
         master_ticker = fund.get('Master')
         if master_ticker and master_ticker != 'N/A':
             row['Master'] = master_ticker
@@ -1994,12 +2014,11 @@ def get_fund_data(fund_list):
             row['Master Day Gain %'] = 0.0
 
         data.append(row)
-        bar.progress((i + 1) / len(fund_list))
 
+    bar.progress(1.0)
     bar.empty()
     df = pd.DataFrame(data)
     
-    # Handle empty portfolio - return empty dataframe with correct columns
     if len(df) == 0:
         return pd.DataFrame(columns=['Code', 'Units', 'Cost', 'Last Price', 'Previous Price', 'Fund Day Gain %', 'Master', 'Master Day Gain %', 'Master vs Fund %', 'Cost Basis', 'Value', 'P/L', 'P/L %'])
     
@@ -2007,11 +2026,7 @@ def get_fund_data(fund_list):
     df['Cost Basis'] = df['Units'] * df['Cost']
     df['P/L'] = df['Value'] - df['Cost Basis']
     df['P/L %'] = (df['P/L'] / df['Cost Basis']) * 100
-    
-    # Calculate Master vs Fund correlation (difference between fund day performance and master day performance)
     df['Master vs Fund %'] = df['Fund Day Gain %'] - df['Master Day Gain %']
-    
-    # Reorder columns: Code, Units, Cost, Last Price, Previous Price, Fund Day Gain %, Master, Master Day Gain %, Master vs Fund %, Cost Basis, Value, P/L, P/L %
     df = df[['Code', 'Units', 'Cost', 'Last Price', 'Previous Price', 'Fund Day Gain %', 'Master', 'Master Day Gain %', 'Master vs Fund %', 'Cost Basis', 'Value', 'P/L', 'P/L %']]
     
     return df
@@ -5248,7 +5263,13 @@ st.sidebar.markdown(
 
 st.sidebar.markdown("---")
 st.sidebar.header("⚡ Data")
-if st.sidebar.button("🔄 Refresh market data", key="refresh_market_data", type="primary", use_container_width=True):
+if st.sidebar.button("🔄 Refresh market data", key="refresh_market_data", use_container_width=True):
+    # Clear disk fund registry cache
+    try:
+        if _FUND_REGISTRY_CACHE_PATH.exists():
+            _FUND_REGISTRY_CACHE_PATH.unlink()
+    except Exception:
+        pass
     for cached_fn in [
         fetch_quote_snapshot,
         fetch_fundamental_snapshot,

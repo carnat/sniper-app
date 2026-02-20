@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "pre-commit: python3 is required for secret scanning"
+  exit 1
+fi
+
+python3 scripts/secret_scan.py --staged
