@@ -1,5 +1,7 @@
 # 🎯 SNIPER OS
 
+[![CI](https://github.com/carnat/sniper-app/actions/workflows/ci.yml/badge.svg)](https://github.com/carnat/sniper-app/actions/workflows/ci.yml)
+
 Streamlit portfolio dashboard for US stocks, Thai equities, and Thai mutual funds.
 
 ## Quick Start
