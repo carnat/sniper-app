@@ -1,13 +1,15 @@
+# Streamlit secrets and local state (never track credentials)
 .streamlit/secrets.toml
 .streamlit/secrets*.toml
-.streamlit/transactions.json
-.streamlit/portfolio_lots.db
-.streamlit/alert_state.json
-.streamlit/analytics_snapshots.json
-.streamlit/scenario_library.json
-.streamlit/fund_registry_cache.json
-.streamlit/options_iv_history.json
+.streamlit/*.json
+.streamlit/*.db
+.streamlit/.gitkeep
+
+# Local test/temp files
 test_button.py
+*_test.py
+.tmp/
+tmp/
 
 # Secret material / key artifacts
 *.key
@@ -19,9 +21,25 @@ test_button.py
 .env.*
 !.env.example
 
-# Research notes
+# Research notes and examples
 *_RESEARCH.md
 RESEARCH_*.md
+*_example.py
+*_example.*.py
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor artifacts (vim, nano, etc)
+*.swp
+*.swo
+*~
+.*.swp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
