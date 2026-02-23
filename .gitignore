@@ -5,6 +5,9 @@
 .streamlit/alert_state.json
 .streamlit/analytics_snapshots.json
 .streamlit/scenario_library.json
+.streamlit/fund_registry_cache.json
+.streamlit/options_iv_history.json
+test_button.py
 
 # Secret material / key artifacts
 *.key

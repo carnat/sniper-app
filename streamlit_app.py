@@ -109,9 +109,10 @@ st.markdown("""
         margin: 1rem 0 0.2rem 0.5rem;
     }
     .sidebar-nav-active {
-        background: rgba(255, 255, 255, 0.055);
+        background: rgba(63, 185, 80, 0.2);
         color: #FFFFFF;
         border-radius: 6px;
+        border: 1px solid rgba(63, 185, 80, 0.48);
         padding: 0.25rem 0.5rem;
         margin: 0.1rem 0;
         font-weight: 500;
@@ -120,14 +121,27 @@ st.markdown("""
         min-height: 1.75rem;
         display: flex;
         align-items: center;
+        box-sizing: border-box;
+        width: 100%;
         cursor: default;
+        opacity: 1 !important;
+        filter: none !important;
+        -webkit-text-fill-color: #FFFFFF !important;
     }
-    /* --- ALL sidebar buttons: borderless, compact, uniform height --- */
-    div[data-testid="stSidebar"] [data-testid="stButton"] {
+    /* --- ALL sidebar buttons: compact, uniform height --- */
+    div[data-testid="stSidebar"] [data-testid="stButton"],
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"],
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] {
         margin: 0 !important;
     }
-    div[data-testid="stSidebar"] [data-testid="stButton"] > button {
-        border: none !important;
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] > button,
+    div[data-testid="stSidebar"] button[kind="primary"],
+    div[data-testid="stSidebar"] button[kind="secondary"],
+    div[data-testid="stSidebar"] button[kind="tertiary"] {
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
         box-shadow: none !important;
         background: transparent !important;
         border-radius: 6px !important;
@@ -139,14 +153,39 @@ st.markdown("""
         color: #9B9A97 !important;
         transition: background 20ms ease-in 0s !important;
     }
-    div[data-testid="stSidebar"] [data-testid="stButton"] > button:hover {
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:hover,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:hover,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button:hover,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] > button:hover,
+    div[data-testid="stSidebar"] button[kind="primary"]:hover,
+    div[data-testid="stSidebar"] button[kind="secondary"]:hover,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:hover {
         background: rgba(255, 255, 255, 0.055) !important;
+        border-color: rgba(255, 255, 255, 0.16) !important;
         color: #FFFFFF !important;
     }
     div[data-testid="stSidebar"] [data-testid="stButton"] > button:focus,
     div[data-testid="stSidebar"] [data-testid="stButton"] > button:focus-visible,
-    div[data-testid="stSidebar"] [data-testid="stButton"] > button:active {
-        border: none !important;
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:active,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:focus,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:focus-visible,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:active,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button:focus,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button:focus-visible,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button:active,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] > button:focus,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] > button:focus-visible,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] > button:active,
+    div[data-testid="stSidebar"] button[kind="primary"]:focus,
+    div[data-testid="stSidebar"] button[kind="primary"]:focus-visible,
+    div[data-testid="stSidebar"] button[kind="primary"]:active,
+    div[data-testid="stSidebar"] button[kind="secondary"]:focus,
+    div[data-testid="stSidebar"] button[kind="secondary"]:focus-visible,
+    div[data-testid="stSidebar"] button[kind="secondary"]:active,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:focus,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:focus-visible,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:active {
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
         box-shadow: none !important;
         outline: none !important;
         background: rgba(255, 255, 255, 0.055) !important;
@@ -158,6 +197,87 @@ st.markdown("""
         font-weight: 500 !important;
         margin: 0 !important;
         color: inherit !important;
+    }
+    /* Active nav row uses primary button kind for identical sizing with green highlight */
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button,
+    div[data-testid="stSidebar"] button[kind="primary"] {
+        opacity: 1 !important;
+        background: rgba(63, 185, 80, 0.2) !important;
+        background-color: rgba(63, 185, 80, 0.2) !important;
+        border: 1px solid rgba(63, 185, 80, 0.48) !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:hover,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:focus,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:focus-visible,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button:active,
+    div[data-testid="stSidebar"] button[kind="primary"]:hover,
+    div[data-testid="stSidebar"] button[kind="primary"]:focus,
+    div[data-testid="stSidebar"] button[kind="primary"]:focus-visible,
+    div[data-testid="stSidebar"] button[kind="primary"]:active {
+        opacity: 1 !important;
+        background: rgba(63, 185, 80, 0.2) !important;
+        background-color: rgba(63, 185, 80, 0.2) !important;
+        border: 1px solid rgba(63, 185, 80, 0.48) !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] > button *,
+    div[data-testid="stSidebar"] button[kind="primary"] * {
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+        fill: currentColor !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        filter: none !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:disabled,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button:disabled,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] > button:disabled,
+    div[data-testid="stSidebar"] button[kind="secondary"]:disabled,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:disabled {
+        opacity: 1 !important;
+        background: rgba(63, 185, 80, 0.2) !important;
+        background-color: rgba(63, 185, 80, 0.2) !important;
+        border: 1px solid rgba(63, 185, 80, 0.48) !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        cursor: default !important;
+    }
+    div[data-testid="stSidebar"] button[disabled],
+    div[data-testid="stSidebar"] button[aria-disabled="true"] {
+        opacity: 1 !important;
+        background: rgba(63, 185, 80, 0.2) !important;
+        background-color: rgba(63, 185, 80, 0.2) !important;
+        border: 1px solid rgba(63, 185, 80, 0.48) !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        filter: none !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stButton"]:has(button[disabled]),
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:has(button[disabled]),
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"]:has(button[disabled]) {
+        opacity: 1 !important;
+        filter: none !important;
+    }
+    div[data-testid="stSidebar"] [data-testid="stButton"] > button:disabled *,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > button:disabled *,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-tertiary"] > button:disabled *,
+    div[data-testid="stSidebar"] button[kind="secondary"]:disabled *,
+    div[data-testid="stSidebar"] button[kind="tertiary"]:disabled * {
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+        fill: currentColor !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        filter: none !important;
+    }
+    div[data-testid="stSidebar"] button[disabled] *,
+    div[data-testid="stSidebar"] button[aria-disabled="true"] * {
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+        fill: currentColor !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        filter: none !important;
     }
     .sidebar-status-row {
         display: flex;
@@ -2039,55 +2159,284 @@ def get_fund_data(fund_list):
 
 # --- NEWS & ALERTS ENGINE ---
 
-def get_newsapi_key():
-    """Resolve NewsAPI key from secrets or environment with placeholder filtering."""
+
+
+def get_finnhub_api_key():
+    """Resolve Finnhub API key from secrets or environment with placeholder filtering."""
     candidates = []
     try:
-        candidates.append(str(st.secrets.get("news_alerts", {}).get("newsapi_key", "")).strip())
+        candidates.append(str(st.secrets.get("news_alerts", {}).get("finnhub_api_key", "")).strip())
     except Exception:
         pass
-    candidates.append(str(os.getenv("NEWSAPI_KEY", "")).strip())
+    candidates.append(str(os.getenv("FINNHUB_API_KEY", "")).strip())
 
     for candidate in candidates:
         if not candidate:
             continue
         low = candidate.lower()
-        if "your_" in low or "placeholder" in low or "newsapi_key_here" in low:
+        if "your_" in low or "placeholder" in low or "finnhub_api_key_here" in low:
             continue
         return candidate
     return ""
 
+@st.cache_data(ttl=86400)
+def resolve_symbol_with_search(ticker):
+    """Resolve ticker to a best-match Yahoo symbol + names using yfinance Search."""
+    raw = str(ticker or "").strip().upper()
+    if not raw:
+        return {"input": "", "symbol": "", "shortname": "", "longname": "", "exchange": ""}
+
+    stripped = raw.replace(".BK", "")
+    fallback = {
+        "input": raw,
+        "symbol": raw,
+        "shortname": "",
+        "longname": "",
+        "exchange": "",
+    }
+
+    try:
+        search = yf.Search(raw, max_results=10, news_count=0)
+        quotes = getattr(search, "quotes", []) or []
+        if not quotes:
+            if raw.endswith(".BK"):
+                return {**fallback, "symbol": raw}
+            return fallback
+
+        def score_quote(q):
+            symbol = str(q.get("symbol", "") or "").upper()
+            exch = str(q.get("exchange", "") or q.get("exchDisp", "") or "").upper()
+            score = 0
+            if symbol == raw:
+                score += 100
+            if symbol == stripped:
+                score += 90
+            if symbol.replace(".BK", "") == stripped:
+                score += 80
+            if raw.endswith(".BK") and symbol.endswith(".BK"):
+                score += 60
+            if raw.endswith(".BK") and ("BKK" in exch or "TH" in exch or "SET" in exch):
+                score += 40
+            return score
+
+        best = max(quotes, key=score_quote)
+        best_symbol = str(best.get("symbol", "") or "").strip().upper() or raw
+        return {
+            "input": raw,
+            "symbol": best_symbol,
+            "shortname": str(best.get("shortname", "") or "").strip(),
+            "longname": str(best.get("longname", "") or "").strip(),
+            "exchange": str(best.get("exchange", "") or best.get("exchDisp", "") or "").strip(),
+        }
+    except Exception:
+        return fallback
+
+@st.cache_data(ttl=300)
+def get_watchtower_market_snapshot():
+    """Get compact market context strip for Watchtower."""
+    snapshot = {
+        "us_status": "Unknown",
+        "us_message": "",
+        "indices": {},
+    }
+
+    try:
+        market_us = yf.Market("US")
+        status = market_us.status if isinstance(market_us.status, dict) else {}
+        snapshot["us_status"] = str(status.get("status", "Unknown") or "Unknown")
+        snapshot["us_message"] = str(status.get("message", "") or "")
+    except Exception:
+        pass
+
+    try:
+        index_symbols = ["^GSPC", "^IXIC", "^DJI", "^SET.BK"]
+        hist = yf.download(index_symbols, period="2d", progress=False)
+        close_frame = hist.get("Close") if isinstance(hist, pd.DataFrame) else None
+        if isinstance(close_frame, pd.DataFrame):
+            for sym in index_symbols:
+                series = close_frame.get(sym)
+                if series is None:
+                    continue
+                vals = pd.Series(series).dropna()
+                if len(vals) >= 2:
+                    prev_val = float(vals.iloc[-2])
+                    last_val = float(vals.iloc[-1])
+                    pct = ((last_val - prev_val) / prev_val * 100.0) if prev_val != 0 else 0.0
+                    snapshot["indices"][sym] = {"last": last_val, "pct": pct}
+        elif isinstance(close_frame, pd.Series):
+            vals = close_frame.dropna()
+            if len(vals) >= 2:
+                prev_val = float(vals.iloc[-2])
+                last_val = float(vals.iloc[-1])
+                pct = ((last_val - prev_val) / prev_val * 100.0) if prev_val != 0 else 0.0
+                snapshot["indices"]["^GSPC"] = {"last": last_val, "pct": pct}
+    except Exception:
+        pass
+
+    return snapshot
+
 @st.cache_data(ttl=3600)
 def fetch_news_for_ticker(ticker):
-    """Fetch latest news for a ticker using NewsAPI (free tier)"""
+    """Fetch latest news for a ticker using Finnhub company-news with relevance filtering."""
     try:
-        newsapi_key = get_newsapi_key()
-        if not newsapi_key:
-            return []
-        
-        # Remove .BK extension for Thai stocks
-        search_ticker = str(ticker or "").replace(".BK", "").strip().upper()
+        raw_ticker = str(ticker or "").strip().upper()
+        resolved_meta = resolve_symbol_with_search(raw_ticker)
+        raw_ticker = str(resolved_meta.get("symbol", raw_ticker) or raw_ticker).strip().upper()
+        # Remove .BK extension for ticker-token matching
+        search_ticker = raw_ticker.replace(".BK", "")
         if not search_ticker:
             return []
 
-        headers = {"X-Api-Key": newsapi_key}
-        query_candidates = [
-            search_ticker,
-            f"{search_ticker} stock",
-        ]
+        def _extract_domain(url):
+            try:
+                if not url:
+                    return ""
+                domain = str(url).split("//", 1)[-1].split("/", 1)[0].lower().strip()
+                if domain.startswith("www."):
+                    domain = domain[4:]
+                return domain
+            except Exception:
+                return ""
 
-        for query_text in query_candidates:
-            url = (
-                "https://newsapi.org/v2/everything"
-                f"?q={query_text}&sortBy=publishedAt&language=en&pageSize=8"
-            )
-            response = requests.get(url, headers=headers, timeout=8)
-            if response.status_code != 200:
-                continue
-            payload = response.json() if response.content else {}
-            articles = payload.get("articles", []) if isinstance(payload, dict) else []
-            if articles:
-                return articles
+        company_name = str(resolved_meta.get("longname", "") or "").strip()
+        company_alias = str(resolved_meta.get("shortname", "") or "").strip()
+        try:
+            yf_symbol = raw_ticker if raw_ticker else search_ticker
+            yf_obj = yf.Ticker(yf_symbol)
+            info = yf_obj.info
+            if isinstance(info, dict):
+                if not company_name:
+                    company_name = str(info.get("longName", "") or "").strip()
+                if not company_alias:
+                    company_alias = str(info.get("shortName", "") or "").strip()
+        except Exception:
+            pass
+
+        allowed_sources = set()
+        allowed_domains = set()
+        try:
+            allow_cfg = st.secrets.get("news_alerts", {}).get("allowed_news_sources", [])
+            if isinstance(allow_cfg, list) and allow_cfg:
+                allowed_sources = set()
+                allowed_domains = set()
+                for item in allow_cfg:
+                    token = str(item or "").strip().lower()
+                    if not token:
+                        continue
+                    if "." in token:
+                        allowed_domains.add(token)
+                    else:
+                        allowed_sources.add(token)
+        except Exception:
+            pass
+
+        def is_relevant_article(article):
+            title = str(article.get("title", "") or "")
+            description = str(article.get("description", "") or "")
+            content = str(article.get("content", "") or "")
+            source = str((article.get("source") or {}).get("name", "") or "")
+            combined = f"{title} {description} {content} {source}".upper()
+
+            source_name_lc = source.strip().lower()
+            article_url = str(article.get("url", "") or "").lower()
+            article_domain = _extract_domain(article_url)
+            is_allowed_source = bool(source_name_lc and source_name_lc in allowed_sources)
+            is_allowed_domain = bool(article_domain and (article_domain in allowed_domains or any(article_domain.endswith(f".{domain}") for domain in allowed_domains)))
+            if (allowed_sources or allowed_domains) and not (is_allowed_source or is_allowed_domain):
+                return False
+
+            ticker_upper = search_ticker.upper()
+            ticker_variants = [
+                ticker_upper,
+                f"${ticker_upper}",
+                f"{ticker_upper}.BK",
+                f"({ticker_upper})",
+            ]
+
+            has_ticker = False
+            for token in ticker_variants:
+                if token and token in combined:
+                    has_ticker = True
+                    break
+
+            company_variants = []
+            if company_name:
+                company_variants.append(company_name.upper())
+            if company_alias:
+                company_variants.append(company_alias.upper())
+            has_company = any(token and token in combined for token in company_variants)
+
+            if not (has_ticker or has_company):
+                return False
+
+            finance_keywords = [
+                "STOCK", "SHARE", "EARNINGS", "REVENUE", "PROFIT", "LOSS", "GUIDANCE",
+                "MARKET", "INVESTOR", "TRADING", "DIVIDEND", "ANALYST", "QUARTER", "FINANC"
+            ]
+            has_finance_context = any(keyword in combined for keyword in finance_keywords)
+            return has_finance_context
+
+        # Finnhub company-news
+        finnhub_api_key = get_finnhub_api_key()
+        if finnhub_api_key:
+            from_date = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+            to_date = datetime.utcnow().strftime("%Y-%m-%d")
+
+            symbol_candidates = []
+            for candidate in [raw_ticker, search_ticker, str(resolved_meta.get("input", "") or "").strip().upper()]:
+                clean = str(candidate or "").strip().upper()
+                if clean and clean not in symbol_candidates:
+                    symbol_candidates.append(clean)
+
+            for candidate_symbol in symbol_candidates:
+                try:
+                    response = requests.get(
+                        "https://finnhub.io/api/v1/company-news",
+                        params={
+                            "symbol": candidate_symbol,
+                            "from": from_date,
+                            "to": to_date,
+                            "token": finnhub_api_key,
+                        },
+                        timeout=8,
+                    )
+                    if response.status_code != 200:
+                        continue
+                    payload = response.json() if response.content else []
+                    if not isinstance(payload, list) or not payload:
+                        continue
+
+                    normalized_finnhub = []
+                    for item in payload:
+                        if not isinstance(item, dict):
+                            continue
+                        url = str(item.get("url", "") or "").strip()
+                        headline = str(item.get("headline", "") or "").strip()
+                        summary = str(item.get("summary", "") or "").strip()
+                        source_name = str(item.get("source", "Finnhub") or "Finnhub").strip()
+                        published_at = None
+                        try:
+                            ts = item.get("datetime")
+                            if ts:
+                                published_at = datetime.utcfromtimestamp(int(ts)).isoformat() + "Z"
+                        except Exception:
+                            published_at = None
+
+                        article = {
+                            "title": headline,
+                            "description": summary,
+                            "content": summary,
+                            "url": url,
+                            "publishedAt": published_at,
+                            "source": {"name": source_name},
+                        }
+                        if article["title"] and article["url"] and is_relevant_article(article):
+                            normalized_finnhub.append(article)
+
+                    if normalized_finnhub:
+                        return normalized_finnhub[:8]
+                except Exception:
+                    continue
     except Exception:
         pass
     
@@ -2767,112 +3116,6 @@ def reverse_transaction_by_index(txn_index, reason="Manual correction"):
     save_transaction_history()
     return True, "ok"
 
-# --- EXECUTION ---
-df_us = get_stock_data(us_portfolio)
-df_thai = get_stock_data(thai_stocks)
-df_vault = get_fund_data(vault_portfolio)
-
-# Precompute alerts once per render (for Today Brief and News tab)
-us_prices = df_us['Live Price'].tolist() if len(df_us) > 0 else []
-thai_prices = df_thai['Live Price'].tolist() if len(df_thai) > 0 else []
-us_alerts = check_price_alerts(us_portfolio, us_prices, "US Stock") if us_prices else []
-thai_alerts = check_price_alerts(thai_stocks, thai_prices, "Thai Stock") if thai_prices else []
-all_alerts = us_alerts + thai_alerts
-new_alert_count = sum(1 for alert in all_alerts if alert.get("is_new"))
-
-# Totals
-usd_thb_rate = 34.0
-grand_total = (df_us['Value'].sum() * usd_thb_rate) + df_thai['Value'].sum() + df_vault['Value'].sum()
-grand_cost = (df_us['Cost Basis'].sum() * usd_thb_rate) + df_thai['Cost Basis'].sum() + df_vault['Cost Basis'].sum()
-grand_pl = grand_total - grand_cost
-grand_pct = (grand_pl / grand_cost) * 100 if grand_cost != 0 else 0
-
-# Today brief helpers
-biggest_mover_label = "N/A"
-biggest_mover_pct = 0.0
-try:
-    mover_candidates = []
-    if len(df_us) > 0:
-        for _, row in df_us.iterrows():
-            mover_candidates.append((row['Ticker'], float(row['P/L %'])))
-    if len(df_thai) > 0:
-        for _, row in df_thai.iterrows():
-            mover_candidates.append((row['Ticker'], float(row['P/L %'])))
-    if not mover_candidates and len(df_vault) > 0:
-        for _, row in df_vault.iterrows():
-            mover_candidates.append((row['Code'], float(row['Fund Day Gain %'])))
-    if mover_candidates:
-        biggest_mover_label, biggest_mover_pct = max(mover_candidates, key=lambda item: abs(item[1]))
-except Exception:
-    pass
-
-next_event_text = "No upcoming earnings"
-try:
-    earnings_map = get_earnings_dates(df_us['Ticker'].tolist() if len(df_us) > 0 else [])
-    upcoming = []
-    for ticker, event_value in earnings_map.items():
-        candidate = event_value[0] if isinstance(event_value, list) and len(event_value) > 0 else event_value
-        parsed_event = pd.to_datetime(candidate, errors='coerce')
-        if not pd.isna(parsed_event):
-            upcoming.append((parsed_event, ticker))
-    if upcoming:
-        upcoming.sort(key=lambda item: item[0])
-        event_date, event_ticker = upcoming[0]
-        next_event_text = f"{event_ticker} · {event_date.strftime('%b %d')}"
-except Exception:
-    pass
-
-# --- DASHBOARD ---
-st.subheader("🧭 TODAY BRIEF")
-brief1, brief2, brief3, brief4 = st.columns(4, gap="small")
-
-with brief1:
-    st.metric("Portfolio Move", f"{grand_pct:+.2f}%")
-
-with brief2:
-    st.metric("Biggest Mover", f"{biggest_mover_label}", delta=f"{biggest_mover_pct:+.2f}%")
-
-with brief3:
-    st.metric("Next Event", next_event_text)
-
-with brief4:
-    st.metric("New Alerts", new_alert_count, delta=f"{len(all_alerts)} active")
-
-st.markdown("---")
-st.subheader("📊 PORTFOLIO OVERVIEW")
-col1, col2, col3 = st.columns(3, gap="medium")
-
-us_pl_usd = df_us['P/L'].sum()
-vault_pl = df_vault['P/L'].sum()
-
-with col1:
-    st.metric(
-        "🛡️ NET WORTH (THB)",
-        f"฿{grand_total:,.0f}",
-        delta=f"{grand_pct:+.2f}% (฿{grand_pl:,.0f})",
-        delta_color="normal" if grand_pct > 0 else "inverse"
-    )
-
-with col2:
-    us_pct_mean = df_us['P/L %'].mean() if len(df_us) > 0 else 0.0
-    st.metric(
-        "🦅 US ATTACK",
-        f"${df_us['Value'].sum():,.0f}",
-        delta=f"{us_pct_mean:+.2f}% Avg (${us_pl_usd:,.0f})",
-        delta_color="normal" if us_pct_mean > 0 else "inverse"
-    )
-
-with col3:
-    vault_pct_mean = df_vault['P/L %'].mean() if len(df_vault) > 0 else 0.0
-    st.metric(
-        "🏦 THAI VAULT",
-        f"฿{df_vault['Value'].sum():,.0f}",
-        delta=f"{vault_pct_mean:+.2f}% Avg (฿{vault_pl:,.0f})",
-        delta_color="normal" if vault_pct_mean > 0 else "inverse"
-    )
-
-st.markdown("---")
-
 menu_structure = {
     "Dashboard": ["Overview"],
     "Portfolio": ["US Equities", "Thai Portfolio", "Analytics"],
@@ -2885,13 +3128,6 @@ view_to_main_menu = {
     for main_name, view_names in menu_structure.items()
     for view_name in view_names
 }
-
-st.sidebar.markdown("""
-<div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; margin-bottom: 0.5rem;">
-    <div style="background: #3fb950; color: white; width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">S</div>
-    <div style="font-weight: 600; font-size: 0.9rem; color: #EAEAEA;">Sniper OS</div>
-</div>
-""", unsafe_allow_html=True)
 
 view_icons = {
     "Overview": "📊",
@@ -2919,21 +3155,147 @@ if "nav_sub_menu" not in st.session_state or st.session_state.nav_sub_menu not i
 if query_view != st.session_state.nav_sub_menu:
     st.query_params["view"] = st.session_state.nav_sub_menu
 
+selected_view = st.session_state.nav_sub_menu
+
+# --- EXECUTION ---
+us_required_views = {"Overview", "US Equities", "Analytics", "News Watchtower", "Market Tools", "Calendar"}
+thai_required_views = {"Overview", "Analytics", "News Watchtower", "Market Tools"}
+vault_required_views = {"Overview", "Thai Portfolio", "Analytics", "Market Tools"}
+
+df_us = get_stock_data(us_portfolio) if selected_view in us_required_views else pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
+df_thai = get_stock_data(thai_stocks) if selected_view in thai_required_views else pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
+df_vault = get_fund_data(vault_portfolio) if selected_view in vault_required_views else pd.DataFrame()
+
+# Precompute alerts once per render (for Today Brief and News tab)
+all_alerts = []
+new_alert_count = 0
+if selected_view in {"Overview", "News Watchtower"}:
+    us_prices = df_us['Live Price'].tolist() if len(df_us) > 0 else []
+    thai_prices = df_thai['Live Price'].tolist() if len(df_thai) > 0 else []
+    us_alerts = check_price_alerts(us_portfolio, us_prices, "US Stock") if us_prices else []
+    thai_alerts = check_price_alerts(thai_stocks, thai_prices, "Thai Stock") if thai_prices else []
+    all_alerts = us_alerts + thai_alerts
+    new_alert_count = sum(1 for alert in all_alerts if alert.get("is_new"))
+
+# Totals
+usd_thb_rate = 34.0
+vault_value_sum = float(df_vault['Value'].sum()) if 'Value' in df_vault.columns else 0.0
+vault_cost_sum = float(df_vault['Cost Basis'].sum()) if 'Cost Basis' in df_vault.columns else 0.0
+grand_total = (df_us['Value'].sum() * usd_thb_rate) + df_thai['Value'].sum() + vault_value_sum
+grand_cost = (df_us['Cost Basis'].sum() * usd_thb_rate) + df_thai['Cost Basis'].sum() + vault_cost_sum
+grand_pl = grand_total - grand_cost
+grand_pct = (grand_pl / grand_cost) * 100 if grand_cost != 0 else 0
+
+if selected_view == "Overview":
+    biggest_mover_label = "N/A"
+    biggest_mover_pct = 0.0
+    try:
+        mover_candidates = []
+        if len(df_us) > 0:
+            for _, row in df_us.iterrows():
+                mover_candidates.append((row['Ticker'], float(row['P/L %'])))
+        if len(df_thai) > 0:
+            for _, row in df_thai.iterrows():
+                mover_candidates.append((row['Ticker'], float(row['P/L %'])))
+        if not mover_candidates and len(df_vault) > 0:
+            for _, row in df_vault.iterrows():
+                mover_candidates.append((row['Code'], float(row['Fund Day Gain %'])))
+        if mover_candidates:
+            biggest_mover_label, biggest_mover_pct = max(mover_candidates, key=lambda item: abs(item[1]))
+    except Exception:
+        pass
+
+    next_event_text = "No upcoming earnings"
+    try:
+        earnings_map = get_earnings_dates(df_us['Ticker'].tolist() if len(df_us) > 0 else [])
+        upcoming = []
+        for ticker, event_value in earnings_map.items():
+            candidate = event_value[0] if isinstance(event_value, list) and len(event_value) > 0 else event_value
+            parsed_event = pd.to_datetime(candidate, errors='coerce')
+            if not pd.isna(parsed_event):
+                upcoming.append((parsed_event, ticker))
+        if upcoming:
+            upcoming.sort(key=lambda item: item[0])
+            event_date, event_ticker = upcoming[0]
+            next_event_text = f"{event_ticker} · {event_date.strftime('%b %d')}"
+    except Exception:
+        pass
+
+    st.subheader("🧭 TODAY BRIEF")
+    brief1, brief2, brief3, brief4 = st.columns(4, gap="small")
+
+    with brief1:
+        st.metric("Portfolio Move", f"{grand_pct:+.2f}%")
+
+    with brief2:
+        st.metric("Biggest Mover", f"{biggest_mover_label}", delta=f"{biggest_mover_pct:+.2f}%")
+
+    with brief3:
+        st.metric("Next Event", next_event_text)
+
+    with brief4:
+        st.metric("New Alerts", new_alert_count, delta=f"{len(all_alerts)} active")
+
+    st.markdown("---")
+    st.subheader("📊 PORTFOLIO OVERVIEW")
+    col1, col2, col3 = st.columns(3, gap="medium")
+
+    us_pl_usd = df_us['P/L'].sum()
+    vault_pl = df_vault['P/L'].sum() if 'P/L' in df_vault.columns else 0.0
+
+    with col1:
+        st.metric(
+            "🛡️ NET WORTH (THB)",
+            f"฿{grand_total:,.0f}",
+            delta=f"{grand_pct:+.2f}% (฿{grand_pl:,.0f})",
+            delta_color="normal" if grand_pct > 0 else "inverse"
+        )
+
+    with col2:
+        us_pct_mean = df_us['P/L %'].mean() if len(df_us) > 0 else 0.0
+        st.metric(
+            "🦅 US ATTACK",
+            f"${df_us['Value'].sum():,.0f}",
+            delta=f"{us_pct_mean:+.2f}% Avg (${us_pl_usd:,.0f})",
+            delta_color="normal" if us_pct_mean > 0 else "inverse"
+        )
+
+    with col3:
+        vault_pct_mean = df_vault['P/L %'].mean() if 'P/L %' in df_vault.columns and len(df_vault) > 0 else 0.0
+        st.metric(
+            "🏦 THAI VAULT",
+            f"฿{vault_value_sum:,.0f}",
+            delta=f"{vault_pct_mean:+.2f}% Avg (฿{vault_pl:,.0f})",
+            delta_color="normal" if vault_pct_mean > 0 else "inverse"
+        )
+
+    st.markdown("---")
+
+st.sidebar.markdown("""
+<div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; margin-bottom: 0.5rem;">
+    <div style="background: #3fb950; color: white; width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">S</div>
+    <div style="font-weight: 600; font-size: 0.9rem; color: #EAEAEA;">Sniper OS</div>
+</div>
+""", unsafe_allow_html=True)
+
 for main_name, view_names in menu_structure.items():
     st.sidebar.markdown(f'<div class="sidebar-nav-section">{main_name}</div>', unsafe_allow_html=True)
     for view_name in view_names:
         is_active = st.session_state.nav_sub_menu == view_name
         icon = view_icons.get(view_name, "•")
         display_label = f"{icon}  {view_name}"
-        if is_active:
-            st.sidebar.markdown(f'<div class="sidebar-nav-active">{display_label}</div>', unsafe_allow_html=True)
-            continue
-        if st.sidebar.button(display_label, key=f"nav_btn_{main_name}_{view_name}", use_container_width=True):
+        if st.sidebar.button(
+            display_label,
+            key=f"nav_btn_{main_name}_{view_name}",
+            use_container_width=True,
+            type="primary" if is_active else "secondary",
+        ):
+            if is_active:
+                continue
             st.session_state.nav_sub_menu = view_name
             st.query_params["view"] = view_name
             st.rerun()
 
-selected_view = st.session_state.nav_sub_menu
 main_menu = view_to_main_menu.get(selected_view, "Dashboard")
 
 st.caption(f"📍 {main_menu} · {selected_view}")
@@ -3764,7 +4126,27 @@ if selected_view == "Analytics":
 
 if selected_view == "News Watchtower":
     st.subheader("📰 NEWS WATCHTOWER")
-    st.caption("Real-time news and alerts for your holdings")
+    st.caption("News feed for your holdings (Finnhub company-news, relevance filtered)")
+
+    market_snapshot = get_watchtower_market_snapshot()
+    us_status = str(market_snapshot.get("us_status", "Unknown") or "Unknown").title()
+    us_message = str(market_snapshot.get("us_message", "") or "").strip()
+    st.markdown("#### 🌐 MARKET SNAPSHOT")
+    ms1, ms2, ms3, ms4, ms5 = st.columns(5)
+    with ms1:
+        st.metric("US Market", us_status)
+    indices = market_snapshot.get("indices", {}) if isinstance(market_snapshot, dict) else {}
+    index_labels = [("^GSPC", "S&P 500"), ("^IXIC", "NASDAQ"), ("^DJI", "DOW"), ("^SET.BK", "SET")]
+    metric_cols = [ms2, ms3, ms4, ms5]
+    for idx, (sym, label) in enumerate(index_labels):
+        with metric_cols[idx]:
+            item = indices.get(sym, {}) if isinstance(indices, dict) else {}
+            last_val = float(item.get("last", 0.0) or 0.0)
+            pct_val = float(item.get("pct", 0.0) or 0.0)
+            st.metric(label, f"{last_val:,.2f}" if last_val else "—", f"{pct_val:+.2f}%" if last_val else None)
+    if us_message:
+        st.caption(us_message)
+    st.markdown("---")
     
     # Get all tickers from portfolios
     all_tickers = us_portfolio.get("Ticker", []) + thai_stocks.get("Ticker", [])
@@ -3772,73 +4154,56 @@ if selected_view == "News Watchtower":
     if not all_tickers:
         st.info("📌 Add holdings to see news and alerts for your positions")
     else:
-        # Check if NewsAPI key is configured
-        newsapi_key = get_newsapi_key()
-        
-        if not newsapi_key:
-            st.warning(
-                "⚠️ NewsAPI key not configured. Add your free key from https://newsapi.org/ "
-                "in `.streamlit/secrets.toml` (`[news_alerts] -> newsapi_key`) "
-                "or set environment variable `NEWSAPI_KEY`."
-            )
-        else:
-            # Price Alerts Section
-            st.markdown("#### 🚨 PRICE ALERTS")
-            
-            if all_alerts:
-                for alert in all_alerts:
-                    col_alert1, col_alert2, col_alert3 = st.columns([1, 2, 2])
-                    with col_alert1:
-                        st.metric(
-                            f"{alert['ticker']}{' 🆕' if alert.get('is_new') else ''}",
-                            f"{alert['change_pct']:+.2f}%"
-                        )
-                    with col_alert2:
-                        st.write(f"**Current:** {alert['currency_symbol']}{alert['current_price']:.2f}")
-                    with col_alert3:
-                        st.write(f"**Cost Base:** {alert['currency_symbol']}{alert['price_at_cost']:.2f}")
+        finnhub_api_key = get_finnhub_api_key()
+        if not finnhub_api_key:
+            st.warning("⚠️ Finnhub API key not configured. Add `finnhub_api_key` in `.streamlit/secrets.toml` under `[news_alerts]`.")
+
+        st.markdown("#### 📺 NEWS FEED")
+        selected_ticker = st.selectbox("Select holding to view news", all_tickers)
+
+        if selected_ticker:
+            resolved = resolve_symbol_with_search(selected_ticker)
+            resolved_symbol = str(resolved.get("symbol", selected_ticker) or selected_ticker)
+            resolved_name = str(resolved.get("longname", "") or resolved.get("shortname", "") or "").strip()
+            exchange = str(resolved.get("exchange", "") or "").strip()
+            if resolved_name:
+                subtitle = f"**Latest news for {resolved_name} ({resolved_symbol})**"
             else:
-                st.success("✅ No price alerts - all holdings within threshold")
-            
-            st.markdown("---")
-            
-            # News Feed Section
-            st.markdown("#### 📺 NEWS FEED")
-            selected_ticker = st.selectbox("Select holding to view news", all_tickers)
-            
-            if selected_ticker:
-                st.write(f"**Latest news for {selected_ticker}**")
-                news_articles = fetch_news_for_ticker(selected_ticker)
-                
-                if news_articles:
-                    summary_rows = []
-                    for article in news_articles:
-                        relative_time, exact_time = format_news_timestamp(article.get('publishedAt'))
-                        summary_rows.append({
-                            "When": relative_time,
-                            "Published (Local)": exact_time,
-                            "Source": article.get('source', {}).get('name', 'Unknown'),
-                            "Headline": article.get('title', 'Untitled')
-                        })
+                subtitle = f"**Latest news for {resolved_symbol}**"
+            st.write(subtitle)
+            if exchange:
+                st.caption(f"Resolved by yfinance Search · Exchange: {exchange}")
+            news_articles = fetch_news_for_ticker(selected_ticker)
 
-                    st.markdown("**At a glance**")
-                    st.dataframe(pd.DataFrame(summary_rows), hide_index=True, width="stretch")
+            if news_articles:
+                summary_rows = []
+                for article in news_articles:
+                    relative_time, exact_time = format_news_timestamp(article.get('publishedAt'))
+                    summary_rows.append({
+                        "When": relative_time,
+                        "Published (Local)": exact_time,
+                        "Source": article.get('source', {}).get('name', 'Unknown'),
+                        "Headline": article.get('title', 'Untitled')
+                    })
 
-                    st.markdown("**Details**")
-                    for i, article in enumerate(news_articles):
-                        relative_time, exact_time = format_news_timestamp(article.get('publishedAt'))
-                        source_name = article.get('source', {}).get('name', 'Unknown')
-                        title = article.get('title', 'Untitled')
-                        with st.expander(f"📰 [{relative_time}] {title} ({source_name})"):
-                            st.caption(f"Published: {exact_time}")
-                            st.write(article.get('description') or "No description available.")
-                            article_url = article.get('url', '')
-                            if article_url and str(article_url).startswith(('http://', 'https://')):
-                                st.markdown(f"[Read Full Article]({article_url})")
-                            else:
-                                st.caption("Article link unavailable")
-                else:
-                    st.info(f"No recent news found for {selected_ticker}")
+                st.markdown("**At a glance**")
+                st.dataframe(pd.DataFrame(summary_rows), hide_index=True, width="stretch")
+
+                st.markdown("**Details**")
+                for i, article in enumerate(news_articles):
+                    relative_time, exact_time = format_news_timestamp(article.get('publishedAt'))
+                    source_name = article.get('source', {}).get('name', 'Unknown')
+                    title = article.get('title', 'Untitled')
+                    with st.expander(f"📰 [{relative_time}] {title} ({source_name})"):
+                        st.caption(f"Published: {exact_time}")
+                        st.write(article.get('description') or "No description available.")
+                        article_url = article.get('url', '')
+                        if article_url and str(article_url).startswith(('http://', 'https://')):
+                            st.markdown(f"[Read Full Article]({article_url})")
+                        else:
+                            st.caption("Article link unavailable")
+            else:
+                st.info(f"No recent news found for {selected_ticker}")
 
 if selected_view == "Transaction History":
     st.subheader("📜 TRANSACTION HISTORY & REALIZED P/L")
@@ -5248,7 +5613,7 @@ st.sidebar.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html
 st.sidebar.markdown('<div class="sidebar-nav-section">Config Status</div>', unsafe_allow_html=True)
 
 sec_ok = bool(get_sec_api_keys())
-news_ok = bool(get_newsapi_key())
+news_ok = bool(get_finnhub_api_key())
 
 st.sidebar.markdown(
     (
@@ -5264,7 +5629,7 @@ st.sidebar.markdown(
     (
         '<div class="sidebar-status-row '
         + ('sidebar-status-ok' if news_ok else 'sidebar-status-missing')
-        + '"><span class="sidebar-status-dot"></span>NewsAPI '
+        + '"><span class="sidebar-status-dot"></span>Finnhub '
         + ('Configured' if news_ok else 'Missing')
         + '</div>'
     ),

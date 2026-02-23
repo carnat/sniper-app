@@ -2,9 +2,9 @@
 
 ## Quick Start
 
-### 1. Get Your FREE NewsAPI Key
+### 1. Get Your FREE Finnhub Key
 
-1. Visit https://newsapi.org/
+1. Visit https://finnhub.io/
 2. Click "Get API Key" (no credit card required)
 3. Register with your email
 4. Copy your API key
@@ -15,7 +15,7 @@ Edit `.streamlit/secrets.toml` and add:
 
 ```toml
 [news_alerts]
-newsapi_key = "your_api_key_here"
+finnhub_api_key = "your_finnhub_api_key_here"
 price_alert_threshold = 5  # Alert if price moves ±5%
 enable_price_alerts = true
 enable_news_feed = true
@@ -32,7 +32,7 @@ streamlit run streamlit_app.py
 
 ### 📰 News Feed
 - View latest news for any holding
-- Real-time articles from 50+ sources
+- Source: Finnhub company-news
 - Direct links to full articles
 - Automatic filtering by ticker
 
@@ -43,33 +43,23 @@ streamlit run streamlit_app.py
 - Works for both US and Thai stocks
 
 ### 📊 Smart Filtering
-- NewsAPI free tier: 100 requests/day
+- Finnhub free tier available for `company-news`
 - Results cached for 1 hour to save API calls
 - Automatic retry logic
 
-## NewsAPI Free Tier Limits
-
-- **100 requests per day**
-- **Max 100 articles per request**
-- **1-month historical data**
-- **All sources available**
-
-Perfect for personal portfolio tracking!
-
 ## Troubleshooting
 
-**"NewsAPI key not configured"**
+**"Finnhub key not configured"**
 - Make sure you added the key to `.streamlit/secrets.toml`
 - Restart the Streamlit app after adding the key
 
 **No news appearing:**
-- NewsAPI sometimes has delays (5-15 minutes)
+- Some symbols have lower coverage on certain days
 - Try different holdings - some tickers have more coverage
-- Check your API key is valid at https://newsapi.org/account
+- Check your API key is valid on Finnhub dashboard
 
 **Rate limit exceeded:**
-- Free tier = 100 requests/day
-- Wait 24 hours or upgrade to paid plan
+- Wait and retry later or upgrade plan
 - Results are cached for 1 hour to minimize requests
 
 ## Advanced Configuration

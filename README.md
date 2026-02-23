@@ -32,7 +32,7 @@ Cost = 10.0
 Master = "QQQ"
 ```
 
-Optional NewsAPI setup: [NEWS_SETUP.md](NEWS_SETUP.md)
+News Watchtower setup: [NEWS_SETUP.md](NEWS_SETUP.md)
 
 ### 3) Run
 
