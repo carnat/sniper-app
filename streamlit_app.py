@@ -3162,9 +3162,37 @@ us_required_views = {"Overview", "US Equities", "Analytics", "News Watchtower", 
 thai_required_views = {"Overview", "Analytics", "News Watchtower", "Market Tools"}
 vault_required_views = {"Overview", "Thai Portfolio", "Analytics", "Market Tools"}
 
-df_us = get_stock_data(us_portfolio) if selected_view in us_required_views else pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
-df_thai = get_stock_data(thai_stocks) if selected_view in thai_required_views else pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
-df_vault = get_fund_data(vault_portfolio) if selected_view in vault_required_views else pd.DataFrame()
+# Initialize session state caches for lazy dataframe loading on first view access
+if "df_us_cached" not in st.session_state:
+    st.session_state.df_us_cached = None
+    st.session_state.df_us_fetch_time = 0
+if "df_thai_cached" not in st.session_state:
+    st.session_state.df_thai_cached = None
+    st.session_state.df_thai_fetch_time = 0
+if "df_vault_cached" not in st.session_state:
+    st.session_state.df_vault_cached = None
+    st.session_state.df_vault_fetch_time = 0
+
+# Lazy-load US portfolio (only fetch on first access to a view that needs it)
+if selected_view in us_required_views:
+    if st.session_state.df_us_cached is None or (time.time() - st.session_state.df_us_fetch_time) > 300:
+        st.session_state.df_us_cached = get_stock_data(us_portfolio)
+        st.session_state.df_us_fetch_time = time.time()
+df_us = st.session_state.df_us_cached if st.session_state.df_us_cached is not None else pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
+
+# Lazy-load Thai portfolio (only fetch on first access to a view that needs it)
+if selected_view in thai_required_views:
+    if st.session_state.df_thai_cached is None or (time.time() - st.session_state.df_thai_fetch_time) > 300:
+        st.session_state.df_thai_cached = get_stock_data(thai_stocks)
+        st.session_state.df_thai_fetch_time = time.time()
+df_thai = st.session_state.df_thai_cached if st.session_state.df_thai_cached is not None else pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
+
+# Lazy-load Vault/Fund portfolio (only fetch on first access to a view that needs it)
+if selected_view in vault_required_views:
+    if st.session_state.df_vault_cached is None or (time.time() - st.session_state.df_vault_fetch_time) > 300:
+        st.session_state.df_vault_cached = get_fund_data(vault_portfolio)
+        st.session_state.df_vault_fetch_time = time.time()
+df_vault = st.session_state.df_vault_cached if st.session_state.df_vault_cached is not None else pd.DataFrame()
 
 # Precompute alerts once per render (for Today Brief and News tab)
 all_alerts = []
@@ -5639,6 +5667,11 @@ st.sidebar.markdown(
 st.sidebar.markdown('<div style="margin-top: 1rem;"></div>', unsafe_allow_html=True)
 st.sidebar.markdown('<div class="sidebar-nav-section">Data</div>', unsafe_allow_html=True)
 if st.sidebar.button("🔄 Refresh market data", key="refresh_market_data", use_container_width=True):
+    # Clear session state dataframe caches to force reload
+    st.session_state.df_us_cached = None
+    st.session_state.df_thai_cached = None
+    st.session_state.df_vault_cached = None
+    
     # Clear disk fund registry cache
     try:
         if _FUND_REGISTRY_CACHE_PATH.exists():
