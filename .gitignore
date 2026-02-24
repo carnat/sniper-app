@@ -57,8 +57,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
+# lib/ excluded from venv ignore — used as project source package
+#lib/
 parts/
 sdist/
 var/

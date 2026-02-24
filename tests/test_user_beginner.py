@@ -11,7 +11,6 @@ TARGET_FUNCTIONS = {
     "fetch_quote_snapshot",
     "load_watchlists",
     "save_watchlists",
-    "get_watchlists_file_path",
 }
 
 
@@ -93,19 +92,16 @@ class TestBeginnerFlow(unittest.TestCase):
         self.assertEqual(df.iloc[0]["Symbol"], "AAPL")
         self.assertAlmostEqual(df.iloc[0]["Price"], 150.0)
 
-        # Beginner: add a symbol to a watchlist and persist
-        fake_st.session_state.watchlists = {"MyList": ["aapl"]}
-        # save_watchlists will write to .streamlit/watchlists.json
-        save_watchlists()
+        # Beginner: add a symbol to a watchlist in session_state
+        # save_watchlists is a no-op on cloud; state lives in session_state
+        fake_st.session_state.watchlists = {"MyList": ["AAPL"]}
+        save_watchlists()  # no-op — confirms it doesn't raise
+        self.assertIn("MyList", fake_st.session_state.watchlists)
+        self.assertIn("AAPL", fake_st.session_state.watchlists["MyList"])
+
+        # load_watchlists returns empty dict (cloud session-state only)
         loaded = load_watchlists()
-        try:
-            self.assertIn("MYLIST", {k.upper(): v for k, v in loaded.items()})
-            self.assertIn("AAPL", [s.upper() for s in loaded.get("MyList", [])])
-        finally:
-            # cleanup persisted file
-            p = Path(".streamlit") / "watchlists.json"
-            if p.exists():
-                p.unlink()
+        self.assertIsInstance(loaded, dict)
 
 
 if __name__ == "__main__":

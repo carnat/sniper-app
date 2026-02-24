@@ -5,7 +5,6 @@ import pandas as pd
 import requests
 import time
 import json
-import sqlite3
 import uuid
 import math
 from datetime import datetime, timedelta
@@ -353,234 +352,61 @@ def load_portfolio_from_secrets():
             []
         )
 
-def get_transactions_file_path():
-    """Local file path for persistent transaction history."""
-    return Path(".streamlit") / "transactions.json"
-
 def load_transaction_history():
-    """Load transaction history from local file with safe fallback."""
-    try:
-        file_path = get_transactions_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-    except Exception:
-        pass
+    """Session-state only: returns empty list on fresh session."""
     return []
 
 def save_transaction_history():
-    """Persist transaction history to local file."""
-    try:
-        file_path = get_transactions_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.transaction_history, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_alert_state_file_path():
-    """Local file path for persistent alert trigger state."""
-    return Path(".streamlit") / "alert_state.json"
+    """No-op: transaction history lives in st.session_state on cloud."""
+    pass
 
 def load_alert_state():
-    """Load alert trigger state from local file."""
-    try:
-        file_path = get_alert_state_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, dict):
-                    return data
-    except Exception:
-        pass
+    """Session-state only: returns empty dict on fresh session."""
     return {}
 
 def save_alert_state():
-    """Persist alert trigger state to local file."""
-    try:
-        file_path = get_alert_state_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.alert_state, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_analytics_snapshots_file_path():
-    """Local file path for analytics snapshot history."""
-    return Path(".streamlit") / "analytics_snapshots.json"
+    """No-op: alert state lives in st.session_state on cloud."""
+    pass
 
 def load_analytics_snapshots():
-    """Load analytics snapshots from local file."""
-    try:
-        file_path = get_analytics_snapshots_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-    except Exception:
-        pass
+    """Session-state only: returns empty list on fresh session."""
     return []
 
 def save_analytics_snapshots():
-    """Persist analytics snapshots to local file."""
-    try:
-        file_path = get_analytics_snapshots_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.analytics_snapshots, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_scenario_library_file_path():
-    """Local file path for saved backtesting scenarios."""
-    return Path(".streamlit") / "scenario_library.json"
+    """No-op: analytics snapshots live in st.session_state on cloud."""
+    pass
 
 def load_saved_scenarios():
-    """Load saved scenario definitions from local file."""
-    try:
-        file_path = get_scenario_library_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-    except Exception:
-        pass
+    """Session-state only: returns empty list on fresh session."""
     return []
 
 def save_saved_scenarios():
-    """Persist saved scenarios to local file."""
-    try:
-        file_path = get_scenario_library_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.saved_scenarios, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_watchlists_file_path():
-    """Local file path for persisted watchlists."""
-    return Path(".streamlit") / "watchlists.json"
+    """No-op: saved scenarios live in st.session_state on cloud."""
+    pass
 
 def load_watchlists():
-    """Load watchlists from local file."""
-    try:
-        file_path = get_watchlists_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, dict):
-                    clean = {}
-                    for name, symbols in data.items():
-                        if not isinstance(name, str):
-                            continue
-                        if not isinstance(symbols, list):
-                            continue
-                        clean[name] = [str(s).strip().upper() for s in symbols if str(s).strip()]
-                    return clean
-    except Exception:
-        pass
+    """Session-state only: returns empty dict on fresh session."""
     return {}
 
 def save_watchlists():
-    """Persist watchlists to local file."""
-    try:
-        file_path = get_watchlists_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.watchlists, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_options_iv_history_file_path():
-    """Local file path for observed ATM IV history used by IV rank/percentile."""
-    return Path(".streamlit") / "options_iv_history.json"
+    """No-op: watchlists live in st.session_state on cloud."""
+    pass
 
 def load_options_iv_history():
-    """Load ATM IV history from local file."""
-    try:
-        file_path = get_options_iv_history_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, dict):
-                    clean = {}
-                    for symbol, values in data.items():
-                        if not isinstance(symbol, str) or not isinstance(values, list):
-                            continue
-                        clean_values = []
-                        for row in values:
-                            if not isinstance(row, dict):
-                                continue
-                            day = str(row.get("date", "")).strip()
-                            iv_val = row.get("atm_iv", None)
-                            try:
-                                iv_float = float(iv_val)
-                            except Exception:
-                                continue
-                            if day:
-                                clean_values.append({"date": day, "atm_iv": iv_float})
-                        clean[symbol] = clean_values[-400:]
-                    return clean
-    except Exception:
-        pass
+    """Session-state only: returns empty dict on fresh session."""
     return {}
 
 def save_options_iv_history():
-    """Persist ATM IV history to local file."""
-    try:
-        file_path = get_options_iv_history_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.options_iv_history, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_calendar_events_file_path():
-    """Local file path for user-planned portfolio calendar events."""
-    return Path(".streamlit") / "calendar_events.json"
+    """No-op: IV history lives in st.session_state on cloud."""
+    pass
 
 def load_calendar_events():
-    """Load user-planned calendar events from local file."""
-    try:
-        file_path = get_calendar_events_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    clean_events = []
-                    for item in data:
-                        if not isinstance(item, dict):
-                            continue
-                        event_date = str(item.get("date", "")).strip()
-                        if not event_date:
-                            continue
-                        clean_events.append({
-                            "id": str(item.get("id", str(uuid.uuid4()))),
-                            "date": event_date,
-                            "event_type": str(item.get("event_type", "Reminder") or "Reminder"),
-                            "title": str(item.get("title", "") or "").strip(),
-                            "instrument": str(item.get("instrument", "") or "").strip().upper(),
-                            "details": str(item.get("details", "") or "").strip(),
-                            "status": str(item.get("status", "Planned") or "Planned"),
-                        })
-                    return clean_events[-1200:]
-    except Exception:
-        pass
+    """Session-state only: returns empty list on fresh session."""
     return []
 
 def save_calendar_events():
-    """Persist user-planned calendar events to local file."""
-    try:
-        file_path = get_calendar_events_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.calendar_events, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+    """No-op: calendar events live in st.session_state on cloud."""
+    pass
 
 def _record_atm_iv(symbol, atm_iv):
     """Record one ATM IV observation per local day for a symbol."""
@@ -742,6 +568,41 @@ def _get_base_symbol_universe():
         if isinstance(watch_symbols, list):
             symbols.update([str(t).strip().upper() for t in watch_symbols if str(t).strip()])
     return sorted(symbols)
+
+@st.cache_data(ttl=300)
+def fetch_vix():
+    """Fetch current VIX level via ^VIX yfinance. Returns (float|None, bool stale)."""
+    try:
+        ticker = yf.Ticker("^VIX")
+        fast = getattr(ticker, "fast_info", None) or {}
+        price = fast.get("lastPrice", None)
+        if price is None:
+            info = ticker.info if isinstance(ticker.info, dict) else {}
+            price = info.get("regularMarketPrice", None)
+        if price is not None:
+            return float(price), False
+    except Exception:
+        pass
+    return None, True  # (value, is_stale)
+
+
+@st.cache_data(ttl=300)
+def fetch_thb_usd():
+    """Fetch live USD/THB rate. Tries THB=X then USDTHB=X, falls back to 34.0."""
+    for ticker_sym in ("THB=X", "USDTHB=X"):
+        try:
+            ticker = yf.Ticker(ticker_sym)
+            fast = getattr(ticker, "fast_info", None) or {}
+            price = fast.get("lastPrice", None)
+            if price is None:
+                info = ticker.info if isinstance(ticker.info, dict) else {}
+                price = info.get("regularMarketPrice", None)
+            if price is not None and float(price) > 1:
+                return float(price), False
+        except Exception:
+            continue
+    return 34.0, True  # (value, is_stale)
+
 
 @st.cache_data(ttl=300)
 def fetch_quote_snapshot(symbols):
@@ -991,280 +852,121 @@ def import_key_exists(import_key):
             return True
     return False
 
-def get_lot_db_path():
-    """Local SQLite file path for lot tracking."""
-    return Path(".streamlit") / "portfolio_lots.db"
-
 def init_lot_database():
-    """Initialize FIFO lot-tracking database tables."""
-    try:
-        db_path = get_lot_db_path()
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS tax_lots (
-                lot_id TEXT PRIMARY KEY,
-                symbol TEXT NOT NULL,
-                asset_type TEXT NOT NULL,
-                currency TEXT NOT NULL,
-                acquired_date TEXT NOT NULL,
-                quantity_original REAL NOT NULL,
-                quantity_remaining REAL NOT NULL,
-                cost_per_unit REAL NOT NULL,
-                source TEXT NOT NULL DEFAULT 'BUY'
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS realized_lots (
-                realized_id TEXT PRIMARY KEY,
-                symbol TEXT NOT NULL,
-                asset_type TEXT NOT NULL,
-                currency TEXT NOT NULL,
-                sale_date TEXT NOT NULL,
-                lot_id TEXT NOT NULL,
-                quantity_sold REAL NOT NULL,
-                cost_per_unit REAL NOT NULL,
-                sale_price REAL NOT NULL,
-                realized_pl REAL NOT NULL,
-                FOREIGN KEY (lot_id) REFERENCES tax_lots(lot_id)
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS lot_metadata (
-                meta_key TEXT PRIMARY KEY,
-                meta_value TEXT
-            )
-        ''')
-
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
+    """No-op: lot tracking uses session_state on cloud."""
+    pass
 
 def lot_record_buy(symbol, asset_type, currency, quantity, price, acquired_date=None, source='BUY'):
-    """Insert a new buy lot for FIFO tracking."""
-    try:
-        if quantity <= 0:
-            return
-        if acquired_date is None:
-            acquired_date = datetime.now().strftime("%Y-%m-%d")
+    """Insert a new buy lot into session_state tax_lots."""
+    if quantity <= 0:
+        return
+    if acquired_date is None:
+        acquired_date = datetime.now().strftime("%Y-%m-%d")
+    st.session_state.tax_lots.append({
+        "lot_id": str(uuid.uuid4()),
+        "symbol": symbol,
+        "asset_type": asset_type,
+        "currency": currency,
+        "acquired_date": acquired_date,
+        "quantity_original": float(quantity),
+        "quantity_remaining": float(quantity),
+        "cost_per_unit": float(price),
+        "source": source,
+    })
 
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-        cursor.execute(
-            '''
-            INSERT INTO tax_lots (
-                lot_id, symbol, asset_type, currency, acquired_date,
-                quantity_original, quantity_remaining, cost_per_unit, source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-            (
-                str(uuid.uuid4()), symbol, asset_type, currency, acquired_date,
-                float(quantity), float(quantity), float(price), source
-            )
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
+def _open_lots_sorted(symbol, asset_type, currency, descending=False):
+    """Return open lots for a symbol, sorted by acquired_date (FIFO or LIFO)."""
+    lots_with_idx = [
+        (i, l) for i, l in enumerate(st.session_state.tax_lots)
+        if (l["symbol"] == symbol and l["asset_type"] == asset_type
+            and l["currency"] == currency and l["quantity_remaining"] > 0)
+    ]
+    lots_with_idx.sort(key=lambda x: (x[1]["acquired_date"], x[0]), reverse=descending)
+    return [l for _, l in lots_with_idx]
+
+def _consume_lots(lots, quantity, sale_price, sale_date, symbol, asset_type, currency):
+    """Shared FIFO/LIFO consumption loop. Mutates lot dicts in place."""
+    to_sell = float(quantity)
+    realized_total = 0.0
+    for lot in lots:
+        if to_sell <= 0:
+            break
+        use_qty = min(lot["quantity_remaining"], to_sell)
+        realized_piece = (float(sale_price) - float(lot["cost_per_unit"])) * float(use_qty)
+        realized_total += realized_piece
+        lot["quantity_remaining"] = float(lot["quantity_remaining"]) - float(use_qty)
+        st.session_state.realized_lots.append({
+            "realized_id": str(uuid.uuid4()),
+            "symbol": symbol,
+            "asset_type": asset_type,
+            "currency": currency,
+            "sale_date": sale_date,
+            "lot_id": lot["lot_id"],
+            "quantity_sold": float(use_qty),
+            "cost_per_unit": float(lot["cost_per_unit"]),
+            "sale_price": float(sale_price),
+            "realized_pl": float(realized_piece),
+        })
+        to_sell -= float(use_qty)
+    return realized_total
 
 def lot_record_sell_fifo(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
     """Consume open lots via FIFO and return realized P/L. Returns None if insufficient lots."""
-    try:
-        if quantity <= 0:
-            return 0.0
-        if sale_date is None:
-            sale_date = datetime.now().strftime("%Y-%m-%d")
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute(
-            '''
-            SELECT lot_id, quantity_remaining, cost_per_unit
-            FROM tax_lots
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ORDER BY acquired_date ASC, rowid ASC
-            ''',
-            (symbol, asset_type, currency)
-        )
-        lots = cursor.fetchall()
-
-        total_available = sum(lot[1] for lot in lots)
-        if total_available + 1e-9 < quantity:
-            conn.close()
-            return None
-
-        to_sell = float(quantity)
-        realized_total = 0.0
-        for lot_id, qty_remaining, cost_per_unit in lots:
-            if to_sell <= 0:
-                break
-
-            use_qty = min(qty_remaining, to_sell)
-            realized_piece = (float(sale_price) - float(cost_per_unit)) * float(use_qty)
-            realized_total += realized_piece
-
-            new_qty = float(qty_remaining) - float(use_qty)
-            cursor.execute(
-                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
-                (new_qty, lot_id)
-            )
-
-            cursor.execute(
-                '''
-                INSERT INTO realized_lots (
-                    realized_id, symbol, asset_type, currency, sale_date,
-                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                (
-                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
-                    lot_id, float(use_qty), float(cost_per_unit), float(sale_price), float(realized_piece)
-                )
-            )
-            to_sell -= float(use_qty)
-
-        conn.commit()
-        conn.close()
-        return realized_total
-    except Exception:
+    if quantity <= 0:
+        return 0.0
+    if sale_date is None:
+        sale_date = datetime.now().strftime("%Y-%m-%d")
+    lots = _open_lots_sorted(symbol, asset_type, currency, descending=False)
+    if sum(l["quantity_remaining"] for l in lots) + 1e-9 < quantity:
         return None
+    return _consume_lots(lots, quantity, sale_price, sale_date, symbol, asset_type, currency)
 
 def lot_record_sell_lifo(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
     """Consume open lots via LIFO and return realized P/L. Returns None if insufficient lots."""
-    try:
-        if quantity <= 0:
-            return 0.0
-        if sale_date is None:
-            sale_date = datetime.now().strftime("%Y-%m-%d")
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute(
-            '''
-            SELECT lot_id, quantity_remaining, cost_per_unit
-            FROM tax_lots
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ORDER BY acquired_date DESC, rowid DESC
-            ''',
-            (symbol, asset_type, currency)
-        )
-        lots = cursor.fetchall()
-
-        total_available = sum(lot[1] for lot in lots)
-        if total_available + 1e-9 < quantity:
-            conn.close()
-            return None
-
-        to_sell = float(quantity)
-        realized_total = 0.0
-        for lot_id, qty_remaining, cost_per_unit in lots:
-            if to_sell <= 0:
-                break
-
-            use_qty = min(qty_remaining, to_sell)
-            realized_piece = (float(sale_price) - float(cost_per_unit)) * float(use_qty)
-            realized_total += realized_piece
-
-            new_qty = float(qty_remaining) - float(use_qty)
-            cursor.execute(
-                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
-                (new_qty, lot_id)
-            )
-
-            cursor.execute(
-                '''
-                INSERT INTO realized_lots (
-                    realized_id, symbol, asset_type, currency, sale_date,
-                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                (
-                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
-                    lot_id, float(use_qty), float(cost_per_unit), float(sale_price), float(realized_piece)
-                )
-            )
-            to_sell -= float(use_qty)
-
-        conn.commit()
-        conn.close()
-        return realized_total
-    except Exception:
+    if quantity <= 0:
+        return 0.0
+    if sale_date is None:
+        sale_date = datetime.now().strftime("%Y-%m-%d")
+    lots = _open_lots_sorted(symbol, asset_type, currency, descending=True)
+    if sum(l["quantity_remaining"] for l in lots) + 1e-9 < quantity:
         return None
+    return _consume_lots(lots, quantity, sale_price, sale_date, symbol, asset_type, currency)
 
 def lot_record_sell_average(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
     """Consume open lots using average-cost method and return realized P/L."""
-    try:
-        if quantity <= 0:
-            return 0.0
-        if sale_date is None:
-            sale_date = datetime.now().strftime("%Y-%m-%d")
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute(
-            '''
-            SELECT lot_id, quantity_remaining, cost_per_unit
-            FROM tax_lots
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ORDER BY acquired_date ASC, rowid ASC
-            ''',
-            (symbol, asset_type, currency)
-        )
-        lots = cursor.fetchall()
-
-        total_available = sum(float(lot[1]) for lot in lots)
-        if total_available + 1e-9 < quantity:
-            conn.close()
-            return None
-
-        if total_available <= 0:
-            conn.close()
-            return 0.0
-
-        weighted_cost_sum = sum(float(lot[1]) * float(lot[2]) for lot in lots)
-        avg_cost = weighted_cost_sum / total_available
-        realized_total = (float(sale_price) - float(avg_cost)) * float(quantity)
-
-        to_sell = float(quantity)
-        for lot_id, qty_remaining, _ in lots:
-            if to_sell <= 0:
-                break
-
-            use_qty = min(float(qty_remaining), to_sell)
-            new_qty = float(qty_remaining) - use_qty
-            cursor.execute(
-                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
-                (new_qty, lot_id)
-            )
-
-            realized_piece = (float(sale_price) - float(avg_cost)) * float(use_qty)
-            cursor.execute(
-                '''
-                INSERT INTO realized_lots (
-                    realized_id, symbol, asset_type, currency, sale_date,
-                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                (
-                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
-                    lot_id, float(use_qty), float(avg_cost), float(sale_price), float(realized_piece)
-                )
-            )
-            to_sell -= float(use_qty)
-
-        conn.commit()
-        conn.close()
-        return realized_total
-    except Exception:
+    if quantity <= 0:
+        return 0.0
+    if sale_date is None:
+        sale_date = datetime.now().strftime("%Y-%m-%d")
+    lots = _open_lots_sorted(symbol, asset_type, currency, descending=False)
+    total_available = sum(float(l["quantity_remaining"]) for l in lots)
+    if total_available + 1e-9 < quantity:
         return None
+    if total_available <= 0:
+        return 0.0
+    avg_cost = sum(float(l["quantity_remaining"]) * float(l["cost_per_unit"]) for l in lots) / total_available
+    realized_total = (float(sale_price) - float(avg_cost)) * float(quantity)
+    to_sell = float(quantity)
+    for lot in lots:
+        if to_sell <= 0:
+            break
+        use_qty = min(float(lot["quantity_remaining"]), to_sell)
+        lot["quantity_remaining"] = float(lot["quantity_remaining"]) - float(use_qty)
+        realized_piece = (float(sale_price) - float(avg_cost)) * float(use_qty)
+        st.session_state.realized_lots.append({
+            "realized_id": str(uuid.uuid4()),
+            "symbol": symbol,
+            "asset_type": asset_type,
+            "currency": currency,
+            "sale_date": sale_date,
+            "lot_id": lot["lot_id"],
+            "quantity_sold": float(use_qty),
+            "cost_per_unit": float(avg_cost),
+            "sale_price": float(sale_price),
+            "realized_pl": float(realized_piece),
+        })
+        to_sell -= float(use_qty)
+    return realized_total
 
 def get_lot_method_for_asset(asset_type):
     """Resolve selected lot method policy by asset type."""
@@ -1277,68 +979,39 @@ def get_lot_method_for_asset(asset_type):
     return str(policies.get(asset_type, default_map.get(asset_type, "FIFO"))).upper()
 
 def lot_apply_split(symbol, asset_type, currency, split_ratio):
-    """Apply stock split ratio to open lots for a symbol."""
+    """Apply stock split ratio to open lots for a symbol in session_state."""
     try:
         ratio = float(split_ratio)
         if ratio <= 0:
             return False
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-        cursor.execute(
-            '''
-            UPDATE tax_lots
-            SET
-                quantity_original = quantity_original * ?,
-                quantity_remaining = quantity_remaining * ?,
-                cost_per_unit = cost_per_unit / ?
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ''',
-            (ratio, ratio, ratio, symbol, asset_type, currency)
-        )
-        conn.commit()
-        conn.close()
+        for lot in st.session_state.tax_lots:
+            if (lot["symbol"] == symbol and lot["asset_type"] == asset_type
+                    and lot["currency"] == currency and lot["quantity_remaining"] > 0):
+                lot["quantity_original"] = float(lot["quantity_original"]) * ratio
+                lot["quantity_remaining"] = float(lot["quantity_remaining"]) * ratio
+                lot["cost_per_unit"] = float(lot["cost_per_unit"]) / ratio
         return True
     except Exception:
         return False
 
 def seed_opening_lots_from_portfolios(us_portfolio, thai_stocks, vault_portfolio):
-    """Seed lot DB once from current starting positions (if DB is empty)."""
-    try:
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT COUNT(1) FROM tax_lots")
-        lot_count = cursor.fetchone()[0]
-        if lot_count > 0:
-            conn.close()
-            return
-
-        today = datetime.now().strftime("%Y-%m-%d")
-
-        for ticker, shares, avg_cost in zip(us_portfolio.get('Ticker', []), us_portfolio.get('Shares', []), us_portfolio.get('Avg_Cost', [])):
-            if float(shares) > 0:
-                lot_record_buy(ticker, "US Stock", "USD", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
-
-        for ticker, shares, avg_cost in zip(thai_stocks.get('Ticker', []), thai_stocks.get('Shares', []), thai_stocks.get('Avg_Cost', [])):
-            if float(shares) > 0:
-                lot_record_buy(ticker, "Thai Stock", "THB", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
-
-        for fund in vault_portfolio:
-            units = float(fund.get('Units', 0))
-            cost = float(fund.get('Cost', 0))
-            code = fund.get('Code', '')
-            if units > 0 and code:
-                lot_record_buy(code, "Mutual Fund", "THB", units, cost, acquired_date=today, source='OPENING')
-
-        cursor.execute(
-            "INSERT OR REPLACE INTO lot_metadata (meta_key, meta_value) VALUES (?, ?)",
-            ("opening_seeded_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
+    """Seed lot state once from current starting positions (if state is empty)."""
+    if st.session_state.lot_metadata.get("opening_seeded_at"):
+        return
+    today = datetime.now().strftime("%Y-%m-%d")
+    for ticker, shares, avg_cost in zip(us_portfolio.get('Ticker', []), us_portfolio.get('Shares', []), us_portfolio.get('Avg_Cost', [])):
+        if float(shares) > 0:
+            lot_record_buy(ticker, "US Stock", "USD", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
+    for ticker, shares, avg_cost in zip(thai_stocks.get('Ticker', []), thai_stocks.get('Shares', []), thai_stocks.get('Avg_Cost', [])):
+        if float(shares) > 0:
+            lot_record_buy(ticker, "Thai Stock", "THB", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
+    for fund in vault_portfolio:
+        units = float(fund.get('Units', 0))
+        cost = float(fund.get('Cost', 0))
+        code = fund.get('Code', '')
+        if units > 0 and code:
+            lot_record_buy(code, "Mutual Fund", "THB", units, cost, acquired_date=today, source='OPENING')
+    st.session_state.lot_metadata["opening_seeded_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def log_transaction(
     ticker,
@@ -1616,16 +1289,16 @@ if 'us_portfolio' not in st.session_state:
     st.session_state.thai_stocks = thai_data
     st.session_state.vault_portfolio = vault_data
 
-# Initialize transaction history
+# Initialize transaction history (session-state only on cloud)
 if 'transaction_history' not in st.session_state:
-    st.session_state.transaction_history = load_transaction_history()
+    st.session_state.transaction_history = []
 
 # Rebuild holdings from persisted history when session starts empty
 hydrate_portfolios_from_transaction_history()
 
 # Initialize alert state
 if 'alert_state' not in st.session_state:
-    st.session_state.alert_state = load_alert_state()
+    st.session_state.alert_state = {}
 
 # Initialize lot method policies
 if 'lot_method_policies' not in st.session_state:
@@ -1637,25 +1310,32 @@ if 'lot_method_policies' not in st.session_state:
 
 # Initialize analytics snapshots
 if 'analytics_snapshots' not in st.session_state:
-    st.session_state.analytics_snapshots = load_analytics_snapshots()
+    st.session_state.analytics_snapshots = []
 
 # Initialize saved scenario library
 if 'saved_scenarios' not in st.session_state:
-    st.session_state.saved_scenarios = load_saved_scenarios()
+    st.session_state.saved_scenarios = []
 
 # Initialize watchlists
 if 'watchlists' not in st.session_state:
-    st.session_state.watchlists = load_watchlists()
+    st.session_state.watchlists = {}
 
 # Initialize options IV history
 if 'options_iv_history' not in st.session_state:
-    st.session_state.options_iv_history = load_options_iv_history()
+    st.session_state.options_iv_history = {}
 
 # Initialize user calendar events
 if 'calendar_events' not in st.session_state:
-    st.session_state.calendar_events = load_calendar_events()
+    st.session_state.calendar_events = []
 
-init_lot_database()
+# Initialize lot tracking state (replaces SQLite on cloud)
+if 'tax_lots' not in st.session_state:
+    st.session_state.tax_lots = []
+if 'realized_lots' not in st.session_state:
+    st.session_state.realized_lots = []
+if 'lot_metadata' not in st.session_state:
+    st.session_state.lot_metadata = {}
+
 seed_opening_lots_from_portfolios(st.session_state.us_portfolio, st.session_state.thai_stocks, st.session_state.vault_portfolio)
 
 us_portfolio = st.session_state.us_portfolio
@@ -1790,64 +1470,28 @@ def call_sec_api(url):
             pass
     return None
 
-_FUND_REGISTRY_CACHE_PATH = Path(".streamlit/fund_registry_cache.json")
-_FUND_REGISTRY_CACHE_MAX_AGE = 86400  # 24 hours
-
-def _load_disk_fund_registry():
-    """Load fund registry from disk cache if fresh enough."""
-    try:
-        if _FUND_REGISTRY_CACHE_PATH.exists():
-            data = json.loads(_FUND_REGISTRY_CACHE_PATH.read_text())
-            saved_ts = data.get("ts", 0)
-            if time.time() - saved_ts < _FUND_REGISTRY_CACHE_MAX_AGE:
-                registry = data.get("registry", {})
-                if registry:
-                    return registry
-    except Exception:
-        pass
-    return None
-
-def _save_disk_fund_registry(registry):
-    """Persist fund registry to disk for fast cold starts."""
-    try:
-        _FUND_REGISTRY_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        _FUND_REGISTRY_CACHE_PATH.write_text(json.dumps({"ts": time.time(), "registry": registry}))
-    except Exception:
-        pass
-
 @st.cache_data(ttl=3600)
 def build_fund_registry():
     """
     Build complete fund registry by querying all AMCs.
-    Uses a 24-hour disk cache so cold starts are instant.
+    Cached in memory for 1 hour via @st.cache_data (cloud-safe, no disk I/O).
     Returns: {"SCBNDQ(E)": "M0000_2553", ...}
     """
-    # Fast path: disk cache
-    cached = _load_disk_fund_registry()
-    if cached:
-        return cached
-
     fund_registry = {}
-    
     try:
         # STEP 1: Get AMC list
         amc_url = "https://api.sec.or.th/FundFactsheet/fund/amc"
         r_amc = call_sec_api(amc_url)
-        
         if r_amc is None:
             return fund_registry
-        
         amc_list = json.loads(r_amc.content)
-        
         # STEP 2: For each AMC, get all funds
         for amc in amc_list:
             unique_id = amc.get('unique_id')
             if not unique_id:
                 continue
-                
             fund_url = f"https://api.sec.or.th/FundFactsheet/fund/amc/{unique_id}"
             r_funds = call_sec_api(fund_url)
-            
             if r_funds is not None:
                 try:
                     funds_list = json.loads(r_funds.content)
@@ -1860,11 +1504,6 @@ def build_fund_registry():
                     pass
     except Exception:
         pass
-    
-    # Persist to disk for next cold start
-    if fund_registry:
-        _save_disk_fund_registry(fund_registry)
-
     return fund_registry
 
 @st.cache_data(ttl=3600)
@@ -3205,8 +2844,10 @@ if selected_view in {"Overview", "News Watchtower"}:
     all_alerts = us_alerts + thai_alerts
     new_alert_count = sum(1 for alert in all_alerts if alert.get("is_new"))
 
+# Live FX rate (THB per 1 USD); falls back to 34.0 with staleness flag
+usd_thb_rate, _fx_stale = fetch_thb_usd()
+
 # Totals
-usd_thb_rate = 34.0
 vault_value_sum = float(df_vault['Value'].sum()) if 'Value' in df_vault.columns else 0.0
 vault_cost_sum = float(df_vault['Cost Basis'].sum()) if 'Cost Basis' in df_vault.columns else 0.0
 grand_total = (df_us['Value'].sum() * usd_thb_rate) + df_thai['Value'].sum() + vault_value_sum
@@ -3248,6 +2889,11 @@ if selected_view == "Overview":
             next_event_text = f"{event_ticker} · {event_date.strftime('%b %d')}"
     except Exception:
         pass
+
+    if _fx_stale:
+        st.caption("⚠️ FX rate unavailable — using fallback 34.0 THB/USD")
+    else:
+        st.caption(f"💱 USD/THB: {usd_thb_rate:.2f} (live)")
 
     st.subheader("🧭 TODAY BRIEF")
     brief1, brief2, brief3, brief4 = st.columns(4, gap="small")
@@ -5672,12 +5318,6 @@ if st.sidebar.button("🔄 Refresh market data", key="refresh_market_data", use_
     st.session_state.df_thai_cached = None
     st.session_state.df_vault_cached = None
     
-    # Clear disk fund registry cache
-    try:
-        if _FUND_REGISTRY_CACHE_PATH.exists():
-            _FUND_REGISTRY_CACHE_PATH.unlink()
-    except Exception:
-        pass
     for cached_fn in [
         fetch_quote_snapshot,
         fetch_fundamental_snapshot,
