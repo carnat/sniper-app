@@ -378,17 +378,17 @@
       <div class="level-header">
         <div class="level-label">LEVEL 1 — BAHT MILLIONAIRE</div>
         <div class="level-nums">
-          <span class="level-current">28.7%</span>
+          <span class="level-current" id="level1Current">28.7%</span>
           <span class="level-target"> / ฿1,000,000</span>
         </div>
       </div>
       <div class="progress-track">
-        <div class="progress-fill" style="width: 28.7%"></div>
+        <div class="progress-fill" id="level1Fill" style="width: 28.7%"></div>
       </div>
       <div class="level-sub">
-        <span>HWM: Mar 12</span>
+        <span id="level1Hwm">HWM: Mar 12</span>
         <span class="preflight-marker">◈ PRE-FLIGHT ฿800K</span>
-        <span>71.3% remaining</span>
+        <span id="level1Remaining">71.3% remaining</span>
       </div>
     </div>
     <div class="section-label">ARSENAL — CORE (7)</div>
@@ -497,37 +497,41 @@
           <div class="ammo-label"><span class="ammo-ticker">NBIS</span> — Option C Tranche 1</div>
           <div class="ammo-status" style="color:var(--amber)">⚠ EXPIRY MAR 26 · VIX&lt;25 + NBIS green ≥1.5x ADV</div>
         </div>
+        <div class="ammo-value" id="ammoNbisT1" style="display:none"></div>
       </div>
       <div class="ammo-item">
         <div>
           <div class="ammo-label"><span class="ammo-ticker">NBIS</span> — Option C Tranche 2</div>
           <div class="ammo-status">Hold: ≥5% retrace from Tranche 1 entry</div>
         </div>
+        <div class="ammo-value" id="ammoNbisT2" style="display:none"></div>
       </div>
       <div class="ammo-item">
         <div>
           <div class="ammo-label"><span class="ammo-ticker">ASTS</span> — SO-1 fill (+0.7 → 10.0)</div>
           <div class="ammo-status">Allocated · Pending broker submission</div>
         </div>
+        <div class="ammo-value" id="ammoAsts" style="display:none"></div>
       </div>
       <div class="ammo-item" style="border-color:var(--amber);border-style:dashed">
         <div>
           <div class="ammo-label"><span class="ammo-ticker" style="color:var(--amber)">TAX REFUND</span> — Incoming (not yet landed)</div>
           <div class="ammo-status">Earmarked: BWXT 🥇 / FN 🥇 · Declare at session on receipt</div>
         </div>
+        <div class="ammo-value" id="ammoTax" style="display:none;color:var(--amber)"></div>
       </div>
     </div>
     <div class="section-label" style="margin-top:16px">THAI DEFENSE — SHIELD</div>
     <div class="thai-grid">
       <div class="thai-card">
         <div class="thai-ticker">TISCO</div>
-        <div class="thai-shares">฿97.26 avg</div>
+        <div class="thai-shares" id="tiscoShares">฿97.26 avg</div>
         <div class="thai-cost">Goal: YIELD + LIQUIDITY</div>
         <div class="thai-rule">Exit: Yield &lt;5% OR NPL &gt;3.5%</div>
       </div>
       <div class="thai-card">
         <div class="thai-ticker">ADVANC</div>
-        <div class="thai-shares">฿284.04 avg</div>
+        <div class="thai-shares" id="advancShares">฿284.04 avg</div>
         <div class="thai-cost">HOLD → DIV Apr 30</div>
         <div class="thai-rule">Exit: Yield &lt;5% OR NPL &gt;3.5%</div>
       </div>
@@ -541,20 +545,20 @@
     </div>
     <div class="section-label" style="margin-top:16px">VAULT — PASSIVE</div>
     <div class="vault-grid">
-      <div class="vault-row"><span class="vault-name">SOXX Semiconductors</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:35.7%"></div></div><span class="vault-pct">35.7%</span></div>
-      <div class="vault-row"><span class="vault-name">VOO S&P 500</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:30.6%"></div></div><span class="vault-pct">30.6%</span></div>
-      <div class="vault-row"><span class="vault-name">Global Tech RMF</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:10.2%"></div></div><span class="vault-pct">10.2%</span></div>
-      <div class="vault-row"><span class="vault-name">QQQ Nasdaq-100</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:8.2%"></div></div><span class="vault-pct">8.2%</span></div>
-      <div class="vault-row"><span class="vault-name">US Equity SSF</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:6.2%"></div></div><span class="vault-pct">6.2%</span></div>
-      <div class="vault-row"><span class="vault-name">EWY South Korea</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:3.4%"></div></div><span class="vault-pct">3.4%</span></div>
-      <div class="vault-row"><span class="vault-name">SET Thailand</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:2.6%"></div></div><span class="vault-pct">2.6%</span></div>
-      <div class="vault-row"><span class="vault-name">Gold</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:0.6%"></div></div><span class="vault-pct">0.6%</span></div>
+      <div class="vault-row"><span class="vault-name">SOXX Semiconductors</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:35.7%"></div></div><span class="vault-pct">35.7%</span><span class="vault-value" id="vSOXX" style="display:none"></span></div>
+      <div class="vault-row"><span class="vault-name">VOO S&P 500</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:30.6%"></div></div><span class="vault-pct">30.6%</span><span class="vault-value" id="vVOO" style="display:none"></span></div>
+      <div class="vault-row"><span class="vault-name">Global Tech RMF</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:10.2%"></div></div><span class="vault-pct">10.2%</span><span class="vault-value" id="vGlobalTech" style="display:none"></span></div>
+      <div class="vault-row"><span class="vault-name">QQQ Nasdaq-100</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:8.2%"></div></div><span class="vault-pct">8.2%</span><span class="vault-value" id="vQQQ" style="display:none"></span></div>
+      <div class="vault-row"><span class="vault-name">US Equity SSF</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:6.2%"></div></div><span class="vault-pct">6.2%</span><span class="vault-value" id="vUSEquity" style="display:none"></span></div>
+      <div class="vault-row"><span class="vault-name">EWY South Korea</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:3.4%"></div></div><span class="vault-pct">3.4%</span><span class="vault-value" id="vEWY" style="display:none"></span></div>
+      <div class="vault-row"><span class="vault-name">SET Thailand</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:2.6%"></div></div><span class="vault-pct">2.6%</span><span class="vault-value" id="vSET" style="display:none"></span></div>
+      <div class="vault-row"><span class="vault-name">Gold</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:0.6%"></div></div><span class="vault-pct">0.6%</span><span class="vault-value" id="vGold" style="display:none"></span></div>
     </div>
     <div class="vault-total-row">
       <span class="vault-total-label">VAULT TOTAL</span>
-      <span class="vault-total-value">+9.95% return</span>
+      <span class="vault-total-value" id="vaultTotalValue">+9.95% return</span>
     </div>
-    <div style="font-size:10px;color:var(--text-dim);margin-top:4px;padding:0 8px">
+    <div style="font-size:10px;color:var(--text-dim);margin-top:4px;padding:0 8px" id="eclassFooter">
       E-Class liquid (×0.80) counts toward Level 1 — Tier 2
     </div>
   </div>
@@ -688,8 +692,8 @@
   <div class="panel">
     <div class="section-label">VAULT OVERVIEW</div>
     <div class="vault-summary-grid">
-      <div class="vsummary-card"><div class="vsummary-label">VAULT TOTAL</div><div class="vsummary-value">+9.95%</div><div class="vsummary-sub">Return YTD</div></div>
-      <div class="vsummary-card"><div class="vsummary-label">E-CLASS LIQUID</div><div class="vsummary-value" style="color:var(--green)">Tier 2</div><div class="vsummary-sub">×0.80 → Level 1</div></div>
+      <div class="vsummary-card"><div class="vsummary-label">VAULT TOTAL</div><div class="vsummary-value" id="vsVaultTotal">+9.95%</div><div class="vsummary-sub" id="vsVaultSub">Return YTD</div></div>
+      <div class="vsummary-card"><div class="vsummary-label">E-CLASS LIQUID</div><div class="vsummary-value" style="color:var(--green)" id="vsEclass">Tier 2</div><div class="vsummary-sub">×0.80 → Level 1</div></div>
       <div class="vsummary-card"><div class="vsummary-label">PEAK EXPOSURE</div><div class="vsummary-value" style="color:var(--text-bright)">35.7%</div><div class="vsummary-sub">SOXX · cap at 50%</div></div>
       <div class="vsummary-card"><div class="vsummary-label">TRIGGERS ACTIVE</div><div class="vsummary-value" style="color:var(--green)">0 / 4</div><div class="vsummary-sub">All clear</div></div>
     </div>
@@ -763,8 +767,8 @@
         <div class="so-item"><div class="so-header"><span class="so-id">SCBGOLDHE</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">Gold E-class · Switchable · ฿2,373 (0.6%)</div></div>
       </div>
       <div style="padding:6px 10px;background:var(--bg-3);border-top:1px solid var(--border)">
-        <div class="hwm-row"><span class="status-key">E-class gross</span><span class="status-val green">—</span></div>
-        <div class="hwm-row"><span class="status-key">Haircut (×0.80)</span><span class="status-val">—</span></div>
+        <div class="hwm-row"><span class="status-key">E-class gross</span><span class="status-val green" id="eclassGross">—</span></div>
+        <div class="hwm-row"><span class="status-key">Haircut (×0.80)</span><span class="status-val" id="eclassLiquid">—</span></div>
         <div class="hwm-row"><span class="status-key">Counts toward Level 1</span><span class="status-val green">✓ Tier 2</span></div>
       </div>
     </div>
@@ -797,17 +801,17 @@
 const DAY0 = new Date('2026-03-13');
 const TODAY = new Date();
 const ARSENAL_CORE = [
-  { ticker: 'VRT',  shares: 0.148355, cost: 235.92, flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: 'Yellow Watch · F3=0 · 50pts' },
-  { ticker: 'VST',  shares: 12,       cost: 158.32, flag: 'C',  thesis: 'Mar 10, 2026', day0: false, note: 'Yellow Watch active' },
-  { ticker: 'MU',   shares: 3.062527, cost: 294.01, flag: 'B',  thesis: 'Mar 15, 2026', day0: false, note: '✅ INTACT · Mar 18 earnings ⚠️' },
-  { ticker: 'APH',  shares: 8,        cost: 136.95, flag: '—',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ CHINA WATCH 16.3% · 65pts' },
-  { ticker: 'ANET', shares: 3,        cost: 122.12, flag: '—',  thesis: 'Mar 10, 2026', day0: false, note: 'Victory target $200' },
-  { ticker: 'TSM',  shares: 0.08434,  cost: 296.42, flag: 'B',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ ISRAEL WATCH · 50pts' },
-  { ticker: 'FN',   shares: 0,        cost: null,   flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: '🥇 WINNER 70pts · Deploy ฿7,000' },
+  { ticker: 'VRT',  shares: 0, cost: 235.92, flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: 'Yellow Watch · F3=0 · 50pts' },
+  { ticker: 'VST',  shares: 0, cost: 158.32, flag: 'C',  thesis: 'Mar 10, 2026', day0: false, note: 'Yellow Watch active' },
+  { ticker: 'MU',   shares: 0, cost: 294.01, flag: 'B',  thesis: 'Mar 15, 2026', day0: false, note: '✅ INTACT · Mar 18 earnings ⚠️' },
+  { ticker: 'APH',  shares: 0, cost: 136.95, flag: '—',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ CHINA WATCH 16.3% · 65pts' },
+  { ticker: 'ANET', shares: 0, cost: 122.12, flag: '—',  thesis: 'Mar 10, 2026', day0: false, note: 'Victory target $200' },
+  { ticker: 'TSM',  shares: 0, cost: 296.42, flag: 'B',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ ISRAEL WATCH · 50pts' },
+  { ticker: 'FN',   shares: 0, cost: null,   flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: '🥇 WINNER 70pts · Deploy ฿7,000' },
 ];
 const ARSENAL_SAT = [
-  { ticker: 'ASTS', shares: 9.3, cost: 74.50, flag: 'A', thesis: null, day0: true,  note: 'SO-1 pending broker · Blackout ~Apr 11' },
-  { ticker: 'ONDS', shares: 1,   cost: 9.05,  flag: 'A', thesis: null, day0: true,  note: 'Mar 25 earnings · no expansion' },
+  { ticker: 'ASTS', shares: 0, cost: 74.50, flag: 'A', thesis: null, day0: true,  note: 'SO-1 pending broker · Blackout ~Apr 11' },
+  { ticker: 'ONDS', shares: 0, cost: 9.05,  flag: 'A', thesis: null, day0: true,  note: 'Mar 25 earnings · no expansion' },
 ];
 const NEGLECT_TICKERS = ['ASTS', 'ONDS'];
 // Cached prices (Mar 13, 2026 — stale; replaced on first prices.json load)
@@ -958,6 +962,82 @@ function updateTHB(rate) {
 updateGate(prices['^VIX']);
 updateTHB(prices['THB=X']);
 
+// ─── PRIVATE DATA — reads ./private.json (gitignored, local only) ───
+async function fetchPrivate() {
+  try {
+    const res = await fetch('./private.json');
+    if (!res.ok) return; // not available on Pages — silent
+    const d = await res.json();
+
+    // Level 1
+    if (d.level1) {
+      const cur = d.level1.current;
+      const pct = (cur / 1000000 * 100).toFixed(1);
+      const remaining = 1000000 - cur;
+      document.getElementById('level1Current').textContent = '฿' + cur.toLocaleString();
+      document.getElementById('level1Fill').style.width = pct + '%';
+      document.getElementById('level1Hwm').textContent = 'HWM: ฿' + cur.toLocaleString() + ' · ' + d.level1.hwm_date;
+      document.getElementById('level1Remaining').textContent = '฿' + remaining.toLocaleString() + ' remaining';
+      document.getElementById('liquidVal').textContent = '฿' + Math.round(cur / 1000) + 'K';
+      document.getElementById('liquidVal').style.color = '';
+      document.getElementById('progressPct').textContent = pct + '%';
+    }
+
+    // Ammo
+    if (d.ammo) {
+      const ammoMap = { nbis_t1: 'ammoNbisT1', nbis_t2: 'ammoNbisT2', asts: 'ammoAsts', tax_refund: 'ammoTax' };
+      Object.entries(ammoMap).forEach(([key, id]) => {
+        if (d.ammo[key]) {
+          const el = document.getElementById(id);
+          el.textContent = '฿' + d.ammo[key].toLocaleString();
+          el.style.display = '';
+        }
+      });
+    }
+
+    // Thai Defense
+    if (d.thai) {
+      if (d.thai.TISCO) document.getElementById('tiscoShares').textContent = d.thai.TISCO.shares + ' shares · ฿97.26 avg';
+      if (d.thai.ADVANC) document.getElementById('advancShares').textContent = d.thai.ADVANC.shares + ' shares · ฿284.04 avg';
+    }
+
+    // Vault rows
+    if (d.vault && d.vault.rows) {
+      const rowMap = { SOXX: 'vSOXX', VOO: 'vVOO', GlobalTech: 'vGlobalTech', QQQ: 'vQQQ', USEquity: 'vUSEquity', EWY: 'vEWY', SET: 'vSET', Gold: 'vGold' };
+      Object.entries(rowMap).forEach(([key, id]) => {
+        if (d.vault.rows[key] !== undefined) {
+          const el = document.getElementById(id);
+          el.textContent = '฿' + d.vault.rows[key].toLocaleString();
+          el.style.display = '';
+        }
+      });
+      document.getElementById('vaultTotalValue').textContent = '฿' + d.vault.total.toLocaleString() + ' · +' + d.vault.return_pct + '% return';
+      document.getElementById('eclassFooter').textContent = 'E-Class liquid: ฿' + d.vault.eclass_gross.toLocaleString() + ' × 80% = ฿' + d.vault.eclass_liquid.toLocaleString() + ' toward Level 1';
+    }
+
+    // Vault tab summary cards
+    if (d.vault) {
+      document.getElementById('vsVaultTotal').textContent = '฿' + d.vault.total.toLocaleString();
+      document.getElementById('vsVaultSub').textContent = 'Return: +' + d.vault.return_pct + '%';
+      document.getElementById('vsEclass').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
+      document.getElementById('eclassGross').textContent = '฿' + d.vault.eclass_gross.toLocaleString();
+      document.getElementById('eclassLiquid').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
+    }
+
+    // Arsenal shares → re-render with real P&L
+    if (d.arsenal) {
+      [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+        if (d.arsenal[p.ticker] !== undefined) p.shares = d.arsenal[p.ticker];
+      });
+      renderArsenal(ARSENAL_CORE, 'arsenalCore');
+      renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
+    }
+
+  } catch (err) {
+    // private.json not available — stay redacted
+  }
+}
+
 // ─── FETCH PRICES — reads ../data/prices.json (GitHub Actions output) ───
 async function fetchPrices() {
   const btn = document.getElementById('refreshBtn');
@@ -1005,6 +1085,7 @@ async function fetchPrices() {
 // Auto-load on page open
 window.addEventListener('load', () => {
   setTimeout(fetchPrices, 300);
+  setTimeout(fetchPrivate, 300);
 });
 
 // ─── TAB SWITCHING ───
