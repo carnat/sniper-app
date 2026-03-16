@@ -870,7 +870,7 @@
           <td class="ticker-cell">PLTR</td>
           <td><span class="flag flag-b">CORE</span></td>
           <td class="thesis-cell thesis-set">Defense AI — NATO edge exception confirmed</td>
-          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-PLTR" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
           <td class="center"><span class="wt-status waiting">WAITING</span></td>
           <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 12</td>
         </tr>
@@ -878,7 +878,7 @@
           <td class="ticker-cell">TSEM</td>
           <td><span class="flag flag-b">CORE</span></td>
           <td class="thesis-cell" style="color:var(--amber)">⚠ ISRAEL WATCH · /thesis refresh required</td>
-          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGER HIT · gate only (VIX &lt;25)</td>
+          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGER HIT · gate only (VIX &lt;25)<br><span id="wt-adv-TSEM" style="font-size:9px;color:var(--text-dim);font-weight:400">vol: —</span></td>
           <td class="center"><span class="wt-status ready">TRIGGER READY</span></td>
           <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 10</td>
         </tr>
@@ -886,7 +886,7 @@
           <td class="ticker-cell" style="color:var(--amber)">NBIS</td>
           <td><span class="flag flag-c">SAT</span></td>
           <td class="thesis-cell thesis-set">AI interconnect · score 30/30 · Option C active</td>
-          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGERED Mar 12 · T1 expiry Mar 26</td>
+          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGERED Mar 12 · T1 expiry Mar 26<br><span id="wt-adv-NBIS" style="font-size:9px;color:var(--text-dim);font-weight:400">vol: —</span></td>
           <td class="center"><span class="wt-status deploy">DEPLOYING</span></td>
           <td class="right" style="font-size:10px">
             <span style="color:var(--text-dim)">Jun 10</span><br>
@@ -897,7 +897,7 @@
           <td class="ticker-cell">BWXT</td>
           <td><span class="flag flag-b">CORE★</span></td>
           <td class="thesis-cell thesis-set">Nuclear propulsion · Matrix Winner (tied 70pts) · ฿11K</td>
-          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-BWXT" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
           <td class="center"><span class="wt-status waiting">WAITING</span></td>
           <td class="right" style="font-size:10px">
             <span style="color:var(--text-dim)">Sep 15</span><br>
@@ -908,7 +908,7 @@
           <td class="ticker-cell">KTOS</td>
           <td><span class="flag flag-c">SAT</span></td>
           <td class="thesis-cell thesis-set">Defense autonomy · score 25/30 · satellite capital only</td>
-          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-KTOS" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
           <td class="center"><span class="wt-status waiting">WAITING</span></td>
           <td class="right" style="font-size:10px">
             <span style="color:var(--text-dim)">Sep 15</span><br>
@@ -925,6 +925,11 @@
         </tr>
       </tbody>
     </table>
+    <!-- News pulse (populated by JS from prices.json d.news) -->
+    <div class="section-label" style="margin-top:16px">NEWS PULSE — WATCHTOWER</div>
+    <div id="wtNewsPulse" style="display:grid;gap:4px">
+      <div style="font-size:10px;color:var(--text-dim);padding:4px 0">Loading — click Refresh to populate</div>
+    </div>
     <!-- Blackout calendar -->
     <div class="section-label" style="margin-top:16px">BLACKOUT CALENDAR</div>
     <div class="wt-blackout-grid">
@@ -1425,6 +1430,7 @@ async function fetchPrices() {
     pricesStale = false;
     renderArsenal(ARSENAL_CORE, 'arsenalCore');
     renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
+    updateWatchtowerLive(d);
     document.getElementById('lastRefresh').textContent = 'Last refresh: ' + d.updated_bkk;
 
   } catch (err) {
@@ -1435,6 +1441,48 @@ async function fetchPrices() {
     icon.classList.remove('spin');
     icon.textContent = '↻';
   }
+}
+
+// ─── WATCHTOWER LIVE: ADV RATIOS + NEWS PULSE ───
+function updateWatchtowerLive(d) {
+  // P1 — ADV ratios injected into table trigger cells
+  const adv = d.adv || {};
+  ['PLTR', 'TSEM', 'NBIS', 'BWXT', 'KTOS', 'FN'].forEach(sym => {
+    const el = document.getElementById('wt-adv-' + sym);
+    if (!el || !adv[sym]) return;
+    const { today_vol, adv_20d, adv_ratio, gate_met } = adv[sym];
+    const volStr = today_vol >= 1e6
+      ? (today_vol / 1e6).toFixed(1) + 'M'
+      : Math.round(today_vol / 1e3) + 'K';
+    const ratioStr = adv_ratio != null ? adv_ratio.toFixed(2) + '×' : '—';
+    const color = gate_met
+      ? 'var(--green)'
+      : adv_ratio >= 1.0 ? 'var(--amber)' : 'var(--text-dim)';
+    el.style.color = color;
+    el.textContent = `vol ${volStr} · ${ratioStr} ADV${gate_met ? ' ✓ GATE' : ''}`;
+  });
+
+  // P3 — News pulse section
+  const news = d.news || {};
+  const container = document.getElementById('wtNewsPulse');
+  if (!container) return;
+  const cutoff = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
+  const rows = ['PLTR', 'TSEM', 'NBIS', 'BWXT', 'KTOS']
+    .filter(s => news[s])
+    .map(sym => {
+      const n = news[sym];
+      const fresh = n.date >= cutoff;
+      return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:2px solid ${fresh ? 'var(--blue)' : 'var(--border)'};border-radius:2px;padding:6px 8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+          <span style="font-weight:700;color:var(--text-white);font-size:11px">${sym}</span>
+          <span style="font-size:9px;color:var(--text-dim)">${n.date} · ${n.publisher}</span>
+        </div>
+        <div style="font-size:10px;color:${fresh ? 'var(--text-base)' : 'var(--text-dim)'};line-height:1.4">${n.headline}</div>
+      </div>`;
+    });
+  container.innerHTML = rows.length
+    ? rows.join('')
+    : '<div style="font-size:10px;color:var(--text-dim);padding:4px 0">No headlines — prices.json may be stale</div>';
 }
 
 // ─── WATCHTOWER SCORECARD COUNTDOWN ───
