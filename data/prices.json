@@ -1,40 +1,127 @@
 {
-  "updated": "2026-03-13T00:00:00Z",
-  "updated_bkk": "2026-03-13 07:00 GMT+7",
-  "_note": "CACHED — run GitHub Action 'Update Prices' to refresh",
+  "updated": "2026-03-16T10:20:21Z",
+  "updated_bkk": "2026-03-16 17:20 GMT+7",
   "prices": {
-    "VRT":   { "price": 258.88 },
-    "ASTS":  { "price": 86.34 },
-    "VST":   { "price": 158.95 },
-    "MU":    { "price": 426.13 },
-    "APH":   { "price": 133.92 },
-    "ANET":  { "price": 133.57 },
-    "TSM":   { "price": 338.31 },
-    "ONDS":  { "price": 10.16 },
-    "FN":    { "price": 502.14 },
-    "PLTR":  { "price": null },
-    "TSEM":  { "price": null },
-    "NBIS":  { "price": 112.95 },
-    "BWXT":  { "price": 194.13 },
-    "KTOS":  { "price": null },
-    "SOXX":  { "price": null, "ytd_pct": null },
-    "VOO":   { "price": null, "ytd_pct": null },
-    "QQQ":   { "price": null, "ytd_pct": null },
-    "EWY":   { "price": null, "ytd_pct": null },
-    "GLD":   { "price": null },
-    "^VIX":  { "price": 27.19 },
-    "THB=X": { "price": 32.42 }
+    "VRT": {
+      "price": 258.88,
+      "prev_close": 265.38,
+      "change_pct": -2.45
+    },
+    "ASTS": {
+      "price": 86.34,
+      "prev_close": 87.09,
+      "change_pct": -0.86
+    },
+    "VST": {
+      "price": 158.95,
+      "prev_close": 159.58,
+      "change_pct": -0.39
+    },
+    "MU": {
+      "price": 426.13,
+      "prev_close": 405.35,
+      "change_pct": 5.13
+    },
+    "APH": {
+      "price": 133.92,
+      "prev_close": 131.47,
+      "change_pct": 1.86
+    },
+    "ANET": {
+      "price": 133.57,
+      "prev_close": 134.03,
+      "change_pct": -0.34
+    },
+    "TSM": {
+      "price": 338.31,
+      "prev_close": 336.71,
+      "change_pct": 0.48
+    },
+    "ONDS": {
+      "price": 10.16,
+      "prev_close": 10.33,
+      "change_pct": -1.65
+    },
+    "FN": {
+      "price": 502.14,
+      "prev_close": 512.8,
+      "change_pct": -2.08
+    },
+    "PLTR": {
+      "price": 150.95,
+      "prev_close": 153.5,
+      "change_pct": -1.66
+    },
+    "TSEM": {
+      "price": 124.71,
+      "prev_close": 118.54,
+      "change_pct": 5.2
+    },
+    "NBIS": {
+      "price": 112.95,
+      "prev_close": 108.04,
+      "change_pct": 4.54
+    },
+    "BWXT": {
+      "price": 194.13,
+      "prev_close": 197.82,
+      "change_pct": -1.87
+    },
+    "KTOS": {
+      "price": 87.53,
+      "prev_close": 89.46,
+      "change_pct": -2.16
+    },
+    "SOXX": {
+      "price": 331.32,
+      "prev_close": 330.19,
+      "change_pct": 0.34,
+      "ytd_pct": 5.62
+    },
+    "VOO": {
+      "price": 609.09,
+      "prev_close": 612.5,
+      "change_pct": -0.56,
+      "ytd_pct": -3.06
+    },
+    "QQQ": {
+      "price": 593.72,
+      "prev_close": 597.26,
+      "change_pct": -0.59,
+      "ytd_pct": -3.16
+    },
+    "EWY": {
+      "price": 124.15,
+      "prev_close": 123.5,
+      "change_pct": 0.53,
+      "ytd_pct": 21.45
+    },
+    "GLD": {
+      "price": 460.84,
+      "prev_close": 466.88,
+      "change_pct": -1.29
+    },
+    "^VIX": {
+      "price": 26.23,
+      "prev_close": 27.19,
+      "change_pct": -3.53
+    },
+    "THB=X": {
+      "price": 32.51,
+      "prev_close": 32.15,
+      "change_pct": 1.12
+    }
   },
   "ytd_ref": {
     "SOXX": 313.69,
-    "VOO":  628.30,
-    "QQQ":  613.12,
-    "EWY":  102.22
+    "VOO": 628.3,
+    "QQQ": 613.12,
+    "EWY": 102.22
   },
   "gate": {
     "vix_freeze": true,
-    "vix":        27.19,
-    "thb_zone":   "B",
-    "thb":        32.42
+    "vix": 26.23,
+    "thb_zone": "B",
+    "thb": 32.51
   }
 }
