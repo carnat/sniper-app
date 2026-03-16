@@ -1,0 +1,40 @@
+{
+  "updated": "2026-03-13T00:00:00Z",
+  "updated_bkk": "2026-03-13 07:00 GMT+7",
+  "_note": "CACHED — run GitHub Action 'Update Prices' to refresh",
+  "prices": {
+    "VRT":   { "price": 258.88 },
+    "ASTS":  { "price": 86.34 },
+    "VST":   { "price": 158.95 },
+    "MU":    { "price": 426.13 },
+    "APH":   { "price": 133.92 },
+    "ANET":  { "price": 133.57 },
+    "TSM":   { "price": 338.31 },
+    "ONDS":  { "price": 10.16 },
+    "FN":    { "price": 502.14 },
+    "PLTR":  { "price": null },
+    "TSEM":  { "price": null },
+    "NBIS":  { "price": 112.95 },
+    "BWXT":  { "price": 194.13 },
+    "KTOS":  { "price": null },
+    "SOXX":  { "price": null, "ytd_pct": null },
+    "VOO":   { "price": null, "ytd_pct": null },
+    "QQQ":   { "price": null, "ytd_pct": null },
+    "EWY":   { "price": null, "ytd_pct": null },
+    "GLD":   { "price": null },
+    "^VIX":  { "price": 27.19 },
+    "THB=X": { "price": 32.42 }
+  },
+  "ytd_ref": {
+    "SOXX": 313.69,
+    "VOO":  628.30,
+    "QQQ":  613.12,
+    "EWY":  102.22
+  },
+  "gate": {
+    "vix_freeze": true,
+    "vix":        27.19,
+    "thb_zone":   "B",
+    "thb":        32.42
+  }
+}

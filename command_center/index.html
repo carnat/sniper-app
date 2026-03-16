@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNIPER COMMAND CENTER v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #070809;
+    --bg-1: #0d1014;
+    --bg-2: #131820;
+    --bg-3: #1a2030;
+    --border: #1e2a3a;
+    --border-bright: #2a3a50;
+    --text-dim: #3a5070;
+    --text-mid: #607090;
+    --text-base: #8aa8c8;
+    --text-bright: #c8dff0;
+    --text-white: #e8f4ff;
+    --green: #00d084;
+    --green-dim: #005530;
+    --green-glow: rgba(0,208,132,0.15);
+    --amber: #ffb800;
+    --amber-dim: #3a2800;
+    --amber-glow: rgba(255,184,0,0.12);
+    --red: #ff4055;
+    --red-dim: #3a0010;
+    --red-glow: rgba(255,64,85,0.12);
+    --orange: #ff8c00;
+    --orange-dim: #2a1800;
+    --blue: #3a9fff;
+    --blue-dim: #0a2040;
+    --cyan: #00c8e0;
+    --freeze-color: var(--amber);
+    --clear-color: var(--green);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg-0);
+    color: var(--text-base);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+  .header {
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--border-bright);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .logo { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px; color: var(--text-white); }
+  .logo span { color: var(--blue); }
+  .version-badge { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; border: 1px solid var(--border); padding: 2px 6px; border-radius: 2px; }
+  .header-center { display: flex; align-items: center; gap: 24px; }
+  .gate-badge {
+    display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 3px;
+    font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 2px;
+    border: 1px solid; transition: all 0.3s;
+  }
+  .gate-badge.freeze {
+    background: var(--amber-dim); border-color: var(--amber); color: var(--amber);
+    box-shadow: 0 0 16px var(--amber-glow), inset 0 0 8px var(--amber-glow);
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+  .gate-badge.clear {
+    background: var(--green-dim); border-color: var(--green); color: var(--green);
+    box-shadow: 0 0 16px var(--green-glow), inset 0 0 8px var(--green-glow);
+  }
+  @keyframes pulse-amber {
+    0%, 100% { box-shadow: 0 0 16px var(--amber-glow), inset 0 0 8px var(--amber-glow); }
+    50% { box-shadow: 0 0 28px rgba(255,184,0,0.25), inset 0 0 16px rgba(255,184,0,0.2); }
+  }
+  .gate-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: blink 1.5s step-end infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+  .header-meta { display: flex; gap: 16px; }
+  .meta-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .meta-label { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+  .meta-value { font-size: 13px; font-weight: 600; color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .meta-value.vix { color: var(--amber); }
+  .meta-value.thb { color: var(--green); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .clock-display { text-align: right; }
+  .clock-time { font-size: 14px; font-weight: 600; color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .clock-date { font-size: 10px; color: var(--text-dim); }
+  .refresh-btn {
+    background: var(--bg-3); border: 1px solid var(--border-bright); color: var(--text-base);
+    padding: 6px 14px; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: 1px; cursor: pointer; border-radius: 3px; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .refresh-btn:hover { background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
+  .refresh-btn.loading { opacity: 0.6; pointer-events: none; }
+  .refresh-btn .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .alert-bar {
+    background: var(--red-dim); border-bottom: 1px solid var(--red); padding: 6px 16px;
+    display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--red);
+  }
+  .alert-bar.beta { background: var(--orange-dim); border-color: var(--orange); color: var(--orange); }
+  .alert-bar.hidden { display: none; }
+  .alert-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px; font-size: 12px; }
+  .main-grid {
+    display: grid; grid-template-columns: 1fr 340px; grid-template-rows: auto auto;
+    gap: 1px; background: var(--border); min-height: calc(100vh - 90px);
+  }
+  .panel { background: var(--bg-1); padding: 14px 16px; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--text-dim); }
+  .panel-title span { color: var(--text-mid); }
+  .level-bar-wrap { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 12px 14px; margin-bottom: 14px; }
+  .level-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .level-label { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--text-mid); }
+  .level-nums { font-size: 11px; font-variant-numeric: tabular-nums; }
+  .level-current { color: var(--green); font-weight: 600; font-size: 15px; }
+  .level-target { color: var(--text-dim); }
+  .progress-track { height: 6px; background: var(--bg-3); border-radius: 3px; overflow: hidden; position: relative; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #00d084, #00a8ff); border-radius: 3px; transition: width 1s ease; position: relative; }
+  .progress-fill::after { content: ''; position: absolute; right: 0; top: 0; width: 3px; height: 100%; background: white; opacity: 0.8; filter: blur(1px); }
+  .level-sub { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: var(--text-dim); }
+  .preflight-marker { color: var(--amber); }
+  .section-label { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 8px; margin-top: 14px; }
+  .section-label:first-of-type { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--text-dim); text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+  th.right, td.right { text-align: right; }
+  th.center, td.center { text-align: center; }
+  td { padding: 5px 8px; color: var(--text-base); border-bottom: 1px solid rgba(30,42,58,0.5); vertical-align: middle; }
+  tr:hover td { background: rgba(26,32,48,0.6); }
+  .ticker-cell { font-weight: 700; color: var(--text-white); font-size: 13px; letter-spacing: 0.5px; }
+  .price-cell { color: var(--text-bright); font-size: 12px; }
+  .price-cell.loading { color: var(--text-dim); }
+  .cost-cell { color: var(--text-mid); font-size: 11px; }
+  .pnl-cell { font-weight: 600; font-size: 12px; }
+  .pnl-pos { color: var(--green); }
+  .pnl-neg { color: var(--red); }
+  .pnl-flat { color: var(--text-mid); }
+  .flag { display: inline-block; padding: 1px 5px; border-radius: 2px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; font-family: 'Rajdhani', sans-serif; }
+  .flag-a { background: rgba(0,200,224,0.15); color: var(--cyan); border: 1px solid rgba(0,200,224,0.3); }
+  .flag-b { background: rgba(58,159,255,0.15); color: var(--blue); border: 1px solid rgba(58,159,255,0.3); }
+  .flag-c { background: rgba(255,140,0,0.15); color: var(--orange); border: 1px solid rgba(255,140,0,0.3); }
+  .flag-none { color: var(--text-dim); font-size: 10px; }
+  .thesis-cell { font-size: 10px; }
+  .thesis-set { color: var(--text-mid); }
+  .thesis-not-set { color: var(--text-dim); font-style: italic; }
+  .neglect-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .neglect-days { font-size: 10px; font-variant-numeric: tabular-nums; }
+  .neglect-ok { color: var(--text-dim); }
+  .neglect-warn { color: var(--amber); font-weight: 600; }
+  .neglect-crit { color: var(--red); font-weight: 700; animation: blink 1s step-end infinite; }
+  .neglect-bar { width: 40px; height: 3px; background: var(--bg-3); border-radius: 2px; overflow: hidden; }
+  .neglect-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+  .neglect-fill.ok { background: var(--text-dim); }
+  .neglect-fill.warn { background: var(--amber); }
+  .neglect-fill.crit { background: var(--red); }
+  .ammo-grid { display: grid; gap: 6px; }
+  .ammo-item { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .ammo-label { font-size: 11px; color: var(--text-base); }
+  .ammo-ticker { font-weight: 700; color: var(--text-white); }
+  .ammo-status { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .ammo-value { font-size: 13px; font-weight: 700; color: var(--amber); font-variant-numeric: tabular-nums; }
+  .vault-grid { display: grid; gap: 4px; }
+  .vault-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 2px; }
+  .vault-name { font-size: 11px; color: var(--text-base); }
+  .vault-pct { font-size: 10px; color: var(--text-dim); }
+  .vault-value { font-size: 12px; color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .vault-bar-wrap { width: 60px; height: 3px; background: var(--bg-3); border-radius: 2px; overflow: hidden; margin: 0 10px; }
+  .vault-bar-fill { height: 100%; background: var(--blue); opacity: 0.6; border-radius: 2px; }
+  .vault-total-row { display: flex; justify-content: space-between; padding: 8px 8px 4px; border-top: 1px solid var(--border-bright); margin-top: 4px; }
+  .vault-total-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 1px; color: var(--text-mid); }
+  .vault-total-value { font-size: 14px; font-weight: 700; color: var(--text-white); font-variant-numeric: tabular-nums; }
+  .thai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .thai-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; }
+  .thai-ticker { font-weight: 700; font-size: 14px; color: var(--text-white); }
+  .thai-shares { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .thai-cost { font-size: 11px; color: var(--text-mid); margin-top: 4px; }
+  .thai-rule { font-size: 9px; color: var(--text-dim); margin-top: 4px; border-top: 1px solid var(--border); padding-top: 4px; }
+  .status-section { margin-bottom: 16px; }
+  .status-block { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+  .status-block-header { background: var(--bg-3); padding: 6px 10px; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+  .status-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(30,42,58,0.5); font-size: 11px; }
+  .status-row:last-child { border-bottom: none; }
+  .status-key { color: var(--text-mid); }
+  .status-val { color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .status-val.green { color: var(--green); }
+  .status-val.amber { color: var(--amber); }
+  .status-val.red { color: var(--red); }
+  .status-val.dim { color: var(--text-dim); }
+  .heartbeat-wrap { padding: 10px; }
+  .heartbeat-status { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .heartbeat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .heartbeat-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s ease-in-out infinite; }
+  .heartbeat-dot.warn { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: blink 1s step-end infinite; }
+  .heartbeat-dot.dead { background: var(--red); box-shadow: 0 0 8px var(--red); animation: blink 0.5s step-end infinite; }
+  .heartbeat-label { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-bright); }
+  .heartbeat-sub { font-size: 10px; color: var(--text-dim); margin-left: 18px; }
+  .countdown-bar-wrap { margin: 8px 0 4px; }
+  .countdown-track { height: 4px; background: var(--bg-3); border-radius: 2px; overflow: hidden; }
+  .countdown-fill { height: 100%; border-radius: 2px; transition: width 1s linear; }
+  .countdown-fill.ok { background: var(--green); }
+  .countdown-fill.warn { background: var(--amber); }
+  .countdown-fill.crit { background: var(--red); }
+  .countdown-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim); margin-top: 4px; }
+  .beta-list { padding: 8px 10px; }
+  .beta-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 10px; color: var(--orange); border-bottom: 1px solid rgba(30,42,58,0.5); }
+  .beta-item:last-child { border-bottom: none; }
+  .beta-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+  .neglect-list { padding: 8px 10px; }
+  .neglect-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(30,42,58,0.5); font-size: 11px; }
+  .neglect-item:last-child { border-bottom: none; }
+  .ni-ticker { font-weight: 700; color: var(--text-white); width: 40px; }
+  .ni-day0 { color: var(--text-dim); font-size: 10px; flex: 1; text-align: center; }
+  .ni-countdown { text-align: right; min-width: 80px; }
+  .ni-days { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 11px; }
+  .ni-label { font-size: 9px; color: var(--text-dim); }
+  .so-list { padding: 4px 0; }
+  .so-item { padding: 7px 10px; border-bottom: 1px solid rgba(30,42,58,0.5); font-size: 11px; }
+  .so-item:last-child { border-bottom: none; }
+  .so-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .so-id { font-weight: 700; color: var(--text-white); font-family: 'Rajdhani', sans-serif; font-size: 12px; }
+  .so-status { font-size: 9px; padding: 1px 6px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; }
+  .so-status.broker { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .so-status.gate { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+  .so-status.watch { background: var(--bg-3); color: var(--text-mid); border: 1px solid var(--border-bright); }
+  .so-status.pending { background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); }
+  .so-desc { color: var(--text-base); line-height: 1.4; }
+  .so-desc .warn { color: var(--amber); }
+  .hwm-block { padding: 10px; }
+  .hwm-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; }
+  .drawdown-gauge { margin-top: 8px; height: 4px; background: var(--bg-3); border-radius: 2px; overflow: hidden; position: relative; }
+  .drawdown-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 1s ease; }
+  .drawdown-threshold { position: absolute; right: 20%; top: -3px; width: 1px; height: 10px; background: var(--red); opacity: 0.7; }
+  .drawdown-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim); margin-top: 4px; }
+  .condo-block { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .condo-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--text-mid); letter-spacing: 1px; }
+  .condo-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .condo-cf { font-size: 14px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+  .footer { background: var(--bg-1); border-top: 1px solid var(--border); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-dim); }
+  .footer-note { letter-spacing: 0.5px; }
+  .data-source { display: flex; align-items: center; gap: 8px; }
+  .last-refresh { color: var(--text-mid); font-variant-numeric: tabular-nums; }
+  .wt-grid { display: grid; gap: 5px; }
+  .wt-item { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; }
+  .wt-item.china-flag { border-left: 2px solid var(--amber); }
+  .wt-item.blackout { border-left: 2px solid var(--red); }
+  .wt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .wt-ticker { font-weight: 700; font-size: 14px; color: var(--text-white); }
+  .wt-status { font-size: 9px; padding: 1px 6px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+  .wt-status.waiting { background: var(--bg-3); color: var(--text-mid); border: 1px solid var(--border-bright); }
+  .wt-status.active { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+  .wt-status.blocked { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .wt-thesis { font-size: 10px; color: var(--text-mid); margin-bottom: 4px; }
+  .wt-meta { display: flex; gap: 12px; font-size: 10px; color: var(--text-dim); }
+  .wt-flag { color: var(--amber); }
+  .wt-remove { color: var(--text-dim); }
+  .wt-capacity { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; margin-bottom: 8px; font-size: 11px; }
+  .capacity-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--text-mid); letter-spacing: 1px; }
+  @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } .header { flex-wrap: wrap; gap: 8px; } }
+  .tab-nav { background: var(--bg-1); border-bottom: 1px solid var(--border-bright); display: flex; padding: 0 16px; }
+  .tab-btn { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--text-dim); padding: 9px 18px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; margin-bottom: -1px; }
+  .tab-btn:hover { color: var(--text-base); }
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .vault-tab-grid { display: grid; grid-template-columns: 1fr 340px; gap: 1px; background: var(--border); min-height: calc(100vh - 120px); }
+  .vault-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
+  .vsummary-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; }
+  .vsummary-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-bottom: 4px; }
+  .vsummary-value { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-white); }
+  .vsummary-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .vtrigger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+  .vtrigger-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; }
+  .vtrigger-card.watch-card { border-color: var(--amber); }
+  .vtrigger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .vtrigger-name { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--text-mid); }
+  .vt-badge { font-size: 9px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; padding: 1px 6px; border-radius: 2px; }
+  .vt-badge.clear { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+  .vt-badge.watch { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+  .vtrigger-detail { font-size: 10px; color: var(--text-base); line-height: 1.5; }
+  .vt-deltas { margin-top: 6px; }
+  .vt-delta-row { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-mid); padding: 1px 0; }
+  .vt-delta-val.pos { color: var(--green); font-weight: 600; }
+  .vt-delta-val.neg { color: var(--red); font-weight: 600; }
+  .vexp-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 2px; margin-bottom: 4px; }
+  .vexp-name { font-size: 11px; color: var(--text-base); flex: 1; }
+  .vexp-wrapper { font-size: 10px; color: var(--text-dim); min-width: 90px; text-align: right; }
+  .vexp-bar-wrap { width: 70px; height: 4px; background: var(--bg-3); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+  .vexp-bar { height: 100%; border-radius: 2px; }
+  .vexp-pct { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-bright); min-width: 36px; text-align: right; }
+  .vexp-val { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-white); min-width: 60px; text-align: right; }
+  .vtab-refresh-btn { background: var(--bg-3); border: 1px solid var(--border-bright); color: var(--text-base); padding: 5px 12px; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; cursor: pointer; border-radius: 3px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+  .vtab-refresh-btn:hover { background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
+  .vtab-refresh-btn.loading { opacity: 0.5; pointer-events: none; }
+  .ytd-chart-wrap { position: relative; height: 200px; margin: 10px 0; }
+  .vault-watermark { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">SNIPER <span>CMD</span></div>
+    <div class="version-badge">v2.0</div>
+  </div>
+  <div class="header-center">
+    <div class="gate-badge freeze" id="gateBadge">
+      <div class="gate-dot"></div>
+      <span id="gateText">FREEZE</span>
+    </div>
+    <div class="header-meta">
+      <div class="meta-item">
+        <span class="meta-label">VIX</span>
+        <span class="meta-value vix" id="vixVal">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">THB/USD</span>
+        <span class="meta-value thb" id="thbVal">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">LIQUID</span>
+        <span class="meta-value" id="liquidVal">฿287K</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">LEVEL 1</span>
+        <span class="meta-value" id="progressPct" style="color:var(--green)">28.7%</span>
+      </div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="clock-display">
+      <div class="clock-time" id="clockTime">--:--</div>
+      <div class="clock-date" id="clockDate">--- GMT+7</div>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="fetchPrices()">
+      <span id="refreshIcon">↻</span> REFRESH
+    </button>
+  </div>
+</header>
+<!-- BETA ALERT BAR -->
+<div class="alert-bar beta" id="betaAlert">
+  <span class="alert-label">⚠ BETA PENDING UPLOAD (4)</span>
+  <span>doctrine_core_v1_4_5_BETA_1.md · doctrine_ops_v1_5_4_BETA_1.md · portfolio_state_v1_0_17_BETA_1.md · doctrine_pe_v1_2_1_BETA_1.md — Upload to Space before next doctrine session</span>
+</div>
+<!-- TAB NAV -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('arsenal', this)">ARSENAL + STATUS</button>
+  <button class="tab-btn" onclick="switchTab('vault', this)">VAULT HEALTH</button>
+</nav>
+<!-- TAB: ARSENAL + STATUS -->
+<div class="tab-pane active" id="tab-arsenal">
+<div class="main-grid">
+  <!-- PANEL 1: ARSENAL + VAULT -->
+  <div class="panel">
+    <div class="level-bar-wrap">
+      <div class="level-header">
+        <div class="level-label">LEVEL 1 — BAHT MILLIONAIRE</div>
+        <div class="level-nums">
+          <span class="level-current">฿287,218</span>
+          <span class="level-target"> / ฿1,000,000</span>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width: 28.7%"></div>
+      </div>
+      <div class="level-sub">
+        <span>HWM: ฿287,218 · Mar 12</span>
+        <span class="preflight-marker">◈ PRE-FLIGHT ฿800K</span>
+        <span>฿712,782 remaining</span>
+      </div>
+    </div>
+    <div class="section-label">ARSENAL — CORE (7)</div>
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th class="right">PRICE</th>
+          <th class="right">COST</th>
+          <th class="right">P&L</th>
+          <th class="center">FLAG</th>
+          <th class="right">THESIS / NEGLECT</th>
+        </tr>
+      </thead>
+      <tbody id="arsenalCore"></tbody>
+    </table>
+    <div class="section-label" style="margin-top:12px">ARSENAL — SATELLITE (2)</div>
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th class="right">PRICE</th>
+          <th class="right">COST</th>
+          <th class="right">P&L</th>
+          <th class="center">FLAG</th>
+          <th class="right">THESIS / NEGLECT</th>
+        </tr>
+      </thead>
+      <tbody id="arsenalSatellite"></tbody>
+    </table>
+    <div class="section-label" style="margin-top:16px">CORE MATRIX — Mar 16, 2026 FINAL</div>
+    <table>
+      <thead>
+        <tr>
+          <th>RANK</th><th>TICKER</th><th class="right">F1</th><th class="right">F2</th>
+          <th class="right">F3</th><th class="right">F4</th><th class="right">TOTAL</th><th>NOTE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--amber)">🥇</td>
+          <td class="ticker-cell">FN</td>
+          <td class="right" style="color:var(--text-mid)">40</td>
+          <td class="right" style="color:var(--text-dim)">0</td>
+          <td class="right" style="color:var(--text-mid)">20</td>
+          <td class="right" style="color:var(--text-mid)">10</td>
+          <td class="right pnl-pos" style="font-size:13px;font-weight:700">70</td>
+          <td style="font-size:10px;color:var(--text-mid)">Deploy ฿7,000 · ADV 967,560</td>
+        </tr>
+        <tr>
+          <td style="color:var(--amber)">🥇</td>
+          <td class="ticker-cell">BWXT</td>
+          <td class="right" style="color:var(--text-mid)">40</td>
+          <td class="right" style="color:var(--text-dim)">0</td>
+          <td class="right" style="color:var(--text-mid)">20</td>
+          <td class="right" style="color:var(--text-mid)">10</td>
+          <td class="right pnl-pos" style="font-size:13px;font-weight:700">70</td>
+          <td style="font-size:10px;color:var(--text-mid)">Deploy ฿11,000 · Tiebreak wins</td>
+        </tr>
+        <tr>
+          <td style="color:var(--text-mid)">3</td>
+          <td class="ticker-cell">APH</td>
+          <td class="right" style="color:var(--text-mid)">20</td>
+          <td class="right" style="color:var(--text-mid)">20</td>
+          <td class="right" style="color:var(--text-mid)">15</td>
+          <td class="right" style="color:var(--text-mid)">10</td>
+          <td class="right" style="color:var(--text-base);font-weight:600">65</td>
+          <td style="font-size:10px;color:var(--text-dim)">⚠ CHINA WATCH 16.3%</td>
+        </tr>
+        <tr style="opacity:0.6">
+          <td style="color:var(--text-dim)">4</td>
+          <td class="ticker-cell" style="color:var(--text-mid)">VRT / TSM</td>
+          <td class="right" style="color:var(--text-dim)">—</td>
+          <td class="right" style="color:var(--text-dim)">—</td>
+          <td class="right" style="color:var(--text-dim)">—</td>
+          <td class="right" style="color:var(--text-dim)">—</td>
+          <td class="right" style="color:var(--text-dim)">50</td>
+          <td style="font-size:10px;color:var(--text-dim)">VRT YellowWatch F3=0 · TSM Israel Watch</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:10px;color:var(--text-dim);padding:4px 8px">
+      Tiebreak: BWXT wins — earlier blackout (Apr 14) + higher ADV gate (1,417,695 vs 967,560). Both deploy from ฿18,000 tax refund.
+    </div>
+    <div class="status-block" style="margin-top:14px;margin-bottom:0">
+      <div class="status-block-header" style="color:var(--amber)">⚠ MANDATORY SESSIONS</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">MU EARNINGS</span><span class="so-status gate">MAR 18</span></div>
+          <div class="so-desc">Mandatory /thesis MU · HBM ASP disclosure · SCBKEQTGE vault decision Mar 19</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">ONDS EARNINGS</span><span class="so-status gate">MAR 25</span></div>
+          <div class="so-desc">Mandatory session · Mistral merger resolution · No expansion until clear</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">NBIS EXPIRY</span><span class="so-status gate">MAR 26</span></div>
+          <div class="so-desc">SO-6 Tranche 1 decision — extend or redirect if VIX still frozen</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-label" style="margin-top:16px">AMMO RESERVE</div>
+    <div class="ammo-grid">
+      <div class="ammo-item">
+        <div>
+          <div class="ammo-label"><span class="ammo-ticker">NBIS</span> — Option C Tranche 1</div>
+          <div class="ammo-status" style="color:var(--amber)">⚠ EXPIRY MAR 26 · VIX&lt;25 + NBIS green ≥1.5x ADV</div>
+        </div>
+        <div class="ammo-value">฿12,014</div>
+      </div>
+      <div class="ammo-item">
+        <div>
+          <div class="ammo-label"><span class="ammo-ticker">NBIS</span> — Option C Tranche 2</div>
+          <div class="ammo-status">Hold: ≥5% retrace from Tranche 1 entry</div>
+        </div>
+        <div class="ammo-value">฿12,014</div>
+      </div>
+      <div class="ammo-item">
+        <div>
+          <div class="ammo-label"><span class="ammo-ticker">ASTS</span> — SO-1 fill (+0.7 → 10.0)</div>
+          <div class="ammo-status">Allocated · Pending broker submission</div>
+        </div>
+        <div class="ammo-value">฿1,971</div>
+      </div>
+      <div class="ammo-item" style="border-color:var(--amber);border-style:dashed">
+        <div>
+          <div class="ammo-label"><span class="ammo-ticker" style="color:var(--amber)">TAX REFUND</span> — Incoming (not yet landed)</div>
+          <div class="ammo-status">Earmarked: ฿11,000 BWXT 🥇 / ฿7,000 FN 🥇 · Declare at session on receipt</div>
+        </div>
+        <div class="ammo-value" style="color:var(--amber)">฿18,000</div>
+      </div>
+    </div>
+    <div class="section-label" style="margin-top:16px">THAI DEFENSE — SHIELD</div>
+    <div class="thai-grid">
+      <div class="thai-card">
+        <div class="thai-ticker">TISCO</div>
+        <div class="thai-shares">173 shares · ฿97.26 avg</div>
+        <div class="thai-cost">Goal: YIELD + LIQUIDITY</div>
+        <div class="thai-rule">Exit: Yield &lt;5% OR NPL &gt;3.5%</div>
+      </div>
+      <div class="thai-card">
+        <div class="thai-ticker">ADVANC</div>
+        <div class="thai-shares">26 shares · ฿284.04 avg</div>
+        <div class="thai-cost">HOLD → DIV Apr 30</div>
+        <div class="thai-rule">Exit: Yield &lt;5% OR NPL &gt;3.5%</div>
+      </div>
+    </div>
+    <div class="condo-block" style="margin-top:6px">
+      <div>
+        <div class="condo-label">THE ANCHOR — CONDO</div>
+        <div class="condo-sub">Val ฿1.7M · Debt ฿1.5M · Tier 3 (0% liquid)</div>
+      </div>
+      <div class="condo-cf">+฿2,700/mo CF</div>
+    </div>
+    <div class="section-label" style="margin-top:16px">VAULT — PASSIVE (฿397,354)</div>
+    <div class="vault-grid">
+      <div class="vault-row"><span class="vault-name">SOXX Semiconductors</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:35.7%"></div></div><span class="vault-pct">35.7%</span><span class="vault-value">฿142,011</span></div>
+      <div class="vault-row"><span class="vault-name">VOO S&P 500</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:30.6%"></div></div><span class="vault-pct">30.6%</span><span class="vault-value">฿121,565</span></div>
+      <div class="vault-row"><span class="vault-name">Global Tech RMF</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:10.2%"></div></div><span class="vault-pct">10.2%</span><span class="vault-value">฿40,537</span></div>
+      <div class="vault-row"><span class="vault-name">QQQ Nasdaq-100</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:8.2%"></div></div><span class="vault-pct">8.2%</span><span class="vault-value">฿32,596</span></div>
+      <div class="vault-row"><span class="vault-name">US Equity SSF</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:6.2%"></div></div><span class="vault-pct">6.2%</span><span class="vault-value">฿24,802</span></div>
+      <div class="vault-row"><span class="vault-name">EWY South Korea</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:3.4%"></div></div><span class="vault-pct">3.4%</span><span class="vault-value">฿13,606</span></div>
+      <div class="vault-row"><span class="vault-name">SET Thailand</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:2.6%"></div></div><span class="vault-pct">2.6%</span><span class="vault-value">฿10,159</span></div>
+      <div class="vault-row"><span class="vault-name">Gold</span><div class="vault-bar-wrap"><div class="vault-bar-fill" style="width:0.6%"></div></div><span class="vault-pct">0.6%</span><span class="vault-value">฿2,373</span></div>
+    </div>
+    <div class="vault-total-row">
+      <span class="vault-total-label">VAULT TOTAL</span>
+      <span class="vault-total-value">฿397,354 · +9.95% return</span>
+    </div>
+    <div style="font-size:10px;color:var(--text-dim);margin-top:4px;padding:0 8px">
+      E-Class liquid: ฿121,466 × 80% = <span style="color:var(--green)">฿97,173</span> toward Level 1
+    </div>
+  </div>
+  <!-- PANEL 2: SYSTEM STATUS -->
+  <div class="panel">
+    <div class="status-section">
+      <div class="panel-header">
+        <div class="panel-title">SYSTEM <span>STATUS</span></div>
+      </div>
+      <div class="status-block">
+        <div class="status-block-header">HEARTBEAT PROTOCOL</div>
+        <div class="heartbeat-wrap">
+          <div class="heartbeat-status">
+            <div class="heartbeat-dot warn" id="hbDot"></div>
+            <div><div class="heartbeat-label" id="hbLabel">VIX ≥ 25 — DAILY SESSION REQUIRED</div></div>
+          </div>
+          <div class="heartbeat-sub" id="hbSub">Required cadence: daily post-market · 48hr miss = HEARTBEAT MISSED → all Factor 1 = 0</div>
+          <div class="countdown-bar-wrap">
+            <div class="countdown-track">
+              <div class="countdown-fill warn" id="hbCountdownFill" style="width:60%"></div>
+            </div>
+            <div class="countdown-labels">
+              <span>Last session</span>
+              <span id="hbCountdownLabel">~29hrs remaining</span>
+              <span>48hr limit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="status-block">
+        <div class="status-block-header">HWM + DRAWDOWN FREEZE</div>
+        <div class="hwm-block">
+          <div class="hwm-row"><span class="status-key">High Water Mark</span><span class="status-val green">฿287,218</span></div>
+          <div class="hwm-row"><span class="status-key">Current Liquid</span><span class="status-val">฿287,218</span></div>
+          <div class="hwm-row"><span class="status-key">Drawdown from HWM</span><span class="status-val green">0.0%</span></div>
+          <div class="hwm-row"><span class="status-key">Freeze trigger at</span><span class="status-val dim">−20% = ฿229,774</span></div>
+          <div class="drawdown-gauge">
+            <div class="drawdown-fill" style="width:100%"></div>
+            <div class="drawdown-threshold"></div>
+          </div>
+          <div class="drawdown-labels"><span>0%</span><span style="color:var(--red)">FREEZE at −20%</span></div>
+        </div>
+      </div>
+      <div class="status-block">
+        <div class="status-block-header">⚠ BETA PENDING UPLOAD (4)</div>
+        <div class="beta-list">
+          <div class="beta-item"><div class="beta-dot"></div>doctrine_core_v1_4_5_BETA_1.md</div>
+          <div class="beta-item"><div class="beta-dot"></div>doctrine_ops_v1_5_4_BETA_1.md</div>
+          <div class="beta-item"><div class="beta-dot"></div>portfolio_state_v1_0_17_BETA_1.md</div>
+          <div class="beta-item"><div class="beta-dot"></div>doctrine_pe_v1_2_1_BETA_1.md</div>
+        </div>
+      </div>
+      <div class="status-block">
+        <div class="status-block-header">DC-06 NEGLECT CLOCKS — NOT SET (2)</div>
+        <div class="neglect-list" id="neglectList"></div>
+        <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">VRT/APH/FN/TSM thesis set Mar 16 ✅ · ANET Mar 10 ✅ · MU Mar 15 ✅</div>
+      </div>
+      <div class="status-block">
+        <div class="status-block-header">STANDING ORDERS — ACTIVE</div>
+        <div class="so-list">
+          <div class="so-item">
+            <div class="so-header"><span class="so-id">SO-1 ASTS</span><span class="so-status broker">BROKER PENDING</span></div>
+            <div class="so-desc">+0.7 fill → 10.0 target · ~฿1,971 · Submit BEFORE <span class="warn">Apr 11 blackout</span> · No VIX gate (DC-05)</div>
+          </div>
+          <div class="so-item">
+            <div class="so-header"><span class="so-id">SO-2 ONDS</span><span class="so-status watch">WATCH</span></div>
+            <div class="so-desc">Hold tracking share — <span class="warn">Mar 25 earnings</span> + Mistral merger</div>
+          </div>
+          <div class="so-item">
+            <div class="so-header"><span class="so-id">SO-5 FN</span><span class="so-status watch">WATCH</span></div>
+            <div class="so-desc">🥇 Matrix Winner 70pts · Deploy ฿7,000 · Gate: VIX&lt;25 + green ≥1.5x ADV (967,560)</div>
+          </div>
+          <div class="so-item">
+            <div class="so-header"><span class="so-id">SO-6 NBIS</span><span class="so-status gate">GATE PENDING</span></div>
+            <div class="so-desc">Tranche 1: ฿12,014 at VIX&lt;25 + NBIS green ≥1.5x ADV · <span class="warn">⚠ EXPIRY MAR 26</span></div>
+          </div>
+        </div>
+        <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">SO-3/4/7/8 RESOLVED ✅ · SO-7: APH China 16.3% → ⚠ CHINA WATCH · SO-8: AAOI banned (PP&amp;E 45.4%)</div>
+      </div>
+      <div class="status-block">
+        <div class="status-block-header">WATCHTOWER</div>
+        <div style="padding:8px 10px 4px">
+          <div class="wt-capacity">
+            <span class="capacity-label">CAPACITY</span>
+            <span style="color:var(--green);font-weight:700">5 / 6 — 1 OPEN SLOT</span>
+          </div>
+          <div class="wt-grid">
+            <div class="wt-item">
+              <div class="wt-header"><span class="wt-ticker">PLTR</span><span class="wt-status waiting">WAITING</span></div>
+              <div class="wt-thesis">Defense AI OS · CORE</div>
+              <div class="wt-meta"><span class="wt-remove">Remove: Jun 12</span></div>
+            </div>
+            <div class="wt-item blackout">
+              <div class="wt-header"><span class="wt-ticker">TSEM</span><span class="wt-status blocked">⚠ ISRAEL WATCH</span></div>
+              <div class="wt-thesis">SiPho foundry · /thesis refresh required</div>
+              <div class="wt-meta"><span class="wt-remove">Remove: Jun 10</span></div>
+            </div>
+            <div class="wt-item">
+              <div class="wt-header"><span class="wt-ticker">NBIS</span><span class="wt-status active">OPTION C ACTIVE</span></div>
+              <div class="wt-thesis">AI IaaS / GPU cloud · /thesis CLEAR Mar 16</div>
+              <div class="wt-meta"><span class="wt-flag">⚠ EXPIRY MAR 26</span><span class="wt-remove">Remove: Jun 10</span></div>
+            </div>
+            <div class="wt-item blackout">
+              <div class="wt-header"><span class="wt-ticker">BWXT</span><span class="wt-status waiting">WAITING</span></div>
+              <div class="wt-thesis">Nuclear components · CORE · 🥇 70pts · Deploy ฿11,000</div>
+              <div class="wt-meta"><span class="wt-flag">⚠ Blackout ~Apr 14 · ADV 1,417,695</span><span class="wt-remove">Remove: Sep 15</span></div>
+            </div>
+            <div class="wt-item blackout">
+              <div class="wt-header"><span class="wt-ticker">KTOS</span><span class="wt-status waiting">WAITING</span></div>
+              <div class="wt-thesis">Defense drones/UAV · SATELLITE · S-score 25/30</div>
+              <div class="wt-meta"><span class="wt-flag">⚠ Blackout ~Apr 17 · /audit at execution</span><span class="wt-remove">Remove: Sep 15</span></div>
+            </div>
+            <div class="wt-item" style="border:1px dashed var(--border-bright);opacity:0.5">
+              <div class="wt-header"><span class="wt-ticker" style="color:var(--text-dim)">OPEN</span><span class="wt-status waiting">SLOT 6</span></div>
+              <div class="wt-thesis" style="color:var(--text-dim)">AAOI permanently banned Mar 16 · Rule 1 breach</div>
+              <div class="wt-meta"><span class="wt-remove">Next scorecard: Jun 2026</span></div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:8px;padding:0 2px">
+            Next scorecard: Jun 2026 · Carry-forward: AVAV, GEV, VSAT · 1 slot open for Q2 candidate
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- end main-grid -->
+</div><!-- end tab-arsenal -->
+<!-- TAB: VAULT HEALTH -->
+<div class="tab-pane" id="tab-vault">
+<div class="vault-tab-grid">
+  <div class="panel">
+    <div class="section-label">VAULT OVERVIEW</div>
+    <div class="vault-summary-grid">
+      <div class="vsummary-card"><div class="vsummary-label">VAULT TOTAL</div><div class="vsummary-value">฿397,354</div><div class="vsummary-sub">Return: +9.95%</div></div>
+      <div class="vsummary-card"><div class="vsummary-label">E-CLASS LIQUID</div><div class="vsummary-value" style="color:var(--green)">฿97,173</div><div class="vsummary-sub">×0.80 → Level 1</div></div>
+      <div class="vsummary-card"><div class="vsummary-label">PEAK EXPOSURE</div><div class="vsummary-value" style="color:var(--text-bright)">35.7%</div><div class="vsummary-sub">SOXX · cap at 50%</div></div>
+      <div class="vsummary-card"><div class="vsummary-label">TRIGGERS ACTIVE</div><div class="vsummary-value" style="color:var(--green)">0 / 4</div><div class="vsummary-sub">All clear</div></div>
+    </div>
+    <div class="section-label" style="margin-top:14px">TRIGGER STATUS</div>
+    <div class="vtrigger-grid">
+      <div class="vtrigger-card">
+        <div class="vtrigger-header"><span class="vtrigger-name">T1 — THESIS BREAK</span><span class="vt-badge clear">CLEAR</span></div>
+        <div class="vtrigger-detail">No ETF thesis breaks detected across SOXX / VOO / QQQ / EWY / GLD</div>
+      </div>
+      <div class="vtrigger-card">
+        <div class="vtrigger-header"><span class="vtrigger-name">T2 — UNDERPERFORMANCE</span><span class="vt-badge clear" id="t2Badge">CLEAR</span></div>
+        <div class="vtrigger-detail">12m delta vs VOO (+17.7%). Threshold: &gt;15pp below VOO</div>
+        <div class="vt-deltas">
+          <div class="vt-delta-row"><span>SOXX</span><span class="vt-delta-val pos" id="soxxDelta">+47pp</span></div>
+          <div class="vt-delta-row"><span>QQQ</span><span class="vt-delta-val pos" id="qqqDelta">+6pp</span></div>
+          <div class="vt-delta-row"><span>EWY</span><span class="vt-delta-val pos" id="ewyDelta">+103pp</span></div>
+          <div class="vt-delta-row"><span style="color:var(--text-dim);font-size:9px">last refreshed</span><span style="color:var(--text-dim);font-size:9px" id="t2Watermark">cached Mar 13</span></div>
+        </div>
+      </div>
+      <div class="vtrigger-card">
+        <div class="vtrigger-header"><span class="vtrigger-name">T3 — CONCENTRATION &gt;50%</span><span class="vt-badge clear">CLEAR</span></div>
+        <div class="vtrigger-detail">Peak SOXX at 35.7% — 14.3pp below 50% trigger. No action needed.</div>
+      </div>
+      <div class="vtrigger-card watch-card">
+        <div class="vtrigger-header"><span class="vtrigger-name">T4 — EARNINGS BLACKOUT</span><span class="vt-badge watch">MONITOR</span></div>
+        <div class="vtrigger-detail">SCBKEQTGE decision deferred to Mar 19 (post-MU earnings Mar 18). No switch ±7 days from key earnings.</div>
+      </div>
+    </div>
+    <div class="section-label" style="margin-top:14px">
+      YTD BENCHMARK PERFORMANCE
+      <button class="vtab-refresh-btn" id="vaultRefreshBtn" onclick="fetchVaultBenchmarks()" style="float:right;margin-top:-2px">
+        <span id="vaultRefreshIcon">↻</span> REFRESH BENCHMARKS
+      </button>
+    </div>
+    <div class="ytd-chart-wrap"><canvas id="ytdBarChart"></canvas></div>
+    <div style="font-size:10px;color:var(--text-dim);margin-top:2px">
+      YTD % Jan 1 → current · <span id="ytdNote">Cached data shown — click refresh for live</span>
+    </div>
+    <div class="section-label" style="margin-top:14px">EXPOSURE MAP</div>
+    <div class="vexp-row"><span class="vexp-name">SOXX — semiconductors</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:71.4%;background:#3a9fff;"></div></div><span class="vexp-pct">35.7%</span><span class="vexp-val">฿142,011</span><span class="vexp-wrapper">E+SSF+SSFE</span></div>
+    <div class="vexp-row"><span class="vexp-name">VOO — S&P 500</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:61%;background:#00d084;"></div></div><span class="vexp-pct">30.6%</span><span class="vexp-val">฿121,565</span><span class="vexp-wrapper">E+SSF+SSFA+SSFE+RMF</span></div>
+    <div class="vexp-row"><span class="vexp-name">Global tech</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:20.4%;background:#ffb800;"></div></div><span class="vexp-pct">10.2%</span><span class="vexp-val">฿40,537</span><span class="vexp-wrapper">RMF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">QQQ — Nasdaq-100</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:16.4%;background:#00c8e0;"></div></div><span class="vexp-pct">8.2%</span><span class="vexp-val">฿32,596</span><span class="vexp-wrapper">RMF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">US equity</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:12.4%;background:#607090;"></div></div><span class="vexp-pct">6.2%</span><span class="vexp-val">฿24,802</span><span class="vexp-wrapper">SSF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">EWY — South Korea</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:6.8%;background:#ff4055;"></div></div><span class="vexp-pct">3.4%</span><span class="vexp-val">฿13,606</span><span class="vexp-wrapper">E-class 💧</span></div>
+    <div class="vexp-row"><span class="vexp-name">SET — Thailand</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:5.2%;background:#3a5070;"></div></div><span class="vexp-pct">2.6%</span><span class="vexp-val">฿10,159</span><span class="vexp-wrapper">SSF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">Gold</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:1.2%;background:#ff8c00;"></div></div><span class="vexp-pct">0.6%</span><span class="vexp-val">฿2,373</span><span class="vexp-wrapper">E-class 💧</span></div>
+    <div class="vault-watermark">
+      <span>Next formal review: Dec 2026 (annual) or trigger fire</span>
+      <span style="color:var(--amber)">SCBKEQTGE: decision Mar 19</span>
+    </div>
+  </div>
+  <!-- VAULT RIGHT PANEL -->
+  <div class="panel">
+    <div class="status-block">
+      <div class="status-block-header">SWITCH TRIGGER RULES</div>
+      <div class="so-list">
+        <div class="so-item"><div class="so-header"><span class="so-id">T1</span><span class="so-status watch">THESIS</span></div><div class="so-desc">Thesis break at master ETF level (SOXX / VOO / QQQ / EWY / GLD)</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">T2</span><span class="so-status watch">PERF</span></div><div class="so-desc">Underperformance vs VOO &gt;15pp over 12 months</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">T3</span><span class="so-status watch">CONC</span></div><div class="so-desc">Extreme vault concentration &gt;50% in single exposure</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">T4</span><span class="so-status watch">BLACKOUT</span></div><div class="so-desc">No switch ±7 days from key earnings event in underlying</div></div>
+      </div>
+      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">Any ONE trigger sufficient for review. Switch requires Commander decision and Consensus Log entry.</div>
+    </div>
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">E-CLASS LIQUID SUMMARY</div>
+      <div class="so-list">
+        <div class="so-item"><div class="so-header"><span class="so-id">SCBKEQTGE</span><span class="so-status gate">DEFERRED</span></div><div class="so-desc">EWY South Korea E-class · Decision Mar 19 post-MU earnings</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">SCBS&P500(E)</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">S&P 500 E-class · Switchable · Part of ฿97,173 liquid total</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">SCBSEMI(E)</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">Semiconductor E-class · Switchable</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">SCBGOLDHE</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">Gold E-class · Switchable · ฿2,373 (0.6%)</div></div>
+      </div>
+      <div style="padding:6px 10px;background:var(--bg-3);border-top:1px solid var(--border)">
+        <div class="hwm-row"><span class="status-key">E-class gross</span><span class="status-val green">฿121,466</span></div>
+        <div class="hwm-row"><span class="status-key">Haircut (×0.80)</span><span class="status-val">฿97,173</span></div>
+        <div class="hwm-row"><span class="status-key">Counts toward Level 1</span><span class="status-val green">✓ Tier 2</span></div>
+      </div>
+    </div>
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header" style="color:var(--text-dim)">LOCKED (TIER 3 — 0% LIQUID)</div>
+      <div class="so-list">
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SSF / RMF / SSFA / SSFE</span></div><div class="so-desc" style="color:var(--text-dim)">Locked wrappers — no cash redemption. Do NOT count toward Level 1. Rebalance via switch to E-class only.</div></div>
+      </div>
+    </div>
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">SCHEDULED REVIEWS</div>
+      <div class="so-list">
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--amber)">SCBKEQTGE</span><span class="so-status gate">MAR 19</span></div><div class="so-desc">Post-MU earnings decision — EWY Korea E-class review</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">ANNUAL /VAULT_REVIEW</span><span class="so-status pending">DEC 2026</span></div><div class="so-desc">Full 5-step review procedure — or earlier if any trigger fires</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">LEVEL 2 REVIEW</span><span class="so-status pending">฿800K TRIGGER</span></div><div class="so-desc">Pre-Flight at ฿800,000 liquid — vault rebalance for Level 2 structure</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- end tab-vault -->
+<footer class="footer">
+  <div class="footer-note">SNIPER COMMAND CENTER v2 · READ ONLY · No buy/sell signals · Commander-in-loop required for all execution decisions</div>
+  <div class="data-source">
+    <span>data/prices.json · GitHub Actions daily 09:00 BKK</span>
+    <span class="last-refresh" id="lastRefresh">Last refresh: —</span>
+  </div>
+</footer>
+<script>
+// ─── STATE ───
+const DAY0 = new Date('2026-03-13');
+const TODAY = new Date();
+const ARSENAL_CORE = [
+  { ticker: 'VRT',  shares: 0.148355, cost: 235.92, flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: 'Yellow Watch · F3=0 · 50pts' },
+  { ticker: 'VST',  shares: 12,       cost: 158.32, flag: 'C',  thesis: 'Mar 10, 2026', day0: false, note: 'Yellow Watch active' },
+  { ticker: 'MU',   shares: 3.062527, cost: 294.01, flag: 'B',  thesis: 'Mar 15, 2026', day0: false, note: '✅ INTACT · Mar 18 earnings ⚠️' },
+  { ticker: 'APH',  shares: 8,        cost: 136.95, flag: '—',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ CHINA WATCH 16.3% · 65pts' },
+  { ticker: 'ANET', shares: 3,        cost: 122.12, flag: '—',  thesis: 'Mar 10, 2026', day0: false, note: 'Victory target $200' },
+  { ticker: 'TSM',  shares: 0.08434,  cost: 296.42, flag: 'B',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ ISRAEL WATCH · 50pts' },
+  { ticker: 'FN',   shares: 0,        cost: null,   flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: '🥇 WINNER 70pts · Deploy ฿7,000' },
+];
+const ARSENAL_SAT = [
+  { ticker: 'ASTS', shares: 9.3, cost: 74.50, flag: 'A', thesis: null, day0: true,  note: 'SO-1 pending broker · Blackout ~Apr 11' },
+  { ticker: 'ONDS', shares: 1,   cost: 9.05,  flag: 'A', thesis: null, day0: true,  note: 'Mar 25 earnings · no expansion' },
+];
+const NEGLECT_TICKERS = ['ASTS', 'ONDS'];
+// Cached prices (Mar 13, 2026 — stale; replaced on first prices.json load)
+let prices = {
+  VRT: 258.88, ASTS: 86.34, VST: 158.95, MU: 426.13,
+  APH: 133.92, ANET: 133.57, TSM: 338.31, ONDS: 10.16,
+  FN: 502.14, BWXT: 194.13, NBIS: 112.95,
+  '^VIX': 27.19, 'THB=X': 32.42
+};
+let pricesStale = true;
+
+// ─── CLOCK ───
+function updateClock() {
+  const now = new Date();
+  const bkk = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+  const h = String(bkk.getHours()).padStart(2, '0');
+  const m = String(bkk.getMinutes()).padStart(2, '0');
+  const s = String(bkk.getSeconds()).padStart(2, '0');
+  document.getElementById('clockTime').textContent = `${h}:${m}:${s}`;
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  document.getElementById('clockDate').textContent =
+    `${days[bkk.getDay()]} ${months[bkk.getMonth()]} ${bkk.getDate()}, ${bkk.getFullYear()} GMT+7`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── NEGLECT CLOCKS ───
+function daysElapsed(day0) {
+  return Math.floor((TODAY - day0) / (1000 * 60 * 60 * 24));
+}
+function renderNeglect() {
+  const list = document.getElementById('neglectList');
+  list.innerHTML = '';
+  NEGLECT_TICKERS.forEach(ticker => {
+    const elapsed = daysElapsed(DAY0);
+    const toFlag = 30 - elapsed;
+    const toForce = 60 - elapsed;
+    let statusClass = 'neglect-ok';
+    let label = '';
+    let fillPct = Math.min((elapsed / 60) * 100, 100);
+    if (elapsed >= 60) {
+      statusClass = 'neglect-crit'; label = `FORCED /COUNCIL`;
+    } else if (elapsed >= 30) {
+      statusClass = 'neglect-warn'; label = `⚠ NEGLECT · ${toForce}d to /council`;
+    } else {
+      label = `${toFlag}d to flag · ${toForce}d to /council`;
+    }
+    const div = document.createElement('div');
+    div.className = 'neglect-item';
+    div.innerHTML = `
+      <span class="ni-ticker">${ticker}</span>
+      <span class="ni-day0">Day 0: Mar 13 · Day ${elapsed}</span>
+      <div class="ni-countdown">
+        <div class="ni-days ${statusClass}">${label}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+renderNeglect();
+
+// ─── ARSENAL TABLE ───
+function flagBadge(flag) {
+  if (flag === 'A') return '<span class="flag flag-a">A</span>';
+  if (flag === 'B') return '<span class="flag flag-b">B</span>';
+  if (flag === 'C') return '<span class="flag flag-c">C</span>';
+  return '<span class="flag-none">—</span>';
+}
+function pnlCell(shares, cost, price) {
+  if (shares === 0 || cost === null) return '<td class="right pnl-flat">—</td>';
+  const pct = ((price - cost) / cost * 100).toFixed(1);
+  const cls = pct > 0 ? 'pnl-pos' : pct < 0 ? 'pnl-neg' : 'pnl-flat';
+  const sign = pct > 0 ? '+' : '';
+  return `<td class="right pnl-cell ${cls}">${sign}${pct}%</td>`;
+}
+function thesisCell(thesis, day0, note) {
+  if (thesis) {
+    const noteStr = note ? `<span style="color:var(--text-dim);font-size:10px"> · ${note}</span>` : '';
+    return `<td class="right thesis-cell thesis-set">${thesis}${noteStr}</td>`;
+  }
+  if (day0) {
+    const elapsed = daysElapsed(DAY0);
+    const toFlag = 30 - elapsed;
+    let cls = 'neglect-ok';
+    let txt = `NOT SET · ${toFlag}d to flag`;
+    if (elapsed >= 60) { cls = 'neglect-crit'; txt = 'NOT SET · ⚠ FORCED /COUNCIL'; }
+    else if (elapsed >= 30) { cls = 'neglect-warn'; txt = 'NOT SET · ⚠ NEGLECT'; }
+    const noteStr = note ? `<br><span style="color:var(--text-dim);font-size:10px">${note}</span>` : '';
+    return `<td class="right thesis-cell thesis-not-set"><span class="${cls}">${txt}</span>${noteStr}</td>`;
+  }
+  return `<td class="right thesis-cell thesis-not-set">—</td>`;
+}
+function renderArsenal(positions, tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  tbody.innerHTML = '';
+  positions.forEach(p => {
+    const price = prices[p.ticker] || 0;
+    const priceDisplay = pricesStale
+      ? `<span class="price-cell loading">${price.toFixed(2)}*</span>`
+      : `<span class="price-cell">$${price.toFixed(2)}</span>`;
+    const costDisplay = p.cost ? `$${p.cost.toFixed(2)}` : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ticker-cell">${p.ticker}</td>
+      <td class="right">${priceDisplay}</td>
+      <td class="right cost-cell">${costDisplay}</td>
+      ${pnlCell(p.shares, p.cost, price)}
+      <td class="center">${flagBadge(p.flag)}</td>
+      ${thesisCell(p.thesis, p.day0, p.note)}
+    `;
+    tbody.appendChild(tr);
+  });
+}
+renderArsenal(ARSENAL_CORE, 'arsenalCore');
+renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
+
+// ─── GATE STATUS ───
+function updateGate(vix) {
+  const badge = document.getElementById('gateBadge');
+  const gateText = document.getElementById('gateText');
+  const vixEl = document.getElementById('vixVal');
+  vixEl.textContent = vix.toFixed(2);
+  if (vix >= 25) {
+    badge.className = 'gate-badge freeze';
+    gateText.textContent = 'FREEZE';
+    vixEl.style.color = 'var(--amber)';
+  } else {
+    badge.className = 'gate-badge clear';
+    gateText.textContent = 'CLEAR';
+    vixEl.style.color = 'var(--green)';
+  }
+}
+function updateTHB(rate) {
+  const el = document.getElementById('thbVal');
+  if (rate < 32) {
+    el.style.color = 'var(--cyan)';
+    el.textContent = rate.toFixed(2) + ' ZoneA';
+  } else if (rate <= 36) {
+    el.style.color = 'var(--green)';
+    el.textContent = rate.toFixed(2) + ' ZoneB';
+  } else {
+    el.style.color = 'var(--amber)';
+    el.textContent = rate.toFixed(2) + ' ZoneC';
+  }
+}
+// Initialize with cached prices
+updateGate(prices['^VIX']);
+updateTHB(prices['THB=X']);
+
+// ─── FETCH PRICES — reads ../data/prices.json (GitHub Actions output) ───
+async function fetchPrices() {
+  const btn = document.getElementById('refreshBtn');
+  const icon = document.getElementById('refreshIcon');
+  btn.classList.add('loading');
+  icon.classList.add('spin');
+  icon.textContent = '↻';
+  try {
+    const res = await fetch('../data/prices.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+
+    // Populate prices from d.prices
+    Object.entries(d.prices).forEach(([sym, v]) => {
+      if (v && v.price !== null) prices[sym] = v.price;
+    });
+
+    // Update gate from d.gate
+    updateGate(d.gate.vix);
+    updateTHB(d.gate.thb);
+
+    // Update YTD data for vault chart
+    vaultYtdData = {
+      SOXX: d.prices['SOXX']?.ytd_pct ?? 5.6,
+      VOO:  d.prices['VOO']?.ytd_pct  ?? -3.1,
+      QQQ:  d.prices['QQQ']?.ytd_pct  ?? -3.2,
+      EWY:  d.prices['EWY']?.ytd_pct  ?? 21.5,
+    };
+
+    pricesStale = false;
+    renderArsenal(ARSENAL_CORE, 'arsenalCore');
+    renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
+    document.getElementById('lastRefresh').textContent = 'Last refresh: ' + d.updated_bkk;
+
+  } catch (err) {
+    console.warn('prices.json fetch failed — using cached defaults:', err);
+    document.getElementById('lastRefresh').textContent = '⚠ prices.json unavailable — cached Mar 13 data shown';
+  } finally {
+    btn.classList.remove('loading');
+    icon.classList.remove('spin');
+    icon.textContent = '↻';
+  }
+}
+
+// Auto-load on page open
+window.addEventListener('load', () => {
+  setTimeout(fetchPrices, 300);
+});
+
+// ─── TAB SWITCHING ───
+let vaultChartReady = false;
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'vault' && !vaultChartReady && typeof Chart !== 'undefined') {
+    initYtdChart();
+    vaultChartReady = true;
+  }
+}
+
+// ─── VAULT YTD CHART ───
+let vaultYtdData = { SOXX: 5.6, EWY: 21.5, QQQ: -3.2, VOO: -3.1 };
+let ytdChartInstance = null;
+function initYtdChart() {
+  const ctx = document.getElementById('ytdBarChart');
+  if (!ctx) return;
+  const labels = ['SOXX', 'EWY', 'QQQ', 'VOO'];
+  const data = [vaultYtdData.SOXX, vaultYtdData.EWY, vaultYtdData.QQQ, vaultYtdData.VOO];
+  const colors = ['#3a9fff', '#ff4055', '#00c8e0', '#00d084'];
+  if (ytdChartInstance) ytdChartInstance.destroy();
+  ytdChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 3, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => (c.raw >= 0 ? '+' : '') + c.raw.toFixed(1) + '%' } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#607090', font: { size: 12, family: 'JetBrains Mono' } } },
+        y: {
+          grid: { color: 'rgba(30,42,58,0.8)' },
+          ticks: { color: '#607090', font: { size: 11, family: 'JetBrains Mono' }, callback: v => (v >= 0 ? '+' : '') + v + '%' }
+        }
+      }
+    }
+  });
+}
+
+// ─── VAULT BENCHMARK REFRESH — reads ../data/prices.json ───
+async function fetchVaultBenchmarks() {
+  const btn = document.getElementById('vaultRefreshBtn');
+  const icon = document.getElementById('vaultRefreshIcon');
+  btn.classList.add('loading');
+  icon.style.animation = 'spin 0.8s linear infinite';
+  icon.style.display = 'inline-block';
+  try {
+    const res = await fetch('../data/prices.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+
+    const benchmarks = ['SOXX', 'VOO', 'QQQ', 'EWY'];
+    benchmarks.forEach(sym => {
+      const entry = d.prices[sym];
+      if (!entry) return;
+      if (entry.ytd_pct !== undefined && entry.ytd_pct !== null) {
+        vaultYtdData[sym] = entry.ytd_pct;
+      } else if (entry.price && d.ytd_ref[sym]) {
+        vaultYtdData[sym] = parseFloat(((entry.price - d.ytd_ref[sym]) / d.ytd_ref[sym] * 100).toFixed(1));
+      }
+    });
+
+    // T2 deltas vs VOO
+    const vooPct    = vaultYtdData.VOO;
+    const soxxDelta = +(vaultYtdData.SOXX - vooPct).toFixed(0);
+    const qqqDelta  = +(vaultYtdData.QQQ  - vooPct).toFixed(0);
+    const ewyDelta  = +(vaultYtdData.EWY  - vooPct).toFixed(0);
+
+    document.getElementById('soxxDelta').textContent = (soxxDelta >= 0 ? '+' : '') + soxxDelta + 'pp';
+    document.getElementById('qqqDelta').textContent  = (qqqDelta  >= 0 ? '+' : '') + qqqDelta  + 'pp';
+    document.getElementById('ewyDelta').textContent  = (ewyDelta  >= 0 ? '+' : '') + ewyDelta  + 'pp';
+    document.getElementById('soxxDelta').className = 'vt-delta-val ' + (soxxDelta >= -15 ? 'pos' : 'neg');
+    document.getElementById('qqqDelta').className  = 'vt-delta-val ' + (qqqDelta  >= -15 ? 'pos' : 'neg');
+    document.getElementById('ewyDelta').className  = 'vt-delta-val ' + (ewyDelta  >= -15 ? 'pos' : 'neg');
+
+    document.getElementById('t2Watermark').textContent = 'refreshed ' + d.updated_bkk;
+    document.getElementById('ytdNote').textContent = 'YTD % Jan 1 → current · ' + d.updated_bkk;
+    initYtdChart();
+
+  } catch (err) {
+    document.getElementById('ytdNote').textContent = '⚠ prices.json unavailable — cached Mar 13 data shown';
+  } finally {
+    btn.classList.remove('loading');
+    icon.style.animation = '';
+    icon.textContent = '↻';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+name: Update Prices
+
+on:
+  schedule:
+    - cron: '0 2 * * 1-5'   # 09:00 Bangkok (UTC+7), weekdays only
+  workflow_dispatch:           # manual trigger
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install yfinance
+
+      - name: Fetch prices
+        run: python scripts/fetch_prices.py
+
+      - name: Upload prices.json artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prices-json
+          path: data/prices.json
+          if-no-files-found: warn
+
+      - name: Commit updated prices
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: update prices'
+          file_pattern: data/prices.json
