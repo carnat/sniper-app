@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/claude_guardrail.py"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python*)",
+      "Bash(pip*)",
+      "Bash(streamlit*)",
+      "Bash(pytest*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git log*)",
+      "Bash(git push*)",
+      "Bash(git fetch*)",
+      "Bash(git branch*)"
+    ],
+    "deny": [
+      "Bash(curl * broker*)",
+      "Bash(curl * trade*)",
+      "Bash(curl * order*)",
+      "Bash(rm -rf *)",
+      "Bash(* secrets.toml*)"
+    ]
+  }
+}
