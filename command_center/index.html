@@ -346,9 +346,22 @@
   .pin-dismiss { font-size: 10px; color: var(--text-dim); text-align: center; cursor: pointer; letter-spacing: 0.5px; }
   .pin-dismiss:hover { color: var(--text-mid); }
   .pin-success { font-size: 11px; color: var(--green); text-align: center; }
+  /* ─── PRIVATE VALUE LOCK ─── */
+  body.locked [data-pv] {
+    color: transparent !important;
+    text-shadow: 0 0 7px rgba(168,196,220,0.28);
+    user-select: none;
+  }
+  /* ─── BETA NOTICE BAR (quiet) ─── */
+  .beta-notice {
+    background: var(--bg-1); border-bottom: 1px solid var(--border);
+    padding: 4px 16px; display: flex; align-items: center; gap: 10px;
+    font-size: 10px; color: var(--text-dim); letter-spacing: 0.3px;
+  }
+  .beta-notice .alert-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 1px; color: var(--text-mid); }
 </style>
 </head>
-<body>
+<body class="locked">
 <!-- PIN UNLOCK MODAL -->
 <div id="pinOverlay" class="pin-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
   <div class="pin-box">
@@ -400,10 +413,10 @@
     </button>
   </div>
 </header>
-<!-- BETA ALERT BAR -->
-<div class="alert-bar beta" id="betaAlert">
-  <span class="alert-label">⚠ BETA PENDING UPLOAD (4)</span>
-  <span>doctrine_core_v1_4_5_BETA_1.md · doctrine_ops_v1_5_4_BETA_1.md · portfolio_state_v1_0_17_BETA_1.md · doctrine_pe_v1_2_1_BETA_1.md — Upload to Space before next doctrine session</span>
+<!-- BETA NOTICE BAR -->
+<div class="beta-notice" id="betaAlert">
+  <span class="alert-label">BETA PENDING</span>
+  <span>doctrine_core · doctrine_ops · portfolio_state · doctrine_pe — 4 files to upload to Space before next doctrine session</span>
 </div>
 <!-- TAB NAV -->
 <nav class="tab-nav">
@@ -567,13 +580,13 @@
     <div class="thai-grid">
       <div class="thai-card">
         <div class="thai-ticker">TISCO</div>
-        <div class="thai-shares" id="tiscoShares">฿97.26 avg</div>
+        <div class="thai-shares" id="tiscoShares" data-pv>฿97.26 avg</div>
         <div class="thai-cost">Goal: YIELD + LIQUIDITY</div>
         <div class="thai-rule">Exit: Yield &lt;5% OR NPL &gt;3.5%</div>
       </div>
       <div class="thai-card">
         <div class="thai-ticker">ADVANC</div>
-        <div class="thai-shares" id="advancShares">฿284.04 avg</div>
+        <div class="thai-shares" id="advancShares" data-pv>฿284.04 avg</div>
         <div class="thai-cost">HOLD → DIV Apr 30</div>
         <div class="thai-rule">Exit: Yield &lt;5% OR NPL &gt;3.5%</div>
       </div>
@@ -581,9 +594,9 @@
     <div class="condo-block" style="margin-top:6px">
       <div>
         <div class="condo-label">THE ANCHOR — CONDO</div>
-        <div class="condo-sub">Val ฿1.7M · Debt ฿1.5M · Tier 3 (0% liquid)</div>
+        <div class="condo-sub" data-pv>Val ฿1.7M · Debt ฿1.5M · Tier 3 (0% liquid)</div>
       </div>
-      <div class="condo-cf">+฿2,700/mo CF</div>
+      <div class="condo-cf" data-pv>+฿2,700/mo CF</div>
     </div>
     <div class="section-label" style="margin-top:16px">VAULT — PASSIVE</div>
     <div class="vault-grid">
@@ -633,10 +646,10 @@
       <div class="status-block">
         <div class="status-block-header">HWM + DRAWDOWN FREEZE</div>
         <div class="hwm-block">
-          <div class="hwm-row"><span class="status-key">High Water Mark</span><span class="status-val green">฿287,218</span></div>
-          <div class="hwm-row"><span class="status-key">Current Liquid</span><span class="status-val">฿287,218</span></div>
+          <div class="hwm-row"><span class="status-key">High Water Mark</span><span class="status-val green" data-pv>฿287,218</span></div>
+          <div class="hwm-row"><span class="status-key">Current Liquid</span><span class="status-val" data-pv>฿287,218</span></div>
           <div class="hwm-row"><span class="status-key">Drawdown from HWM</span><span class="status-val green">0.0%</span></div>
-          <div class="hwm-row"><span class="status-key">Freeze trigger at</span><span class="status-val dim">−20% = ฿229,774</span></div>
+          <div class="hwm-row"><span class="status-key">Freeze trigger at</span><span class="status-val dim" data-pv>−20% = ฿229,774</span></div>
           <div class="drawdown-gauge">
             <div class="drawdown-fill" style="width:100%"></div>
             <div class="drawdown-threshold"></div>
@@ -644,13 +657,10 @@
           <div class="drawdown-labels"><span>0%</span><span style="color:var(--red)">FREEZE at −20%</span></div>
         </div>
       </div>
-      <div class="status-block">
-        <div class="status-block-header">⚠ BETA PENDING UPLOAD (4)</div>
-        <div class="beta-list">
-          <div class="beta-item"><div class="beta-dot"></div>doctrine_core_v1_4_5_BETA_1.md</div>
-          <div class="beta-item"><div class="beta-dot"></div>doctrine_ops_v1_5_4_BETA_1.md</div>
-          <div class="beta-item"><div class="beta-dot"></div>portfolio_state_v1_0_17_BETA_1.md</div>
-          <div class="beta-item"><div class="beta-dot"></div>doctrine_pe_v1_2_1_BETA_1.md</div>
+      <div class="status-block" style="opacity:0.6">
+        <div class="status-block-header" style="color:var(--text-dim)">BETA PENDING UPLOAD (4)</div>
+        <div class="so-list">
+          <div class="so-item" style="padding:4px 10px"><div class="so-desc" style="color:var(--text-dim);font-size:10px">doctrine_core · doctrine_ops · portfolio_state · doctrine_pe — Upload to Space</div></div>
         </div>
       </div>
       <div class="status-block">
@@ -663,7 +673,7 @@
         <div class="so-list">
           <div class="so-item">
             <div class="so-header"><span class="so-id">SO-1 ASTS</span><span class="so-status broker">BROKER PENDING</span></div>
-            <div class="so-desc">+0.7 fill → 10.0 target · ~฿1,971 · Submit BEFORE <span class="warn">Apr 11 blackout</span> · No VIX gate (DC-05)</div>
+            <div class="so-desc">+0.7 fill → 10.0 target · ~<span data-pv>฿1,971</span> · Submit BEFORE <span class="warn">Apr 11 blackout</span> · No VIX gate (DC-05)</div>
           </div>
           <div class="so-item">
             <div class="so-header"><span class="so-id">SO-2 ONDS</span><span class="so-status watch">WATCH</span></div>
@@ -671,11 +681,11 @@
           </div>
           <div class="so-item">
             <div class="so-header"><span class="so-id">SO-5 FN</span><span class="so-status watch">WATCH</span></div>
-            <div class="so-desc">🥇 Matrix Winner 70pts · Deploy ฿7,000 · Gate: VIX&lt;25 + green ≥1.5x ADV (967,560)</div>
+            <div class="so-desc">🥇 Matrix Winner 70pts · Deploy <span data-pv>฿7,000</span> · Gate: VIX&lt;25 + green ≥1.5x ADV (967,560)</div>
           </div>
           <div class="so-item">
             <div class="so-header"><span class="so-id">SO-6 NBIS</span><span class="so-status gate">GATE PENDING</span></div>
-            <div class="so-desc">Tranche 1: ฿12,014 at VIX&lt;25 + NBIS green ≥1.5x ADV · <span class="warn">⚠ EXPIRY MAR 26</span></div>
+            <div class="so-desc">Tranche 1: <span data-pv>฿12,014</span> at VIX&lt;25 + NBIS green ≥1.5x ADV · <span class="warn">⚠ EXPIRY MAR 26</span></div>
           </div>
         </div>
         <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">SO-3/4/7/8 RESOLVED ✅ · SO-7: APH China 16.3% → ⚠ CHINA WATCH · SO-8: AAOI banned (PP&amp;E 45.4%)</div>
@@ -1092,6 +1102,7 @@ let prices = {
   '^VIX': 27.19, 'THB=X': 32.42
 };
 let pricesStale = true;
+let privateUnlocked = false;
 
 // ─── CLOCK ───
 function updateClock() {
@@ -1183,7 +1194,7 @@ function renderArsenal(positions, tbodyId) {
     const priceDisplay = pricesStale
       ? `<span class="price-cell loading">${price.toFixed(2)}*</span>`
       : `<span class="price-cell">$${price.toFixed(2)}</span>`;
-    const costDisplay = p.cost ? `$${p.cost.toFixed(2)}` : '—';
+    const costDisplay = (privateUnlocked && p.cost) ? `$${p.cost.toFixed(2)}` : '——';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="ticker-cell">${p.ticker}</td>
@@ -1267,6 +1278,8 @@ async function decryptPrivateData(encData, pin) {
 }
 
 function injectPrivateData(d) {
+  privateUnlocked = true;
+  document.body.classList.remove('locked');
   // Level 1
   if (d.level1) {
     const cur = d.level1.current;
