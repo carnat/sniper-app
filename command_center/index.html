@@ -272,6 +272,21 @@
   .wt-status.waiting { background: var(--bg-3); color: var(--text-mid); border: 1px solid var(--border-bright); }
   .wt-status.active { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
   .wt-status.blocked { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .wt-status.deploy { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); animation: pulse-amber 2s ease-in-out infinite; }
+  .wt-status.ready { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .wt-table-row-crit { background: rgba(255,184,0,0.04); }
+  .wt-blackout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .wt-blackout-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; }
+  .wt-blackout-card.crit { border-color: var(--red); }
+  .wt-blackout-card.warn { border-color: var(--amber); }
+  .wt-blackout-label { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  .wt-blackout-ticker { font-size: 12px; font-weight: 700; color: var(--text-white); }
+  .wt-blackout-desc { font-size: 10px; color: var(--text-base); margin-top: 3px; }
+  .wt-blackout-sub { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+  .wt-countdown-bar { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+  .wt-countdown-days { font-size: 20px; font-weight: 700; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .wt-removal-rules { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; font-size: 10px; color: var(--text-mid); line-height: 1.7; }
+  .wt-adv-val { font-size: 11px; color: var(--text-mid); font-variant-numeric: tabular-nums; }
   .wt-thesis { font-size: 10px; color: var(--text-mid); margin-bottom: 4px; }
   .wt-meta { display: flex; gap: 12px; font-size: 10px; color: var(--text-dim); }
   .wt-flag { color: var(--amber); }
@@ -371,7 +386,7 @@
       </div>
       <div class="meta-item">
         <span class="meta-label">LEVEL 1</span>
-        <span class="meta-value" id="progressPct" style="color:var(--green)">28.7%</span>
+        <span class="meta-value" id="progressPct" style="color:var(--text-dim)">—</span>
       </div>
     </div>
   </div>
@@ -394,6 +409,7 @@
 <nav class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('arsenal', this)">ARSENAL + STATUS</button>
   <button class="tab-btn" onclick="switchTab('vault', this)">VAULT HEALTH</button>
+  <button class="tab-btn" onclick="switchTab('watchtower', this)">WATCHTOWER</button>
 </nav>
 <!-- TAB: ARSENAL + STATUS -->
 <div class="tab-pane active" id="tab-arsenal">
@@ -404,17 +420,17 @@
       <div class="level-header">
         <div class="level-label">LEVEL 1 — BAHT MILLIONAIRE</div>
         <div class="level-nums">
-          <span class="level-current" id="level1Current">28.7%</span>
+          <span class="level-current" id="level1Current">—</span>
           <span class="level-target"> / ฿1,000,000</span>
         </div>
       </div>
       <div class="progress-track">
-        <div class="progress-fill" id="level1Fill" style="width: 28.7%"></div>
+        <div class="progress-fill" id="level1Fill" style="width: 0%"></div>
       </div>
       <div class="level-sub">
         <span id="level1Hwm">HWM: Mar 12</span>
         <span class="preflight-marker">◈ PRE-FLIGHT ฿800K</span>
-        <span id="level1Remaining">71.3% remaining</span>
+        <span id="level1Remaining">—</span>
       </div>
     </div>
     <div class="section-label">ARSENAL — CORE (7)</div>
@@ -582,7 +598,7 @@
     </div>
     <div class="vault-total-row">
       <span class="vault-total-label">VAULT TOTAL</span>
-      <span class="vault-total-value" id="vaultTotalValue">+9.95% return</span>
+      <span class="vault-total-value" id="vaultTotalValue">—</span>
     </div>
     <div style="font-size:10px;color:var(--text-dim);margin-top:4px;padding:0 8px" id="eclassFooter">
       E-Class liquid (×0.80) counts toward Level 1 — Tier 2
@@ -718,8 +734,8 @@
   <div class="panel">
     <div class="section-label">VAULT OVERVIEW</div>
     <div class="vault-summary-grid">
-      <div class="vsummary-card"><div class="vsummary-label">VAULT TOTAL</div><div class="vsummary-value" id="vsVaultTotal">+9.95%</div><div class="vsummary-sub" id="vsVaultSub">Return YTD</div></div>
-      <div class="vsummary-card"><div class="vsummary-label">E-CLASS LIQUID</div><div class="vsummary-value" style="color:var(--green)" id="vsEclass">Tier 2</div><div class="vsummary-sub">×0.80 → Level 1</div></div>
+      <div class="vsummary-card"><div class="vsummary-label">VAULT TOTAL</div><div class="vsummary-value" id="vsVaultTotal" style="color:var(--text-dim)">—</div><div class="vsummary-sub" id="vsVaultSub">Return YTD</div></div>
+      <div class="vsummary-card"><div class="vsummary-label">E-CLASS LIQUID</div><div class="vsummary-value" style="color:var(--text-dim)" id="vsEclass">—</div><div class="vsummary-sub">×0.80 → Level 1</div></div>
       <div class="vsummary-card"><div class="vsummary-label">PEAK EXPOSURE</div><div class="vsummary-value" style="color:var(--text-bright)">35.7%</div><div class="vsummary-sub">SOXX · cap at 50%</div></div>
       <div class="vsummary-card"><div class="vsummary-label">TRIGGERS ACTIVE</div><div class="vsummary-value" style="color:var(--green)">0 / 4</div><div class="vsummary-sub">All clear</div></div>
     </div>
@@ -759,14 +775,14 @@
       YTD % Jan 1 → current · <span id="ytdNote">Cached data shown — click refresh for live</span>
     </div>
     <div class="section-label" style="margin-top:14px">EXPOSURE MAP</div>
-    <div class="vexp-row"><span class="vexp-name">SOXX — semiconductors</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:71.4%;background:#3a9fff;"></div></div><span class="vexp-pct">35.7%</span><span class="vexp-val">฿142,011</span><span class="vexp-wrapper">E+SSF+SSFE</span></div>
-    <div class="vexp-row"><span class="vexp-name">VOO — S&P 500</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:61%;background:#00d084;"></div></div><span class="vexp-pct">30.6%</span><span class="vexp-val">฿121,565</span><span class="vexp-wrapper">E+SSF+SSFA+SSFE+RMF</span></div>
-    <div class="vexp-row"><span class="vexp-name">Global tech</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:20.4%;background:#ffb800;"></div></div><span class="vexp-pct">10.2%</span><span class="vexp-val">฿40,537</span><span class="vexp-wrapper">RMF 🔒</span></div>
-    <div class="vexp-row"><span class="vexp-name">QQQ — Nasdaq-100</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:16.4%;background:#00c8e0;"></div></div><span class="vexp-pct">8.2%</span><span class="vexp-val">฿32,596</span><span class="vexp-wrapper">RMF 🔒</span></div>
-    <div class="vexp-row"><span class="vexp-name">US equity</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:12.4%;background:#607090;"></div></div><span class="vexp-pct">6.2%</span><span class="vexp-val">฿24,802</span><span class="vexp-wrapper">SSF 🔒</span></div>
-    <div class="vexp-row"><span class="vexp-name">EWY — South Korea</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:6.8%;background:#ff4055;"></div></div><span class="vexp-pct">3.4%</span><span class="vexp-val">฿13,606</span><span class="vexp-wrapper">E-class 💧</span></div>
-    <div class="vexp-row"><span class="vexp-name">SET — Thailand</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:5.2%;background:#3a5070;"></div></div><span class="vexp-pct">2.6%</span><span class="vexp-val">฿10,159</span><span class="vexp-wrapper">SSF 🔒</span></div>
-    <div class="vexp-row"><span class="vexp-name">Gold</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:1.2%;background:#ff8c00;"></div></div><span class="vexp-pct">0.6%</span><span class="vexp-val">฿2,373</span><span class="vexp-wrapper">E-class 💧</span></div>
+    <div class="vexp-row"><span class="vexp-name">SOXX — semiconductors</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:71.4%;background:#3a9fff;"></div></div><span class="vexp-pct">35.7%</span><span class="vexp-val" id="vtSOXX" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">E+SSF+SSFE</span></div>
+    <div class="vexp-row"><span class="vexp-name">VOO — S&P 500</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:61%;background:#00d084;"></div></div><span class="vexp-pct">30.6%</span><span class="vexp-val" id="vtVOO" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">E+SSF+SSFA+SSFE+RMF</span></div>
+    <div class="vexp-row"><span class="vexp-name">Global tech</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:20.4%;background:#ffb800;"></div></div><span class="vexp-pct">10.2%</span><span class="vexp-val" id="vtGlobalTech" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">RMF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">QQQ — Nasdaq-100</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:16.4%;background:#00c8e0;"></div></div><span class="vexp-pct">8.2%</span><span class="vexp-val" id="vtQQQ" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">RMF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">US equity</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:12.4%;background:#607090;"></div></div><span class="vexp-pct">6.2%</span><span class="vexp-val" id="vtUSEquity" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">SSF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">EWY — South Korea</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:6.8%;background:#ff4055;"></div></div><span class="vexp-pct">3.4%</span><span class="vexp-val" id="vtEWY" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">E-class 💧</span></div>
+    <div class="vexp-row"><span class="vexp-name">SET — Thailand</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:5.2%;background:#3a5070;"></div></div><span class="vexp-pct">2.6%</span><span class="vexp-val" id="vtSET" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">SSF 🔒</span></div>
+    <div class="vexp-row"><span class="vexp-name">Gold</span><div class="vexp-bar-wrap"><div class="vexp-bar" style="width:1.2%;background:#ff8c00;"></div></div><span class="vexp-pct">0.6%</span><span class="vexp-val" id="vtGold" style="color:var(--text-dim)">—</span><span class="vexp-wrapper">E-class 💧</span></div>
     <div class="vault-watermark">
       <span>Next formal review: Dec 2026 (annual) or trigger fire</span>
       <span style="color:var(--amber)">SCBKEQTGE: decision Mar 19</span>
@@ -790,7 +806,7 @@
         <div class="so-item"><div class="so-header"><span class="so-id">SCBKEQTGE</span><span class="so-status gate">DEFERRED</span></div><div class="so-desc">EWY South Korea E-class · Decision Mar 19 post-MU earnings</div></div>
         <div class="so-item"><div class="so-header"><span class="so-id">SCBS&P500(E)</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">S&P 500 E-class · Switchable</div></div>
         <div class="so-item"><div class="so-header"><span class="so-id">SCBSEMI(E)</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">Semiconductor E-class · Switchable</div></div>
-        <div class="so-item"><div class="so-header"><span class="so-id">SCBGOLDHE</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">Gold E-class · Switchable · ฿2,373 (0.6%)</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id">SCBGOLDHE</span><span class="so-status watch">LIQUID</span></div><div class="so-desc">Gold E-class · Switchable · 0.6%</div></div>
       </div>
       <div style="padding:6px 10px;background:var(--bg-3);border-top:1px solid var(--border)">
         <div class="hwm-row"><span class="status-key">E-class gross</span><span class="status-val green" id="eclassGross">—</span></div>
@@ -815,6 +831,234 @@
   </div>
 </div>
 </div><!-- end tab-vault -->
+<!-- TAB: WATCHTOWER (CMD-2) -->
+<div class="tab-pane" id="tab-watchtower">
+<div class="vault-tab-grid">
+  <!-- MAIN PANEL -->
+  <div class="panel">
+    <!-- Slot capacity -->
+    <div class="wt-capacity">
+      <span class="capacity-label">WATCHTOWER SLOTS</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;gap:5px;align-items:center">
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--amber);box-shadow:0 0 5px rgba(255,184,0,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border-bright)"></div>
+        </div>
+        <span style="font-size:14px;font-weight:700;color:var(--text-white);font-variant-numeric:tabular-nums">5 / 6</span>
+        <span style="font-size:10px;color:var(--text-dim)">1 slot open · AAOI removed Mar 16</span>
+      </div>
+    </div>
+    <!-- Watchtower roster table -->
+    <div class="section-label" style="margin-top:14px">WATCHTOWER ROSTER — Q1/Q2 2026</div>
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>CLASS</th>
+          <th>THESIS / FLAGS</th>
+          <th>TRIGGER CONDITION</th>
+          <th class="center">STATUS</th>
+          <th class="right">REMOVAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ticker-cell">PLTR</td>
+          <td><span class="flag flag-b">CORE</span></td>
+          <td class="thesis-cell thesis-set">Defense AI — NATO edge exception confirmed</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-PLTR" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
+          <td class="center"><span class="wt-status waiting">WAITING</span></td>
+          <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 12</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">TSEM</td>
+          <td><span class="flag flag-b">CORE</span></td>
+          <td class="thesis-cell" style="color:var(--amber)">⚠ ISRAEL WATCH · /thesis refresh required</td>
+          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGER HIT · gate only (VIX &lt;25)<br><span id="wt-adv-TSEM" style="font-size:9px;color:var(--text-dim);font-weight:400">vol: —</span></td>
+          <td class="center"><span class="wt-status ready">TRIGGER READY</span></td>
+          <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 10</td>
+        </tr>
+        <tr class="wt-table-row-crit">
+          <td class="ticker-cell" style="color:var(--amber)">NBIS</td>
+          <td><span class="flag flag-c">SAT</span></td>
+          <td class="thesis-cell thesis-set">AI interconnect · score 30/30 · Option C active</td>
+          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGERED Mar 12 · T1 expiry Mar 26<br><span id="wt-adv-NBIS" style="font-size:9px;color:var(--text-dim);font-weight:400">vol: —</span></td>
+          <td class="center"><span class="wt-status deploy">DEPLOYING</span></td>
+          <td class="right" style="font-size:10px">
+            <span style="color:var(--text-dim)">Jun 10</span><br>
+            <span style="color:var(--red);font-size:9px;font-weight:700">⚠ T1 EXPIRY MAR 26</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">BWXT</td>
+          <td><span class="flag flag-b">CORE★</span></td>
+          <td class="thesis-cell thesis-set">Nuclear propulsion · Matrix Winner (tied 70pts) · ฿11K</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-BWXT" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
+          <td class="center"><span class="wt-status waiting">WAITING</span></td>
+          <td class="right" style="font-size:10px">
+            <span style="color:var(--text-dim)">Sep 15</span><br>
+            <span style="color:var(--amber);font-size:9px">⚠ BLACKOUT Apr 14</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">KTOS</td>
+          <td><span class="flag flag-c">SAT</span></td>
+          <td class="thesis-cell thesis-set">Defense autonomy · score 25/30 · satellite capital only</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-KTOS" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
+          <td class="center"><span class="wt-status waiting">WAITING</span></td>
+          <td class="right" style="font-size:10px">
+            <span style="color:var(--text-dim)">Sep 15</span><br>
+            <span style="color:var(--amber);font-size:9px">⚠ BLACKOUT Apr 17</span>
+          </td>
+        </tr>
+        <tr style="opacity:0.4">
+          <td class="ticker-cell" style="color:var(--text-dim)">— OPEN —</td>
+          <td style="color:var(--text-dim);font-size:10px">—</td>
+          <td style="font-size:10px;color:var(--text-dim);font-style:italic">Slot available · AAOI removed Mar 16 (permanent China rule ban)</td>
+          <td style="font-size:10px;color:var(--text-dim)">—</td>
+          <td class="center" style="font-size:10px;color:var(--text-dim)">OPEN</td>
+          <td class="right" style="font-size:10px;color:var(--text-dim)">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- News pulse (populated by JS from prices.json d.news) -->
+    <div class="section-label" style="margin-top:16px">NEWS PULSE — WATCHTOWER</div>
+    <div id="wtNewsPulse" style="display:grid;gap:4px">
+      <div style="font-size:10px;color:var(--text-dim);padding:4px 0">Loading — click Refresh to populate</div>
+    </div>
+    <!-- Blackout calendar -->
+    <div class="section-label" style="margin-top:16px">BLACKOUT CALENDAR</div>
+    <div class="wt-blackout-grid">
+      <div class="wt-blackout-card crit">
+        <div class="wt-blackout-label" style="color:var(--red)">⚠ CRITICAL — EXPIRY</div>
+        <div class="wt-blackout-ticker">NBIS · MAR 26</div>
+        <div class="wt-blackout-desc">Option C T1 ฿12,014 — deploy or forfeit</div>
+        <div class="wt-blackout-sub">T2 ฿12,014 triggers on ≥5% retrace after T1 deploy</div>
+      </div>
+      <div class="wt-blackout-card">
+        <div class="wt-blackout-label" style="color:var(--text-dim)">BLACKOUT WINDOW</div>
+        <div class="wt-blackout-ticker">ASTS · ~APR 11</div>
+        <div class="wt-blackout-desc">Pre-earnings window · SO-1 must be submitted before</div>
+        <div class="wt-blackout-sub">Earnings ~May 12 · ±30d window opens</div>
+      </div>
+      <div class="wt-blackout-card warn">
+        <div class="wt-blackout-label" style="color:var(--amber)">BLACKOUT WINDOW</div>
+        <div class="wt-blackout-ticker">BWXT · ~APR 14</div>
+        <div class="wt-blackout-desc">No new DCA in window · Core candidate blocked</div>
+        <div class="wt-blackout-sub">Earnings May 4 · ±30d window</div>
+      </div>
+      <div class="wt-blackout-card warn">
+        <div class="wt-blackout-label" style="color:var(--amber)">BLACKOUT WINDOW</div>
+        <div class="wt-blackout-ticker">KTOS · ~APR 17</div>
+        <div class="wt-blackout-desc">No new DCA in window · Satellite blocked</div>
+        <div class="wt-blackout-sub">Earnings May 7 · ±30d window</div>
+      </div>
+    </div>
+    <!-- Removal logic -->
+    <div class="section-label" style="margin-top:16px">REMOVAL LOGIC</div>
+    <div class="wt-removal-rules">
+      <span style="color:var(--text-base);font-weight:600">Auto-removal triggers (any one):</span><br>
+      1 · Removal date reached with no trigger → exit without execution, free slot<br>
+      2 · Thesis break confirmed → immediate removal + Consensus Log entry<br>
+      3 · Core graduation → promoted to Arsenal, slot freed immediately<br>
+      4 · Satellite deploy complete → hold in Arsenal, Watchtower slot freed<br>
+      <span style="color:var(--text-dim)">Slot 6 open. Next new entries considered at Q2 scorecard or post-trigger slot open.</span>
+    </div>
+    <!-- Scorecard countdown -->
+    <div class="wt-countdown-bar">
+      <div>
+        <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;color:var(--text-mid);letter-spacing:1px">NEXT SCORECARD REVIEW</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Q2 2026 · Jun 1 window opens</div>
+      </div>
+      <div style="text-align:right">
+        <div class="wt-countdown-days" id="wtCountdown">—</div>
+        <div style="font-size:10px;color:var(--text-dim)">days remaining</div>
+      </div>
+    </div>
+  </div>
+  <!-- RIGHT PANEL -->
+  <div class="panel">
+    <!-- Active Standing Orders -->
+    <div class="status-block">
+      <div class="status-block-header">STANDING ORDERS — ACTIVE</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">SO-1</span><span class="so-status broker">BROKER</span></div>
+          <div class="so-desc">ASTS +0.7 fill · submit before <span class="warn">Apr 11 blackout</span></div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">SO-2</span><span class="so-status watch">WATCH</span></div>
+          <div class="so-desc">ONDS 1-share tracking position · thesis maintenance</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">SO-5</span><span class="so-status gate">GATE</span></div>
+          <div class="so-desc">FN · Matrix Winner (tied 70pts) · await VIX &lt;25 + 1.5× ADV. Deploy ฿7,000.</div>
+        </div>
+        <div class="so-item" style="border-left:2px solid var(--red)">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">SO-6</span><span class="so-status gate" style="border-color:var(--red);color:var(--red)">EXPIRY MAR 26</span></div>
+          <div class="so-desc">NBIS Option C T1 · <span class="warn">฿12,014 — DEPLOY NOW or forfeit</span><br>T2 ฿12,014 on ≥5% retrace post-T1</div>
+        </div>
+      </div>
+    </div>
+    <!-- Resolved orders (dimmed) -->
+    <div class="status-block" style="margin-top:10px;opacity:0.45">
+      <div class="status-block-header" style="color:var(--text-dim)">RESOLVED ORDERS</div>
+      <div class="so-list">
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-3</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ ASTS blackout Apr 11 noted</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-4</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ /thesis MU completed Mar 15</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-7</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ APH China % confirmed 16.3%</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-8</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ AAOI China 45.4% — permanent ban</div></div>
+      </div>
+    </div>
+    <!-- Satellite Priority Scores DC-13 -->
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">SATELLITE PRIORITY — DC-13</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--green)">NBIS</span><span class="so-status" style="background:var(--green-dim);color:var(--green);border:1px solid var(--green)">30 / 30</span></div>
+          <div class="so-desc" style="color:var(--green)">TRIGGERED · Option C T1 active · expiry Mar 26</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">KTOS</span><span class="so-status watch">25 / 30</span></div>
+          <div class="so-desc">Waiting for trigger · blackout Apr 17</div>
+        </div>
+      </div>
+      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">Score ≥25 = deploy from Satellite capital only. Re-scored each Q scorecard session.</div>
+    </div>
+    <!-- ADV gate reference -->
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">ADV GATE REFERENCE</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">FN</span><span class="wt-adv-val">967,560</span></div>
+          <div class="so-desc">1.5× gate = 1,451,340 · Matrix Winner · Deploy ฿7,000</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">BWXT</span><span class="wt-adv-val">1,417,695</span></div>
+          <div class="so-desc">1.5× gate = 2,126,543 · Core candidate · Deploy ฿11,000</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">PLTR</span><span class="wt-adv-val" style="color:var(--text-dim)">high vol</span></div>
+          <div class="so-desc">ADV generally far above 1.5× · VIX gate is binding constraint</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">KTOS</span><span class="wt-adv-val" style="color:var(--text-dim)">confirm on day</span></div>
+          <div class="so-desc">Satellite class · verify 1.5× ADV on trigger day · blackout Apr 17</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">TSEM</span><span class="wt-adv-val" style="color:var(--amber)">⚠ Israel Watch</span></div>
+          <div class="so-desc">Confirm thesis intact + ADV before execution · /thesis refresh required</div>
+        </div>
+      </div>
+      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">ADV = 20-day avg daily volume. All triggers: 1 green close ≥1.5× ADV + VIX gate.</div>
+    </div>
+  </div>
+</div>
+</div><!-- end tab-watchtower -->
 <footer class="footer">
   <div class="footer-note">SNIPER COMMAND CENTER v2 · READ ONLY · No buy/sell signals · Commander-in-loop required for all execution decisions</div>
   <div class="data-source">
@@ -1034,7 +1278,9 @@ function injectPrivateData(d) {
     document.getElementById('level1Remaining').textContent = '฿' + remaining.toLocaleString() + ' remaining';
     document.getElementById('liquidVal').textContent = '฿' + Math.round(cur / 1000) + 'K';
     document.getElementById('liquidVal').style.color = '';
-    document.getElementById('progressPct').textContent = pct + '%';
+    const ppEl = document.getElementById('progressPct');
+    ppEl.textContent = pct + '%';
+    ppEl.style.color = 'var(--green)';
   }
   // Ammo
   if (d.ammo) {
@@ -1055,11 +1301,15 @@ function injectPrivateData(d) {
   // Vault rows
   if (d.vault && d.vault.rows) {
     const rowMap = { SOXX: 'vSOXX', VOO: 'vVOO', GlobalTech: 'vGlobalTech', QQQ: 'vQQQ', USEquity: 'vUSEquity', EWY: 'vEWY', SET: 'vSET', Gold: 'vGold' };
+    const rowMapVt = { SOXX: 'vtSOXX', VOO: 'vtVOO', GlobalTech: 'vtGlobalTech', QQQ: 'vtQQQ', USEquity: 'vtUSEquity', EWY: 'vtEWY', SET: 'vtSET', Gold: 'vtGold' };
     Object.entries(rowMap).forEach(([key, id]) => {
       if (d.vault.rows[key] !== undefined) {
+        const val = '฿' + d.vault.rows[key].toLocaleString();
         const el = document.getElementById(id);
-        el.textContent = '฿' + d.vault.rows[key].toLocaleString();
+        el.textContent = val;
         el.style.display = '';
+        const elVt = document.getElementById(rowMapVt[key]);
+        if (elVt) { elVt.textContent = val; elVt.style.color = ''; }
       }
     });
     document.getElementById('vaultTotalValue').textContent = '฿' + d.vault.total.toLocaleString() + ' · +' + d.vault.return_pct + '% return';
@@ -1067,9 +1317,13 @@ function injectPrivateData(d) {
   }
   // Vault tab summary cards
   if (d.vault) {
-    document.getElementById('vsVaultTotal').textContent = '฿' + d.vault.total.toLocaleString();
+    const vsTotal = document.getElementById('vsVaultTotal');
+    vsTotal.textContent = '฿' + d.vault.total.toLocaleString();
+    vsTotal.style.color = '';
     document.getElementById('vsVaultSub').textContent = 'Return: +' + d.vault.return_pct + '%';
-    document.getElementById('vsEclass').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
+    const vsEclass = document.getElementById('vsEclass');
+    vsEclass.textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
+    vsEclass.style.color = 'var(--green)';
     document.getElementById('eclassGross').textContent = '฿' + d.vault.eclass_gross.toLocaleString();
     document.getElementById('eclassLiquid').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
   }
@@ -1176,6 +1430,7 @@ async function fetchPrices() {
     pricesStale = false;
     renderArsenal(ARSENAL_CORE, 'arsenalCore');
     renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
+    updateWatchtowerLive(d);
     document.getElementById('lastRefresh').textContent = 'Last refresh: ' + d.updated_bkk;
 
   } catch (err) {
@@ -1188,10 +1443,63 @@ async function fetchPrices() {
   }
 }
 
+// ─── WATCHTOWER LIVE: ADV RATIOS + NEWS PULSE ───
+function updateWatchtowerLive(d) {
+  // P1 — ADV ratios injected into table trigger cells
+  const adv = d.adv || {};
+  ['PLTR', 'TSEM', 'NBIS', 'BWXT', 'KTOS', 'FN'].forEach(sym => {
+    const el = document.getElementById('wt-adv-' + sym);
+    if (!el || !adv[sym]) return;
+    const { today_vol, adv_20d, adv_ratio, gate_met } = adv[sym];
+    const volStr = today_vol >= 1e6
+      ? (today_vol / 1e6).toFixed(1) + 'M'
+      : Math.round(today_vol / 1e3) + 'K';
+    const ratioStr = adv_ratio != null ? adv_ratio.toFixed(2) + '×' : '—';
+    const color = gate_met
+      ? 'var(--green)'
+      : adv_ratio >= 1.0 ? 'var(--amber)' : 'var(--text-dim)';
+    el.style.color = color;
+    el.textContent = `vol ${volStr} · ${ratioStr} ADV${gate_met ? ' ✓ GATE' : ''}`;
+  });
+
+  // P3 — News pulse section
+  const news = d.news || {};
+  const container = document.getElementById('wtNewsPulse');
+  if (!container) return;
+  const cutoff = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
+  const rows = ['PLTR', 'TSEM', 'NBIS', 'BWXT', 'KTOS']
+    .filter(s => news[s])
+    .map(sym => {
+      const n = news[sym];
+      const fresh = n.date >= cutoff;
+      return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:2px solid ${fresh ? 'var(--blue)' : 'var(--border)'};border-radius:2px;padding:6px 8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+          <span style="font-weight:700;color:var(--text-white);font-size:11px">${sym}</span>
+          <span style="font-size:9px;color:var(--text-dim)">${n.date} · ${n.publisher}</span>
+        </div>
+        <div style="font-size:10px;color:${fresh ? 'var(--text-base)' : 'var(--text-dim)'};line-height:1.4">${n.headline}</div>
+      </div>`;
+    });
+  container.innerHTML = rows.length
+    ? rows.join('')
+    : '<div style="font-size:10px;color:var(--text-dim);padding:4px 0">No headlines — prices.json may be stale</div>';
+}
+
+// ─── WATCHTOWER SCORECARD COUNTDOWN ───
+function updateWtCountdown() {
+  const el = document.getElementById('wtCountdown');
+  if (!el) return;
+  const target = new Date('2026-06-01T00:00:00+07:00');
+  const now = new Date();
+  const days = Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
+  el.textContent = days;
+}
+
 // Auto-load on page open
 window.addEventListener('load', () => {
   setTimeout(fetchPrices, 300);
   setTimeout(fetchPrivate, 300);
+  updateWtCountdown();
 });
 
 // ─── TAB SWITCHING ───
