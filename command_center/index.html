@@ -316,9 +316,35 @@
   .vtab-refresh-btn.loading { opacity: 0.5; pointer-events: none; }
   .ytd-chart-wrap { position: relative; height: 200px; margin: 10px 0; }
   .vault-watermark { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+  /* ─── PIN UNLOCK MODAL ─── */
+  .pin-overlay { position: fixed; inset: 0; background: rgba(7,8,9,0.88); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9000; }
+  .pin-overlay.hidden { display: none; }
+  .pin-box { background: var(--bg-2); border: 1px solid var(--border-bright); border-radius: 6px; padding: 28px 32px; width: 320px; display: flex; flex-direction: column; gap: 16px; }
+  .pin-title { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: var(--text-white); text-align: center; }
+  .pin-sub { font-size: 10px; color: var(--text-dim); text-align: center; letter-spacing: 0.5px; }
+  .pin-input { background: var(--bg-1); border: 1px solid var(--border-bright); color: var(--text-white); font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 6px; text-align: center; padding: 10px; border-radius: 4px; outline: none; width: 100%; }
+  .pin-input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(58,159,255,0.15); }
+  .pin-btn { background: var(--blue-dim); border: 1px solid var(--blue); color: var(--blue); font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; padding: 9px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .pin-btn:hover { background: var(--blue); color: var(--bg-0); }
+  .pin-btn:disabled { opacity: 0.4; pointer-events: none; }
+  .pin-error { font-size: 11px; color: var(--red); text-align: center; min-height: 16px; }
+  .pin-dismiss { font-size: 10px; color: var(--text-dim); text-align: center; cursor: pointer; letter-spacing: 0.5px; }
+  .pin-dismiss:hover { color: var(--text-mid); }
+  .pin-success { font-size: 11px; color: var(--green); text-align: center; }
 </style>
 </head>
 <body>
+<!-- PIN UNLOCK MODAL -->
+<div id="pinOverlay" class="pin-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+  <div class="pin-box">
+    <div class="pin-title" id="pinTitle">UNLOCK PRIVATE DATA</div>
+    <div class="pin-sub">Enter PIN to decrypt · data never leaves your browser</div>
+    <input id="pinInput" class="pin-input" type="password" inputmode="numeric" maxlength="12" placeholder="••••" autocomplete="off" aria-label="PIN">
+    <button id="pinBtn" class="pin-btn" onclick="submitPin()">UNLOCK</button>
+    <div id="pinError" class="pin-error"></div>
+    <div class="pin-dismiss" onclick="dismissPin()">skip — stay in public view</div>
+  </div>
+</div>
 <!-- HEADER -->
 <header class="header">
   <div class="header-left">
@@ -962,81 +988,161 @@ function updateTHB(rate) {
 updateGate(prices['^VIX']);
 updateTHB(prices['THB=X']);
 
-// ─── PRIVATE DATA — reads ./private.json (gitignored, local only) ───
-async function fetchPrivate() {
-  try {
-    const res = await fetch('./private.json');
-    if (!res.ok) return; // not available on Pages — silent
-    const d = await res.json();
+// ─── PRIVATE DATA — Option A: client-side PIN decryption ───────────────────
+// Flow: fetch ./private.enc.json (committed, safe) → show PIN modal →
+//       user enters PIN → decrypt AES-GCM in browser → inject data
 
-    // Level 1
-    if (d.level1) {
-      const cur = d.level1.current;
-      const pct = (cur / 1000000 * 100).toFixed(1);
-      const remaining = 1000000 - cur;
-      document.getElementById('level1Current').textContent = '฿' + cur.toLocaleString();
-      document.getElementById('level1Fill').style.width = pct + '%';
-      document.getElementById('level1Hwm').textContent = 'HWM: ฿' + cur.toLocaleString() + ' · ' + d.level1.hwm_date;
-      document.getElementById('level1Remaining').textContent = '฿' + remaining.toLocaleString() + ' remaining';
-      document.getElementById('liquidVal').textContent = '฿' + Math.round(cur / 1000) + 'K';
-      document.getElementById('liquidVal').style.color = '';
-      document.getElementById('progressPct').textContent = pct + '%';
-    }
+let _encData = null; // cached encrypted payload
 
-    // Ammo
-    if (d.ammo) {
-      const ammoMap = { nbis_t1: 'ammoNbisT1', nbis_t2: 'ammoNbisT2', asts: 'ammoAsts', tax_refund: 'ammoTax' };
-      Object.entries(ammoMap).forEach(([key, id]) => {
-        if (d.ammo[key]) {
-          const el = document.getElementById(id);
-          el.textContent = '฿' + d.ammo[key].toLocaleString();
-          el.style.display = '';
-        }
-      });
-    }
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf;
+}
 
-    // Thai Defense
-    if (d.thai) {
-      if (d.thai.TISCO) document.getElementById('tiscoShares').textContent = d.thai.TISCO.shares + ' shares · ฿97.26 avg';
-      if (d.thai.ADVANC) document.getElementById('advancShares').textContent = d.thai.ADVANC.shares + ' shares · ฿284.04 avg';
-    }
+async function deriveKey(pin, salt) {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false, ['decrypt']
+  );
+}
 
-    // Vault rows
-    if (d.vault && d.vault.rows) {
-      const rowMap = { SOXX: 'vSOXX', VOO: 'vVOO', GlobalTech: 'vGlobalTech', QQQ: 'vQQQ', USEquity: 'vUSEquity', EWY: 'vEWY', SET: 'vSET', Gold: 'vGold' };
-      Object.entries(rowMap).forEach(([key, id]) => {
-        if (d.vault.rows[key] !== undefined) {
-          const el = document.getElementById(id);
-          el.textContent = '฿' + d.vault.rows[key].toLocaleString();
-          el.style.display = '';
-        }
-      });
-      document.getElementById('vaultTotalValue').textContent = '฿' + d.vault.total.toLocaleString() + ' · +' + d.vault.return_pct + '% return';
-      document.getElementById('eclassFooter').textContent = 'E-Class liquid: ฿' + d.vault.eclass_gross.toLocaleString() + ' × 80% = ฿' + d.vault.eclass_liquid.toLocaleString() + ' toward Level 1';
-    }
+async function decryptPrivateData(encData, pin) {
+  const salt       = b64ToBytes(encData.salt);
+  const iv         = b64ToBytes(encData.iv);
+  const ciphertext = b64ToBytes(encData.ciphertext);
+  const key        = await deriveKey(pin, salt);
+  const plainBuf   = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
 
-    // Vault tab summary cards
-    if (d.vault) {
-      document.getElementById('vsVaultTotal').textContent = '฿' + d.vault.total.toLocaleString();
-      document.getElementById('vsVaultSub').textContent = 'Return: +' + d.vault.return_pct + '%';
-      document.getElementById('vsEclass').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
-      document.getElementById('eclassGross').textContent = '฿' + d.vault.eclass_gross.toLocaleString();
-      document.getElementById('eclassLiquid').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
-    }
-
-    // Arsenal shares → re-render with real P&L
-    if (d.arsenal) {
-      [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
-        if (d.arsenal[p.ticker] !== undefined) p.shares = d.arsenal[p.ticker];
-      });
-      renderArsenal(ARSENAL_CORE, 'arsenalCore');
-      renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
-    }
-
-  } catch (err) {
-    // private.json not available — stay redacted
+function injectPrivateData(d) {
+  // Level 1
+  if (d.level1) {
+    const cur = d.level1.current;
+    const pct = (cur / 1000000 * 100).toFixed(1);
+    const remaining = 1000000 - cur;
+    document.getElementById('level1Current').textContent = '฿' + cur.toLocaleString();
+    document.getElementById('level1Fill').style.width = pct + '%';
+    document.getElementById('level1Hwm').textContent = 'HWM: ฿' + cur.toLocaleString() + ' · ' + d.level1.hwm_date;
+    document.getElementById('level1Remaining').textContent = '฿' + remaining.toLocaleString() + ' remaining';
+    document.getElementById('liquidVal').textContent = '฿' + Math.round(cur / 1000) + 'K';
+    document.getElementById('liquidVal').style.color = '';
+    document.getElementById('progressPct').textContent = pct + '%';
+  }
+  // Ammo
+  if (d.ammo) {
+    const ammoMap = { nbis_t1: 'ammoNbisT1', nbis_t2: 'ammoNbisT2', asts: 'ammoAsts', tax_refund: 'ammoTax' };
+    Object.entries(ammoMap).forEach(([key, id]) => {
+      if (d.ammo[key]) {
+        const el = document.getElementById(id);
+        el.textContent = '฿' + d.ammo[key].toLocaleString();
+        el.style.display = '';
+      }
+    });
+  }
+  // Thai Defense
+  if (d.thai) {
+    if (d.thai.TISCO) document.getElementById('tiscoShares').textContent = d.thai.TISCO.shares + ' shares · ฿97.26 avg';
+    if (d.thai.ADVANC) document.getElementById('advancShares').textContent = d.thai.ADVANC.shares + ' shares · ฿284.04 avg';
+  }
+  // Vault rows
+  if (d.vault && d.vault.rows) {
+    const rowMap = { SOXX: 'vSOXX', VOO: 'vVOO', GlobalTech: 'vGlobalTech', QQQ: 'vQQQ', USEquity: 'vUSEquity', EWY: 'vEWY', SET: 'vSET', Gold: 'vGold' };
+    Object.entries(rowMap).forEach(([key, id]) => {
+      if (d.vault.rows[key] !== undefined) {
+        const el = document.getElementById(id);
+        el.textContent = '฿' + d.vault.rows[key].toLocaleString();
+        el.style.display = '';
+      }
+    });
+    document.getElementById('vaultTotalValue').textContent = '฿' + d.vault.total.toLocaleString() + ' · +' + d.vault.return_pct + '% return';
+    document.getElementById('eclassFooter').textContent = 'E-Class liquid: ฿' + d.vault.eclass_gross.toLocaleString() + ' × 80% = ฿' + d.vault.eclass_liquid.toLocaleString() + ' toward Level 1';
+  }
+  // Vault tab summary cards
+  if (d.vault) {
+    document.getElementById('vsVaultTotal').textContent = '฿' + d.vault.total.toLocaleString();
+    document.getElementById('vsVaultSub').textContent = 'Return: +' + d.vault.return_pct + '%';
+    document.getElementById('vsEclass').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
+    document.getElementById('eclassGross').textContent = '฿' + d.vault.eclass_gross.toLocaleString();
+    document.getElementById('eclassLiquid').textContent = '฿' + d.vault.eclass_liquid.toLocaleString();
+  }
+  // Arsenal shares → re-render with real P&L
+  if (d.arsenal) {
+    [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+      if (d.arsenal[p.ticker] !== undefined) p.shares = d.arsenal[p.ticker];
+    });
+    renderArsenal(ARSENAL_CORE, 'arsenalCore');
+    renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
   }
 }
+
+// Try local private.json first (development), then encrypted file (production)
+async function fetchPrivate() {
+  // 1. Local plaintext (gitignored) — works when served locally
+  try {
+    const res = await fetch('./private.json');
+    if (res.ok) {
+      const d = await res.json();
+      injectPrivateData(d);
+      return;
+    }
+  } catch (_) {}
+
+  // 2. Encrypted file (committed to repo) — prompt for PIN
+  try {
+    const res = await fetch('./private.enc.json');
+    if (!res.ok) return; // not deployed yet — stay redacted
+    _encData = await res.json();
+    if (!_encData.ciphertext) return; // malformed
+    // Show PIN modal after prices have loaded
+    document.getElementById('pinOverlay').classList.remove('hidden');
+    document.getElementById('pinInput').focus();
+  } catch (_) {
+    // silent — stay redacted
+  }
+}
+
+async function submitPin() {
+  const pin = document.getElementById('pinInput').value;
+  const errEl = document.getElementById('pinError');
+  const btn = document.getElementById('pinBtn');
+  if (!pin) { errEl.textContent = 'Enter your PIN.'; return; }
+  btn.disabled = true;
+  btn.textContent = 'DECRYPTING...';
+  errEl.textContent = '';
+  try {
+    const d = await decryptPrivateData(_encData, pin);
+    injectPrivateData(d);
+    document.getElementById('pinOverlay').classList.add('hidden');
+    document.getElementById('pinInput').value = '';
+  } catch (_) {
+    errEl.textContent = 'Wrong PIN — try again.';
+    document.getElementById('pinInput').select();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'UNLOCK';
+  }
+}
+
+function dismissPin() {
+  document.getElementById('pinOverlay').classList.add('hidden');
+  document.getElementById('pinInput').value = '';
+}
+
+// Allow Enter key in PIN input
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('pinInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitPin();
+    if (e.key === 'Escape') dismissPin();
+  });
+});
 
 // ─── FETCH PRICES — reads ../data/prices.json (GitHub Actions output) ───
 async function fetchPrices() {
