@@ -272,6 +272,21 @@
   .wt-status.waiting { background: var(--bg-3); color: var(--text-mid); border: 1px solid var(--border-bright); }
   .wt-status.active { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
   .wt-status.blocked { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .wt-status.deploy { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); animation: pulse-amber 2s ease-in-out infinite; }
+  .wt-status.ready { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .wt-table-row-crit { background: rgba(255,184,0,0.04); }
+  .wt-blackout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .wt-blackout-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; }
+  .wt-blackout-card.crit { border-color: var(--red); }
+  .wt-blackout-card.warn { border-color: var(--amber); }
+  .wt-blackout-label { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  .wt-blackout-ticker { font-size: 12px; font-weight: 700; color: var(--text-white); }
+  .wt-blackout-desc { font-size: 10px; color: var(--text-base); margin-top: 3px; }
+  .wt-blackout-sub { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+  .wt-countdown-bar { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+  .wt-countdown-days { font-size: 20px; font-weight: 700; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .wt-removal-rules { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; font-size: 10px; color: var(--text-mid); line-height: 1.7; }
+  .wt-adv-val { font-size: 11px; color: var(--text-mid); font-variant-numeric: tabular-nums; }
   .wt-thesis { font-size: 10px; color: var(--text-mid); margin-bottom: 4px; }
   .wt-meta { display: flex; gap: 12px; font-size: 10px; color: var(--text-dim); }
   .wt-flag { color: var(--amber); }
@@ -394,6 +409,7 @@
 <nav class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('arsenal', this)">ARSENAL + STATUS</button>
   <button class="tab-btn" onclick="switchTab('vault', this)">VAULT HEALTH</button>
+  <button class="tab-btn" onclick="switchTab('watchtower', this)">WATCHTOWER</button>
 </nav>
 <!-- TAB: ARSENAL + STATUS -->
 <div class="tab-pane active" id="tab-arsenal">
@@ -815,6 +831,229 @@
   </div>
 </div>
 </div><!-- end tab-vault -->
+<!-- TAB: WATCHTOWER (CMD-2) -->
+<div class="tab-pane" id="tab-watchtower">
+<div class="vault-tab-grid">
+  <!-- MAIN PANEL -->
+  <div class="panel">
+    <!-- Slot capacity -->
+    <div class="wt-capacity">
+      <span class="capacity-label">WATCHTOWER SLOTS</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;gap:5px;align-items:center">
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--amber);box-shadow:0 0 5px rgba(255,184,0,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
+          <div style="width:11px;height:11px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border-bright)"></div>
+        </div>
+        <span style="font-size:14px;font-weight:700;color:var(--text-white);font-variant-numeric:tabular-nums">5 / 6</span>
+        <span style="font-size:10px;color:var(--text-dim)">1 slot open · AAOI removed Mar 16</span>
+      </div>
+    </div>
+    <!-- Watchtower roster table -->
+    <div class="section-label" style="margin-top:14px">WATCHTOWER ROSTER — Q1/Q2 2026</div>
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>CLASS</th>
+          <th>THESIS / FLAGS</th>
+          <th>TRIGGER CONDITION</th>
+          <th class="center">STATUS</th>
+          <th class="right">REMOVAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ticker-cell">PLTR</td>
+          <td><span class="flag flag-b">CORE</span></td>
+          <td class="thesis-cell thesis-set">Defense AI — NATO edge exception confirmed</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV</td>
+          <td class="center"><span class="wt-status waiting">WAITING</span></td>
+          <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 12</td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">TSEM</td>
+          <td><span class="flag flag-b">CORE</span></td>
+          <td class="thesis-cell" style="color:var(--amber)">⚠ ISRAEL WATCH · /thesis refresh required</td>
+          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGER HIT · gate only (VIX &lt;25)</td>
+          <td class="center"><span class="wt-status ready">TRIGGER READY</span></td>
+          <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 10</td>
+        </tr>
+        <tr class="wt-table-row-crit">
+          <td class="ticker-cell" style="color:var(--amber)">NBIS</td>
+          <td><span class="flag flag-c">SAT</span></td>
+          <td class="thesis-cell thesis-set">AI interconnect · score 30/30 · Option C active</td>
+          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGERED Mar 12 · T1 expiry Mar 26</td>
+          <td class="center"><span class="wt-status deploy">DEPLOYING</span></td>
+          <td class="right" style="font-size:10px">
+            <span style="color:var(--text-dim)">Jun 10</span><br>
+            <span style="color:var(--red);font-size:9px;font-weight:700">⚠ T1 EXPIRY MAR 26</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">BWXT</td>
+          <td><span class="flag flag-b">CORE★</span></td>
+          <td class="thesis-cell thesis-set">Nuclear propulsion · Matrix Winner (tied 70pts) · ฿11K</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV</td>
+          <td class="center"><span class="wt-status waiting">WAITING</span></td>
+          <td class="right" style="font-size:10px">
+            <span style="color:var(--text-dim)">Sep 15</span><br>
+            <span style="color:var(--amber);font-size:9px">⚠ BLACKOUT Apr 14</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="ticker-cell">KTOS</td>
+          <td><span class="flag flag-c">SAT</span></td>
+          <td class="thesis-cell thesis-set">Defense autonomy · score 25/30 · satellite capital only</td>
+          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV</td>
+          <td class="center"><span class="wt-status waiting">WAITING</span></td>
+          <td class="right" style="font-size:10px">
+            <span style="color:var(--text-dim)">Sep 15</span><br>
+            <span style="color:var(--amber);font-size:9px">⚠ BLACKOUT Apr 17</span>
+          </td>
+        </tr>
+        <tr style="opacity:0.4">
+          <td class="ticker-cell" style="color:var(--text-dim)">— OPEN —</td>
+          <td style="color:var(--text-dim);font-size:10px">—</td>
+          <td style="font-size:10px;color:var(--text-dim);font-style:italic">Slot available · AAOI removed Mar 16 (permanent China rule ban)</td>
+          <td style="font-size:10px;color:var(--text-dim)">—</td>
+          <td class="center" style="font-size:10px;color:var(--text-dim)">OPEN</td>
+          <td class="right" style="font-size:10px;color:var(--text-dim)">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- Blackout calendar -->
+    <div class="section-label" style="margin-top:16px">BLACKOUT CALENDAR</div>
+    <div class="wt-blackout-grid">
+      <div class="wt-blackout-card crit">
+        <div class="wt-blackout-label" style="color:var(--red)">⚠ CRITICAL — EXPIRY</div>
+        <div class="wt-blackout-ticker">NBIS · MAR 26</div>
+        <div class="wt-blackout-desc">Option C T1 ฿12,014 — deploy or forfeit</div>
+        <div class="wt-blackout-sub">T2 ฿12,014 triggers on ≥5% retrace after T1 deploy</div>
+      </div>
+      <div class="wt-blackout-card">
+        <div class="wt-blackout-label" style="color:var(--text-dim)">BLACKOUT WINDOW</div>
+        <div class="wt-blackout-ticker">ASTS · ~APR 11</div>
+        <div class="wt-blackout-desc">Pre-earnings window · SO-1 must be submitted before</div>
+        <div class="wt-blackout-sub">Earnings ~May 12 · ±30d window opens</div>
+      </div>
+      <div class="wt-blackout-card warn">
+        <div class="wt-blackout-label" style="color:var(--amber)">BLACKOUT WINDOW</div>
+        <div class="wt-blackout-ticker">BWXT · ~APR 14</div>
+        <div class="wt-blackout-desc">No new DCA in window · Core candidate blocked</div>
+        <div class="wt-blackout-sub">Earnings May 4 · ±30d window</div>
+      </div>
+      <div class="wt-blackout-card warn">
+        <div class="wt-blackout-label" style="color:var(--amber)">BLACKOUT WINDOW</div>
+        <div class="wt-blackout-ticker">KTOS · ~APR 17</div>
+        <div class="wt-blackout-desc">No new DCA in window · Satellite blocked</div>
+        <div class="wt-blackout-sub">Earnings May 7 · ±30d window</div>
+      </div>
+    </div>
+    <!-- Removal logic -->
+    <div class="section-label" style="margin-top:16px">REMOVAL LOGIC</div>
+    <div class="wt-removal-rules">
+      <span style="color:var(--text-base);font-weight:600">Auto-removal triggers (any one):</span><br>
+      1 · Removal date reached with no trigger → exit without execution, free slot<br>
+      2 · Thesis break confirmed → immediate removal + Consensus Log entry<br>
+      3 · Core graduation → promoted to Arsenal, slot freed immediately<br>
+      4 · Satellite deploy complete → hold in Arsenal, Watchtower slot freed<br>
+      <span style="color:var(--text-dim)">Slot 6 open. Next new entries considered at Q2 scorecard or post-trigger slot open.</span>
+    </div>
+    <!-- Scorecard countdown -->
+    <div class="wt-countdown-bar">
+      <div>
+        <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;color:var(--text-mid);letter-spacing:1px">NEXT SCORECARD REVIEW</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Q2 2026 · Jun 1 window opens</div>
+      </div>
+      <div style="text-align:right">
+        <div class="wt-countdown-days" id="wtCountdown">—</div>
+        <div style="font-size:10px;color:var(--text-dim)">days remaining</div>
+      </div>
+    </div>
+  </div>
+  <!-- RIGHT PANEL -->
+  <div class="panel">
+    <!-- Active Standing Orders -->
+    <div class="status-block">
+      <div class="status-block-header">STANDING ORDERS — ACTIVE</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">SO-1</span><span class="so-status broker">BROKER</span></div>
+          <div class="so-desc">ASTS +0.7 fill · submit before <span class="warn">Apr 11 blackout</span></div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">SO-2</span><span class="so-status watch">WATCH</span></div>
+          <div class="so-desc">ONDS 1-share tracking position · thesis maintenance</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">SO-5</span><span class="so-status gate">GATE</span></div>
+          <div class="so-desc">FN · Matrix Winner (tied 70pts) · await VIX &lt;25 + 1.5× ADV. Deploy ฿7,000.</div>
+        </div>
+        <div class="so-item" style="border-left:2px solid var(--red)">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">SO-6</span><span class="so-status gate" style="border-color:var(--red);color:var(--red)">EXPIRY MAR 26</span></div>
+          <div class="so-desc">NBIS Option C T1 · <span class="warn">฿12,014 — DEPLOY NOW or forfeit</span><br>T2 ฿12,014 on ≥5% retrace post-T1</div>
+        </div>
+      </div>
+    </div>
+    <!-- Resolved orders (dimmed) -->
+    <div class="status-block" style="margin-top:10px;opacity:0.45">
+      <div class="status-block-header" style="color:var(--text-dim)">RESOLVED ORDERS</div>
+      <div class="so-list">
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-3</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ ASTS blackout Apr 11 noted</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-4</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ /thesis MU completed Mar 15</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-7</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ APH China % confirmed 16.3%</div></div>
+        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-8</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ AAOI China 45.4% — permanent ban</div></div>
+      </div>
+    </div>
+    <!-- Satellite Priority Scores DC-13 -->
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">SATELLITE PRIORITY — DC-13</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--green)">NBIS</span><span class="so-status" style="background:var(--green-dim);color:var(--green);border:1px solid var(--green)">30 / 30</span></div>
+          <div class="so-desc" style="color:var(--green)">TRIGGERED · Option C T1 active · expiry Mar 26</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">KTOS</span><span class="so-status watch">25 / 30</span></div>
+          <div class="so-desc">Waiting for trigger · blackout Apr 17</div>
+        </div>
+      </div>
+      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">Score ≥25 = deploy from Satellite capital only. Re-scored each Q scorecard session.</div>
+    </div>
+    <!-- ADV gate reference -->
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">ADV GATE REFERENCE</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">FN</span><span class="wt-adv-val">967,560</span></div>
+          <div class="so-desc">1.5× gate = 1,451,340 · Matrix Winner · Deploy ฿7,000</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">BWXT</span><span class="wt-adv-val">1,417,695</span></div>
+          <div class="so-desc">1.5× gate = 2,126,543 · Core candidate · Deploy ฿11,000</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">PLTR</span><span class="wt-adv-val" style="color:var(--text-dim)">high vol</span></div>
+          <div class="so-desc">ADV generally far above 1.5× · VIX gate is binding constraint</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">KTOS</span><span class="wt-adv-val" style="color:var(--text-dim)">confirm on day</span></div>
+          <div class="so-desc">Satellite class · verify 1.5× ADV on trigger day · blackout Apr 17</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">TSEM</span><span class="wt-adv-val" style="color:var(--amber)">⚠ Israel Watch</span></div>
+          <div class="so-desc">Confirm thesis intact + ADV before execution · /thesis refresh required</div>
+        </div>
+      </div>
+      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">ADV = 20-day avg daily volume. All triggers: 1 green close ≥1.5× ADV + VIX gate.</div>
+    </div>
+  </div>
+</div>
+</div><!-- end tab-watchtower -->
 <footer class="footer">
   <div class="footer-note">SNIPER COMMAND CENTER v2 · READ ONLY · No buy/sell signals · Commander-in-loop required for all execution decisions</div>
   <div class="data-source">
@@ -1198,10 +1437,21 @@ async function fetchPrices() {
   }
 }
 
+// ─── WATCHTOWER SCORECARD COUNTDOWN ───
+function updateWtCountdown() {
+  const el = document.getElementById('wtCountdown');
+  if (!el) return;
+  const target = new Date('2026-06-01T00:00:00+07:00');
+  const now = new Date();
+  const days = Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
+  el.textContent = days;
+}
+
 // Auto-load on page open
 window.addEventListener('load', () => {
   setTimeout(fetchPrices, 300);
   setTimeout(fetchPrivate, 300);
+  updateWtCountdown();
 });
 
 // ─── TAB SWITCHING ───
