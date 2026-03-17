@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNIPER SETUP — Private Data Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #070809; --bg-1: #0d1014; --bg-2: #131820; --bg-3: #1a2030;
+    --border: #1e2a3a; --border-bright: #2a3a50;
+    --text-dim: #5a7898; --text-mid: #8098b8; --text-base: #a8c4dc;
+    --text-bright: #d8ecf8; --text-white: #f0f8ff;
+    --green: #00d084; --green-dim: #005530; --green-glow: rgba(0,208,132,0.15);
+    --amber: #ffb800; --amber-dim: #3a2800;
+    --red: #ff4055; --red-dim: #3a0010; --red-glow: rgba(255,64,85,0.12);
+    --blue: #3a9fff; --blue-dim: #0a2040; --cyan: #00c8e0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg-0); color: var(--text-base); font-family: 'JetBrains Mono', monospace; font-size: 12px; min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px); pointer-events: none; z-index: 9999; }
+
+  /* ─── FETCH BAR ─── */
+  .fetch-bar { position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 99999; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 0.15s; }
+  .fetch-bar.active { opacity: 1; }
+  .fetch-bar-track { position: absolute; top: 0; left: -45%; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, var(--blue), var(--cyan), var(--blue), transparent); animation: fetch-sweep 1.1s ease-in-out infinite; }
+  .fetch-bar.success .fetch-bar-track { background: var(--green); animation: none; left: 0; width: 100%; }
+  .fetch-bar.error .fetch-bar-track { background: var(--red); animation: none; left: 0; width: 100%; }
+  @keyframes fetch-sweep { 0% { left: -45%; } 100% { left: 105%; } }
+
+  /* ─── HEADER ─── */
+  .header { background: var(--bg-1); border-bottom: 1px solid var(--border-bright); padding: 10px 20px; display: flex; align-items: center; gap: 16px; }
+  .logo { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 3px; color: var(--text-white); }
+  .logo span { color: var(--blue); }
+  .version-badge { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; border: 1px solid var(--border); padding: 2px 6px; border-radius: 2px; }
+  .header-note { margin-left: auto; font-size: 10px; color: var(--text-dim); }
+  .header-note a { color: var(--blue); text-decoration: none; }
+  .header-note a:hover { text-decoration: underline; }
+
+  /* ─── MAIN LAYOUT ─── */
+  .main { max-width: 820px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* ─── MODE SELECTOR ─── */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .mode-card { background: var(--bg-2); border: 2px solid var(--border); border-radius: 4px; padding: 20px; cursor: pointer; transition: all 0.2s; }
+  .mode-card:hover { border-color: var(--blue); background: var(--blue-dim); }
+  .mode-card.active { border-color: var(--blue); background: var(--blue-dim); }
+  .mode-card-title { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; color: var(--text-white); margin-bottom: 6px; }
+  .mode-card-desc { font-size: 10px; color: var(--text-dim); line-height: 1.6; }
+
+  /* ─── STEP BLOCKS ─── */
+  .step { background: var(--bg-1); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 12px; overflow: hidden; }
+  .step.hidden { display: none; }
+  .step-header { background: var(--bg-2); border-bottom: 1px solid var(--border); padding: 9px 14px; display: flex; align-items: center; gap: 10px; }
+  .step-num { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--text-dim); }
+  .step-title { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--text-mid); }
+  .step-body { padding: 14px; }
+
+  /* ─── FIELDSETS ─── */
+  .fieldset { margin-bottom: 16px; }
+  .fieldset:last-child { margin-bottom: 0; }
+  .fieldset-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .field-grid.wide { grid-template-columns: repeat(3, 1fr); }
+  .field-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; background: var(--bg-2); border-radius: 2px; border: 1px solid var(--border); }
+  .field-label { font-size: 11px; color: var(--text-mid); flex: 1; }
+  .field-input { background: var(--bg-1); border: 1px solid var(--border-bright); color: var(--text-white); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 3px 7px; border-radius: 2px; width: 130px; text-align: right; outline: none; transition: border-color 0.15s; }
+  .field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(58,159,255,0.15); }
+  .field-input.text-input { text-align: left; }
+
+  /* ─── PIN FIELDS ─── */
+  .pin-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .pin-label { font-size: 11px; color: var(--text-mid); width: 110px; flex-shrink: 0; }
+  .pin-field { background: var(--bg-1); border: 1px solid var(--border-bright); color: var(--text-white); font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: 5px; padding: 8px 12px; border-radius: 3px; width: 200px; outline: none; transition: border-color 0.15s; }
+  .pin-field:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(58,159,255,0.15); }
+
+  /* ─── BUTTONS ─── */
+  .btn { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1px; border: 1px solid; padding: 8px 18px; border-radius: 3px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-blue { background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
+  .btn-blue:hover { background: var(--blue); color: var(--bg-0); }
+  .btn-green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .btn-green:hover { background: var(--green); color: var(--bg-0); }
+  .btn-dim { background: var(--bg-3); border-color: var(--border-bright); color: var(--text-base); }
+  .btn-dim:hover { background: var(--bg-2); border-color: var(--text-mid); color: var(--text-white); }
+  .btn:disabled { opacity: 0.35; pointer-events: none; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+  /* ─── STATUS LINES ─── */
+  .status-line { font-size: 11px; padding: 6px 10px; border-radius: 2px; margin-top: 8px; line-height: 1.5; }
+  .status-line.ok { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+  .status-line.err { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .status-line.info { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--border-bright); }
+  .status-line.hidden { display: none; }
+
+  /* ─── OUTPUT PREVIEW ─── */
+  .json-preview { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 10px 12px; font-size: 10px; color: var(--text-dim); max-height: 120px; overflow: auto; line-height: 1.5; white-space: pre; margin-top: 10px; }
+
+  /* ─── GITHUB SECTION ─── */
+  .gh-section { background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px; padding: 12px 14px; margin-top: 12px; }
+  .gh-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text-mid); margin-bottom: 10px; }
+  .gh-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .gh-label { font-size: 11px; color: var(--text-mid); width: 50px; flex-shrink: 0; }
+  .gh-input { background: var(--bg-1); border: 1px solid var(--border-bright); color: var(--text-white); font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 5px 8px; border-radius: 2px; flex: 1; outline: none; transition: border-color 0.15s; }
+  .gh-input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(58,159,255,0.15); }
+  .gh-note { font-size: 9px; color: var(--text-dim); margin-top: 4px; line-height: 1.5; }
+
+  /* ─── FILE INPUT ─── */
+  .file-drop { background: var(--bg-2); border: 2px dashed var(--border-bright); border-radius: 3px; padding: 18px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; }
+  .file-drop:hover, .file-drop.over { border-color: var(--blue); background: var(--blue-dim); }
+  .file-drop input { display: none; }
+  .file-drop-label { font-size: 11px; color: var(--text-mid); }
+  .file-drop-label span { color: var(--blue); cursor: pointer; }
+  .file-name { font-size: 10px; color: var(--green); margin-top: 4px; }
+
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+</style>
+</head>
+<body>
+<div id="fetchBar" class="fetch-bar"><div class="fetch-bar-track"></div></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">SNIPER <span>SETUP</span></div>
+  <div class="version-badge">PRIVATE DATA EDITOR</div>
+  <div class="header-note">data never leaves your browser · <a href="./index.html">← Back to Command Center</a></div>
+</header>
+
+<main class="main">
+
+  <!-- STEP 0: MODE SELECTOR -->
+  <div id="modeSection">
+    <div style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-dim);margin-bottom:10px">SELECT MODE</div>
+    <div class="mode-grid">
+      <div class="mode-card" id="modeNew" onclick="selectMode('new')">
+        <div class="mode-card-title">NEW SETUP</div>
+        <div class="mode-card-desc">First time setup or reset.<br>Fill in all portfolio data, set a PIN, encrypt and push to GitHub.</div>
+      </div>
+      <div class="mode-card" id="modeLoad" onclick="selectMode('load')">
+        <div class="mode-card-title">LOAD &amp; UPDATE</div>
+        <div class="mode-card-desc">Load your existing private.enc.json, decrypt with current PIN, edit values, re-encrypt and push.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1: LOAD EXISTING (load mode only) -->
+  <div class="step hidden" id="step1">
+    <div class="step-header">
+      <span class="step-num">STEP 1</span>
+      <span class="step-title">LOAD ENCRYPTED FILE</span>
+    </div>
+    <div class="step-body">
+      <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+        <input type="file" id="fileInput" accept=".json" onchange="onFileSelect(event)">
+        <div class="file-drop-label">Drop <span>private.enc.json</span> here or click to choose</div>
+        <div class="file-name hidden" id="fileName"></div>
+      </div>
+      <div class="pin-row">
+        <span class="pin-label">Current PIN</span>
+        <input type="password" class="pin-field" id="loadPin" inputmode="numeric" maxlength="12" placeholder="••••" autocomplete="off">
+      </div>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn btn-blue" onclick="doLoad()"><span id="loadSpinner"></span>DECRYPT &amp; LOAD</button>
+      </div>
+      <div class="status-line hidden" id="loadStatus"></div>
+    </div>
+  </div>
+
+  <!-- STEP 2: FORM -->
+  <div class="step hidden" id="step2">
+    <div class="step-header">
+      <span class="step-num">STEP 2</span>
+      <span class="step-title">PORTFOLIO DATA</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--text-dim)">all values in THB unless noted</span>
+    </div>
+    <div class="step-body">
+
+      <!-- LEVEL 1 -->
+      <div class="fieldset">
+        <div class="fieldset-title">LEVEL 1</div>
+        <div class="field-grid">
+          <div class="field-row">
+            <span class="field-label">Current liquid (฿)</span>
+            <input type="number" class="field-input" id="f_level1_current" placeholder="287218" min="0" step="1">
+          </div>
+          <div class="field-row">
+            <span class="field-label">HWM date</span>
+            <input type="text" class="field-input text-input" id="f_level1_hwm_date" placeholder="Mar 12">
+          </div>
+        </div>
+      </div>
+
+      <!-- AMMO -->
+      <div class="fieldset">
+        <div class="fieldset-title">AMMO RESERVES</div>
+        <div class="field-grid">
+          <div class="field-row">
+            <span class="field-label">NBIS T1 (฿)</span>
+            <input type="number" class="field-input" id="f_ammo_nbis_t1" placeholder="12014" min="0" step="1">
+          </div>
+          <div class="field-row">
+            <span class="field-label">NBIS T2 (฿)</span>
+            <input type="number" class="field-input" id="f_ammo_nbis_t2" placeholder="12014" min="0" step="1">
+          </div>
+          <div class="field-row">
+            <span class="field-label">ASTS (฿)</span>
+            <input type="number" class="field-input" id="f_ammo_asts" placeholder="1971" min="0" step="1">
+          </div>
+          <div class="field-row">
+            <span class="field-label">Tax refund (฿)</span>
+            <input type="number" class="field-input" id="f_ammo_tax_refund" placeholder="18000" min="0" step="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- THAI -->
+      <div class="fieldset">
+        <div class="fieldset-title">THAI DEFENSE</div>
+        <div class="field-grid">
+          <div class="field-row">
+            <span class="field-label">TISCO shares</span>
+            <input type="number" class="field-input" id="f_thai_tisco" placeholder="173" min="0" step="1">
+          </div>
+          <div class="field-row">
+            <span class="field-label">ADVANC shares</span>
+            <input type="number" class="field-input" id="f_thai_advanc" placeholder="26" min="0" step="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- VAULT -->
+      <div class="fieldset">
+        <div class="fieldset-title">VAULT — SUMMARY</div>
+        <div class="field-grid">
+          <div class="field-row">
+            <span class="field-label">Total (฿)</span>
+            <input type="number" class="field-input" id="f_vault_total" placeholder="397354" min="0" step="1">
+          </div>
+          <div class="field-row">
+            <span class="field-label">Return %</span>
+            <input type="number" class="field-input" id="f_vault_return_pct" placeholder="9.95" step="0.01">
+          </div>
+          <div class="field-row">
+            <span class="field-label">E-class gross (฿)</span>
+            <input type="number" class="field-input" id="f_vault_eclass_gross" placeholder="121466" min="0" step="1">
+          </div>
+          <div class="field-row">
+            <span class="field-label">E-class liquid (฿)</span>
+            <input type="number" class="field-input" id="f_vault_eclass_liquid" placeholder="97173" min="0" step="1">
+          </div>
+        </div>
+        <div class="fieldset-title" style="margin-top:12px">VAULT — ROW VALUES</div>
+        <div class="field-grid wide">
+          <div class="field-row"><span class="field-label">SOXX</span><input type="number" class="field-input" id="f_vault_SOXX" placeholder="142011" min="0" step="1"></div>
+          <div class="field-row"><span class="field-label">VOO</span><input type="number" class="field-input" id="f_vault_VOO" placeholder="121565" min="0" step="1"></div>
+          <div class="field-row"><span class="field-label">GlobalTech</span><input type="number" class="field-input" id="f_vault_GlobalTech" placeholder="40537" min="0" step="1"></div>
+          <div class="field-row"><span class="field-label">QQQ</span><input type="number" class="field-input" id="f_vault_QQQ" placeholder="32596" min="0" step="1"></div>
+          <div class="field-row"><span class="field-label">USEquity</span><input type="number" class="field-input" id="f_vault_USEquity" placeholder="24802" min="0" step="1"></div>
+          <div class="field-row"><span class="field-label">EWY</span><input type="number" class="field-input" id="f_vault_EWY" placeholder="13606" min="0" step="1"></div>
+          <div class="field-row"><span class="field-label">SET</span><input type="number" class="field-input" id="f_vault_SET" placeholder="10159" min="0" step="1"></div>
+          <div class="field-row"><span class="field-label">Gold</span><input type="number" class="field-input" id="f_vault_Gold" placeholder="2373" min="0" step="1"></div>
+        </div>
+      </div>
+
+      <!-- ARSENAL -->
+      <div class="fieldset">
+        <div class="fieldset-title">ARSENAL — SHARE COUNTS</div>
+        <div class="field-grid wide">
+          <div class="field-row"><span class="field-label">VRT</span><input type="number" class="field-input" id="f_ar_VRT" placeholder="0.148355" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">VST</span><input type="number" class="field-input" id="f_ar_VST" placeholder="12" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">MU</span><input type="number" class="field-input" id="f_ar_MU" placeholder="3.062527" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">APH</span><input type="number" class="field-input" id="f_ar_APH" placeholder="8" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">ANET</span><input type="number" class="field-input" id="f_ar_ANET" placeholder="3" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">TSM</span><input type="number" class="field-input" id="f_ar_TSM" placeholder="0.08434" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">FN</span><input type="number" class="field-input" id="f_ar_FN" placeholder="0" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">ASTS</span><input type="number" class="field-input" id="f_ar_ASTS" placeholder="9.3" min="0" step="any"></div>
+          <div class="field-row"><span class="field-label">ONDS</span><input type="number" class="field-input" id="f_ar_ONDS" placeholder="1" min="0" step="any"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STEP 3: PIN + ENCRYPT -->
+  <div class="step hidden" id="step3">
+    <div class="step-header">
+      <span class="step-num">STEP 3</span>
+      <span class="step-title">SET PIN &amp; ENCRYPT</span>
+    </div>
+    <div class="step-body">
+      <div class="pin-row">
+        <span class="pin-label">New PIN</span>
+        <input type="password" class="pin-field" id="encPin" inputmode="numeric" maxlength="12" placeholder="••••" autocomplete="new-password">
+      </div>
+      <div class="pin-row">
+        <span class="pin-label">Confirm PIN</span>
+        <input type="password" class="pin-field" id="encPinConfirm" inputmode="numeric" maxlength="12" placeholder="••••" autocomplete="new-password">
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:2px">Use the same PIN as your current private.enc.json to keep it unchanged. Any PIN works — numbers or text.</div>
+      <div class="btn-row">
+        <button class="btn btn-blue" onclick="doEncrypt()"><span id="encSpinner"></span>ENCRYPT</button>
+      </div>
+      <div class="status-line hidden" id="encStatus"></div>
+    </div>
+  </div>
+
+  <!-- STEP 4: OUTPUT -->
+  <div class="step hidden" id="step4">
+    <div class="step-header">
+      <span class="step-num">STEP 4</span>
+      <span class="step-title">SAVE &amp; DEPLOY</span>
+    </div>
+    <div class="step-body">
+      <div class="status-line ok" id="encResult">✓ Encrypted successfully</div>
+      <div class="json-preview" id="jsonPreview"></div>
+
+      <!-- OPTION A: DOWNLOAD -->
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="doDownload()">↓ DOWNLOAD private.enc.json</button>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:6px">
+        Then upload to GitHub: go to <code style="color:var(--blue)">github.com/[you]/sniper-app</code> → command_center/ → upload file → commit.
+      </div>
+
+      <!-- OPTION B: GITHUB API PUSH -->
+      <div class="gh-section">
+        <div class="gh-title">PUSH DIRECTLY TO GITHUB</div>
+        <div class="gh-row">
+          <span class="gh-label">Repo</span>
+          <input type="text" class="gh-input" id="ghRepo" placeholder="username/sniper-app" autocomplete="off">
+        </div>
+        <div class="gh-row">
+          <span class="gh-label">PAT</span>
+          <input type="password" class="gh-input" id="ghPat" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+        </div>
+        <div class="gh-note">
+          Personal Access Token with <strong>Contents: Read &amp; Write</strong> scope. Stored in sessionStorage only — cleared when you close this tab. Never committed anywhere.
+          <br>Create at: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-blue" onclick="doPush()"><span id="pushSpinner"></span>PUSH TO GITHUB</button>
+          <button class="btn btn-dim" onclick="resetTool()" style="margin-left:auto">↺ START OVER</button>
+        </div>
+        <div class="status-line hidden" id="pushStatus"></div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── STATE ───
+let _mode = null;           // 'new' | 'load'
+let _encryptedOutput = null; // last encrypted object (for download / push)
+
+// ─── FETCH BAR ───
+function barStart() { const b = document.getElementById('fetchBar'); b.className = 'fetch-bar active'; }
+function barDone(ok) {
+  const b = document.getElementById('fetchBar');
+  b.className = 'fetch-bar active ' + (ok ? 'success' : 'error');
+  setTimeout(() => { b.className = 'fetch-bar'; }, ok ? 600 : 1200);
+}
+
+// ─── MODE SELECT ───
+function selectMode(mode) {
+  _mode = mode;
+  document.getElementById('modeNew').classList.toggle('active', mode === 'new');
+  document.getElementById('modeLoad').classList.toggle('active', mode === 'load');
+  document.getElementById('step1').classList.toggle('hidden', mode !== 'load');
+  document.getElementById('step2').classList.remove('hidden');
+  document.getElementById('step3').classList.remove('hidden');
+  if (mode === 'new') document.getElementById('step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  else document.getElementById('step1').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── CRYPTO — copied verbatim from index.html ───
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf;
+}
+async function deriveKey(pin, salt, usage) {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false, [usage]
+  );
+}
+async function decryptPrivateData(encData, pin) {
+  const salt       = b64ToBytes(encData.salt);
+  const iv         = b64ToBytes(encData.iv);
+  const ciphertext = b64ToBytes(encData.ciphertext);
+  const key        = await deriveKey(pin, salt, 'decrypt');
+  const plainBuf   = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
+}
+async function encryptPrivateData(plainObj, pin) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(pin, salt, 'encrypt');
+  const plain = new TextEncoder().encode(JSON.stringify(plainObj));
+  const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer)));
+  return {
+    _note: 'AES-256-GCM · PBKDF2-SHA256 · 100k iter — generated by setup.html',
+    salt:       b64(salt),
+    iv:         b64(iv),
+    ciphertext: b64(cipherBuf),
+  };
+}
+
+// ─── FILE LOAD ───
+let _loadedFile = null;
+function onDragOver(e) { e.preventDefault(); document.getElementById('fileDrop').classList.add('over'); }
+function onDragLeave()  { document.getElementById('fileDrop').classList.remove('over'); }
+function onDrop(e)      { e.preventDefault(); onDragLeave(); const f = e.dataTransfer.files[0]; if (f) setFile(f); }
+function onFileSelect(e){ const f = e.target.files[0]; if (f) setFile(f); }
+function setFile(f) {
+  _loadedFile = f;
+  const el = document.getElementById('fileName');
+  el.textContent = f.name;
+  el.classList.remove('hidden');
+}
+
+async function doLoad() {
+  const pin = document.getElementById('loadPin').value.trim();
+  const statusEl = document.getElementById('loadStatus');
+  const spinner  = document.getElementById('loadSpinner');
+  if (!_loadedFile) return showStatus(statusEl, 'err', 'Choose a file first');
+  if (!pin)         return showStatus(statusEl, 'err', 'Enter current PIN');
+  spinner.className = 'spin'; spinner.textContent = '↻ ';
+  barStart();
+  try {
+    const text = await _loadedFile.text();
+    const encData = JSON.parse(text);
+    const d = await decryptPrivateData(encData, pin);
+    populateForm(d);
+    showStatus(statusEl, 'ok', '✓ Decrypted — form populated below');
+    barDone(true);
+    document.getElementById('step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) {
+    showStatus(statusEl, 'err', e.message.includes('operation') ? 'Wrong PIN — decryption failed' : 'Invalid file: ' + e.message);
+    barDone(false);
+  } finally { spinner.className = ''; spinner.textContent = ''; }
+}
+
+// ─── FORM POPULATE / COLLECT ───
+function set(id, val) { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; }
+function get(id, asFloat) {
+  const el = document.getElementById(id);
+  if (!el || el.value === '') return undefined;
+  return asFloat ? parseFloat(el.value) : parseInt(el.value, 10);
+}
+function getStr(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function populateForm(d) {
+  if (d.level1) { set('f_level1_current', d.level1.current); set('f_level1_hwm_date', d.level1.hwm_date); }
+  if (d.ammo)   { set('f_ammo_nbis_t1', d.ammo.nbis_t1); set('f_ammo_nbis_t2', d.ammo.nbis_t2); set('f_ammo_asts', d.ammo.asts); set('f_ammo_tax_refund', d.ammo.tax_refund); }
+  if (d.thai)   { if (d.thai.TISCO) set('f_thai_tisco', d.thai.TISCO.shares); if (d.thai.ADVANC) set('f_thai_advanc', d.thai.ADVANC.shares); }
+  if (d.vault)  {
+    set('f_vault_total', d.vault.total); set('f_vault_return_pct', d.vault.return_pct);
+    set('f_vault_eclass_gross', d.vault.eclass_gross); set('f_vault_eclass_liquid', d.vault.eclass_liquid);
+    if (d.vault.rows) {
+      ['SOXX','VOO','GlobalTech','QQQ','USEquity','EWY','SET','Gold'].forEach(k => set('f_vault_' + k, d.vault.rows[k]));
+    }
+  }
+  if (d.arsenal) { ['VRT','VST','MU','APH','ANET','TSM','FN','ASTS','ONDS'].forEach(k => set('f_ar_' + k, d.arsenal[k])); }
+}
+
+function collectFormData() {
+  const vaultRows = {};
+  ['SOXX','VOO','GlobalTech','QQQ','USEquity','EWY','SET','Gold'].forEach(k => {
+    const v = get('f_vault_' + k); if (v !== undefined) vaultRows[k] = v;
+  });
+  const arsenal = {};
+  ['VRT','VST','MU','APH','ANET','TSM','FN','ASTS','ONDS'].forEach(k => {
+    const v = getStr('f_ar_' + k); if (v !== '') arsenal[k] = parseFloat(v);
+  });
+  return {
+    level1: { current: get('f_level1_current'), hwm_date: getStr('f_level1_hwm_date') },
+    ammo:   { nbis_t1: get('f_ammo_nbis_t1'), nbis_t2: get('f_ammo_nbis_t2'), asts: get('f_ammo_asts'), tax_refund: get('f_ammo_tax_refund') },
+    thai:   { TISCO: { shares: get('f_thai_tisco') }, ADVANC: { shares: get('f_thai_advanc') } },
+    vault:  { total: get('f_vault_total'), return_pct: parseFloat(document.getElementById('f_vault_return_pct')?.value || 0), eclass_gross: get('f_vault_eclass_gross'), eclass_liquid: get('f_vault_eclass_liquid'), rows: vaultRows },
+    arsenal,
+  };
+}
+
+// ─── ENCRYPT ───
+async function doEncrypt() {
+  const pin1 = document.getElementById('encPin').value;
+  const pin2 = document.getElementById('encPinConfirm').value;
+  const statusEl = document.getElementById('encStatus');
+  const spinner  = document.getElementById('encSpinner');
+  if (!pin1)       return showStatus(statusEl, 'err', 'Enter a PIN');
+  if (pin1 !== pin2) return showStatus(statusEl, 'err', 'PINs do not match');
+  const data = collectFormData();
+  if (!data.level1.current) return showStatus(statusEl, 'err', 'Level 1 current value is required');
+  spinner.className = 'spin'; spinner.textContent = '↻ ';
+  barStart();
+  try {
+    _encryptedOutput = await encryptPrivateData(data, pin1);
+    const preview = JSON.stringify(_encryptedOutput, null, 2).slice(0, 400) + '\n...';
+    document.getElementById('jsonPreview').textContent = preview;
+    document.getElementById('step4').classList.remove('hidden');
+    document.getElementById('step4').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showStatus(statusEl, 'ok', '✓ Ready — download or push below');
+    barDone(true);
+    // Restore PAT from sessionStorage if saved
+    const savedPat = sessionStorage.getItem('gh_pat');
+    const savedRepo = sessionStorage.getItem('gh_repo');
+    if (savedPat) document.getElementById('ghPat').value = savedPat;
+    if (savedRepo) document.getElementById('ghRepo').value = savedRepo;
+  } catch (e) {
+    showStatus(statusEl, 'err', 'Encryption failed: ' + e.message);
+    barDone(false);
+  } finally { spinner.className = ''; spinner.textContent = ''; }
+}
+
+// ─── DOWNLOAD ───
+function doDownload() {
+  if (!_encryptedOutput) return;
+  const blob = new Blob([JSON.stringify(_encryptedOutput, null, 2)], { type: 'application/json' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'private.enc.json' });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── GITHUB API PUSH ───
+async function doPush() {
+  if (!_encryptedOutput) return;
+  const repo    = document.getElementById('ghRepo').value.trim();
+  const pat     = document.getElementById('ghPat').value.trim();
+  const statusEl = document.getElementById('pushStatus');
+  const spinner  = document.getElementById('pushSpinner');
+  if (!repo) return showStatus(statusEl, 'err', 'Enter repo (e.g. username/sniper-app)');
+  if (!pat)  return showStatus(statusEl, 'err', 'Enter Personal Access Token');
+  // Save to sessionStorage for convenience within this session
+  sessionStorage.setItem('gh_pat', pat);
+  sessionStorage.setItem('gh_repo', repo);
+  spinner.className = 'spin'; spinner.textContent = '↻ ';
+  barStart();
+  showStatus(statusEl, 'info', 'Pushing to GitHub…');
+  try {
+    const path    = 'command_center/private.enc.json';
+    const apiBase = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const headers = { Authorization: `Bearer ${pat}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28' };
+    // Get current SHA (needed for update; undefined for first create)
+    let sha;
+    const getRes = await fetch(apiBase, { headers });
+    if (getRes.ok) { sha = (await getRes.json()).sha; }
+    else if (getRes.status !== 404) throw new Error(`GET failed: HTTP ${getRes.status}`);
+    // PUT new content
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(_encryptedOutput, null, 2))));
+    const body = { message: 'chore: update private.enc.json via setup.html', content, ...(sha ? { sha } : {}) };
+    const putRes = await fetch(apiBase, { method: 'PUT', headers, body: JSON.stringify(body) });
+    if (!putRes.ok) {
+      const err = await putRes.json().catch(() => ({}));
+      throw new Error(`HTTP ${putRes.status}: ${err.message || 'unknown'}`);
+    }
+    const result = await putRes.json();
+    const commitUrl = result.commit?.html_url || `https://github.com/${repo}/blob/main/${path}`;
+    showStatus(statusEl, 'ok', `✓ Pushed — <a href="${commitUrl}" target="_blank" style="color:var(--green)">view commit</a>`);
+    barDone(true);
+  } catch (e) {
+    showStatus(statusEl, 'err', 'Push failed: ' + e.message);
+    barDone(false);
+  } finally { spinner.className = ''; spinner.textContent = ''; }
+}
+
+// ─── HELPERS ───
+function showStatus(el, type, msg) {
+  el.className = 'status-line ' + type;
+  el.innerHTML = msg;
+}
+
+function resetTool() {
+  _mode = null; _encryptedOutput = null; _loadedFile = null;
+  document.getElementById('modeNew').classList.remove('active');
+  document.getElementById('modeLoad').classList.remove('active');
+  ['step1','step2','step3','step4'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  ['loadStatus','encStatus','pushStatus'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileName').classList.add('hidden');
+  document.querySelectorAll('.field-input, .pin-field, .gh-input').forEach(el => { if (el.id !== 'ghRepo' && el.id !== 'ghPat') el.value = ''; });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── KEYBOARD ───
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.activeElement === document.getElementById('loadPin')) doLoad();
+    if (document.activeElement === document.getElementById('encPinConfirm')) doEncrypt();
+  }
+});
+</script>
+</body>
+</html>
