@@ -1,115 +1,113 @@
 {
-  "updated": "2026-03-16T10:20:21Z",
-  "updated_bkk": "2026-03-16 17:20 GMT+7",
+  "updated": "2026-03-17T04:07:21Z",
+  "updated_bkk": "2026-03-17 11:07 GMT+7",
   "prices": {
     "VRT": {
-      "price": 258.88,
-      "prev_close": 265.38,
-      "change_pct": -2.45
+      "price": 264.74,
+      "prev_close": 258.88,
+      "change_pct": 2.26
     },
     "ASTS": {
-      "price": 86.34,
-      "prev_close": 87.09,
-      "change_pct": -0.86
+      "price": 89.11,
+      "prev_close": 86.34,
+      "change_pct": 3.21
     },
     "VST": {
-      "price": 158.95,
-      "prev_close": 159.58,
-      "change_pct": -0.39
+      "price": 161.99,
+      "prev_close": 158.95,
+      "change_pct": 1.91
     },
     "MU": {
-      "price": 426.13,
-      "prev_close": 405.35,
-      "change_pct": 5.13
+      "price": 441.8,
+      "prev_close": 426.13,
+      "change_pct": 3.68
     },
     "APH": {
-      "price": 133.92,
-      "prev_close": 131.47,
-      "change_pct": 1.86
+      "price": 136.8,
+      "prev_close": 133.92,
+      "change_pct": 2.15
     },
     "ANET": {
-      "price": 133.57,
-      "prev_close": 134.03,
-      "change_pct": -0.34
+      "price": 135.35,
+      "prev_close": 133.57,
+      "change_pct": 1.33
     },
     "TSM": {
-      "price": 338.31,
-      "prev_close": 336.71,
-      "change_pct": 0.48
+      "price": 340.23,
+      "prev_close": 338.31,
+      "change_pct": 0.57
     },
     "ONDS": {
-      "price": 10.16,
-      "prev_close": 10.33,
-      "change_pct": -1.65
+      "price": 10.53,
+      "prev_close": 10.16,
+      "change_pct": 3.64
     },
     "FN": {
-      "price": 502.14,
-      "prev_close": 512.8,
-      "change_pct": -2.08
+      "price": 512.82,
+      "prev_close": 502.14,
+      "change_pct": 2.13
     },
     "PLTR": {
-      "price": 150.95,
-      "prev_close": 153.5,
-      "change_pct": -1.66
+      "price": 152.72,
+      "prev_close": 150.95,
+      "change_pct": 1.17
     },
     "TSEM": {
-      "price": 124.71,
-      "prev_close": 118.54,
-      "change_pct": 5.2
+      "price": 138.47,
+      "prev_close": 124.71,
+      "change_pct": 11.03
     },
     "NBIS": {
-      "price": 112.95,
-      "prev_close": 108.04,
-      "change_pct": 4.54
+      "price": 129.85,
+      "prev_close": 112.95,
+      "change_pct": 14.96
     },
     "BWXT": {
-      "price": 194.13,
-      "prev_close": 197.82,
-      "change_pct": -1.87
+      "price": 204.67,
+      "prev_close": 194.13,
+      "change_pct": 5.43
     },
     "KTOS": {
-      "price": 87.53,
-      "prev_close": 89.46,
-      "change_pct": -2.16
+      "price": 89.53,
+      "prev_close": 87.53,
+      "change_pct": 2.28
     },
     "SOXX": {
-      "price": 331.32,
-      "prev_close": 330.19,
-      "change_pct": 0.34,
-      "ytd_pct": 5.62
+      "price": 337.83,
+      "prev_close": 331.32,
+      "change_pct": 1.96,
+      "ytd_pct": 7.7
     },
     "VOO": {
-      "price": 609.09,
-      "prev_close": 612.5,
-      "change_pct": -0.56,
-      "ytd_pct": -3.06
+      "price": 615.19,
+      "prev_close": 609.09,
+      "change_pct": 1.0,
+      "ytd_pct": -2.09
     },
     "QQQ": {
-      "price": 593.72,
-      "prev_close": 597.26,
-      "change_pct": -0.59,
-      "ytd_pct": -3.16
+      "price": 600.38,
+      "prev_close": 593.72,
+      "change_pct": 1.12,
+      "ytd_pct": -2.08
     },
     "EWY": {
-      "price": 124.15,
-      "prev_close": 123.5,
-      "change_pct": 0.53,
-      "ytd_pct": 21.45
+      "price": 133.1,
+      "prev_close": 124.15,
+      "change_pct": 7.21,
+      "ytd_pct": 30.21
     },
     "GLD": {
-      "price": 460.84,
-      "prev_close": 466.88,
-      "change_pct": -1.29
+      "price": 460.43,
+      "prev_close": 460.84,
+      "change_pct": -0.09
     },
     "^VIX": {
-      "price": 26.23,
+      "price": 23.51,
       "prev_close": 27.19,
-      "change_pct": -3.53
+      "change_pct": -13.53
     },
     "THB=X": {
-      "price": 32.51,
-      "prev_close": 32.15,
-      "change_pct": 1.12
+      "price": 32.42
     }
   },
   "ytd_ref": {
@@ -119,9 +117,74 @@
     "EWY": 102.22
   },
   "gate": {
-    "vix_freeze": true,
-    "vix": 26.23,
+    "vix_freeze": false,
+    "vix": 23.51,
     "thb_zone": "B",
-    "thb": 32.51
+    "thb": 32.42
+  },
+  "adv": {
+    "PLTR": {
+      "adv_20d": 53118445,
+      "today_vol": 32773147,
+      "adv_ratio": 0.62,
+      "gate_met": false
+    },
+    "TSEM": {
+      "adv_20d": 1954750,
+      "today_vol": 3893861,
+      "adv_ratio": 1.99,
+      "gate_met": true
+    },
+    "NBIS": {
+      "adv_20d": 13392780,
+      "today_vol": 34249154,
+      "adv_ratio": 2.56,
+      "gate_met": true
+    },
+    "BWXT": {
+      "adv_20d": 945130,
+      "today_vol": 1276646,
+      "adv_ratio": 1.35,
+      "gate_met": false
+    },
+    "KTOS": {
+      "adv_20d": 5151245,
+      "today_vol": 2381611,
+      "adv_ratio": 0.46,
+      "gate_met": false
+    },
+    "FN": {
+      "adv_20d": 655040,
+      "today_vol": 488256,
+      "adv_ratio": 0.75,
+      "gate_met": false
+    }
+  },
+  "news": {
+    "PLTR": {
+      "headline": "Prediction: Alphabet Stock Will Crush Palantir Stock Over the Next 5 Years",
+      "publisher": "Motley Fool",
+      "date": "2026-03-17"
+    },
+    "TSEM": {
+      "headline": "Why Tower Semiconductor Stock Jumped Today",
+      "publisher": "Motley Fool",
+      "date": "2026-03-16"
+    },
+    "NBIS": {
+      "headline": "AI companies continue cross-investment as ROI questions loom",
+      "publisher": "Yahoo Finance Video",
+      "date": "2026-03-16"
+    },
+    "BWXT": {
+      "headline": "Teledyne Gains Momentum Through Key Acquisitions & Defense Spending",
+      "publisher": "Zacks",
+      "date": "2026-03-13"
+    },
+    "KTOS": {
+      "headline": "1 Growth Stock Set to Flourish and 2 We Avoid",
+      "publisher": "StockStory",
+      "date": "2026-03-16"
+    }
   }
 }
