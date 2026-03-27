@@ -1,115 +1,115 @@
 {
-  "updated": "2026-03-26T04:23:45Z",
-  "updated_bkk": "2026-03-26 11:23 GMT+7",
+  "updated": "2026-03-27T04:24:41Z",
+  "updated_bkk": "2026-03-27 11:24 GMT+7",
   "prices": {
     "VRT": {
-      "price": 276.16,
-      "prev_close": 270.89,
-      "change_pct": 1.95
+      "price": 252.4,
+      "prev_close": 276.16,
+      "change_pct": -8.6
     },
     "ASTS": {
-      "price": 96.06,
-      "prev_close": 86.98,
-      "change_pct": 10.44
+      "price": 87.86,
+      "prev_close": 96.06,
+      "change_pct": -8.54
     },
     "VST": {
-      "price": 151.51,
-      "prev_close": 152.72,
-      "change_pct": -0.79
+      "price": 152.3,
+      "prev_close": 151.51,
+      "change_pct": 0.52
     },
     "MU": {
-      "price": 382.09,
-      "prev_close": 395.53,
-      "change_pct": -3.4
+      "price": 355.46,
+      "prev_close": 382.09,
+      "change_pct": -6.97
     },
     "APH": {
-      "price": 128.73,
-      "prev_close": 127.96,
-      "change_pct": 0.6
+      "price": 123.13,
+      "prev_close": 128.73,
+      "change_pct": -4.35
     },
     "ANET": {
-      "price": 135.01,
-      "prev_close": 130.8,
-      "change_pct": 3.22
+      "price": 122.55,
+      "prev_close": 135.01,
+      "change_pct": -9.23
     },
     "TSM": {
-      "price": 347.75,
-      "prev_close": 343.25,
-      "change_pct": 1.31
+      "price": 326.11,
+      "prev_close": 347.75,
+      "change_pct": -6.22
     },
     "ONDS": {
-      "price": 10.31,
-      "prev_close": 10.68,
-      "change_pct": -3.46
+      "price": 9.44,
+      "prev_close": 10.31,
+      "change_pct": -8.44
     },
     "FN": {
-      "price": 612.03,
-      "prev_close": 600.91,
-      "change_pct": 1.85
+      "price": 549.7,
+      "prev_close": 612.03,
+      "change_pct": -10.18
     },
     "PLTR": {
-      "price": 154.96,
-      "prev_close": 154.78,
-      "change_pct": 0.12
+      "price": 147.56,
+      "prev_close": 154.96,
+      "change_pct": -4.78
     },
     "TSEM": {
-      "price": 188.74,
-      "prev_close": 180.82,
-      "change_pct": 4.38
+      "price": 174.68,
+      "prev_close": 188.74,
+      "change_pct": -7.45
     },
     "NBIS": {
-      "price": 115.09,
-      "prev_close": 114.91,
-      "change_pct": 0.16
+      "price": 105.97,
+      "prev_close": 115.09,
+      "change_pct": -7.92
     },
     "BWXT": {
-      "price": 222.13,
-      "prev_close": 204.76,
-      "change_pct": 8.48
+      "price": 205.09,
+      "prev_close": 222.13,
+      "change_pct": -7.67
     },
     "KTOS": {
-      "price": 79.98,
-      "prev_close": 77.49,
-      "change_pct": 3.21
+      "price": 75.86,
+      "prev_close": 79.98,
+      "change_pct": -5.15
     },
     "SOXX": {
-      "price": 345.25,
-      "prev_close": 341.02,
-      "change_pct": 1.24,
-      "ytd_pct": 10.06
+      "price": 328.85,
+      "prev_close": 345.25,
+      "change_pct": -4.75,
+      "ytd_pct": 4.83
     },
     "VOO": {
-      "price": 605.66,
-      "prev_close": 602.38,
-      "change_pct": 0.54,
-      "ytd_pct": -3.6
+      "price": 594.92,
+      "prev_close": 605.66,
+      "change_pct": -1.77,
+      "ytd_pct": -5.31
     },
     "QQQ": {
-      "price": 587.82,
-      "prev_close": 583.98,
-      "change_pct": 0.66,
-      "ytd_pct": -4.13
+      "price": 573.79,
+      "prev_close": 587.82,
+      "change_pct": -2.39,
+      "ytd_pct": -6.41
     },
     "EWY": {
-      "price": 127.74,
-      "prev_close": 128.75,
-      "change_pct": -0.78,
-      "ytd_pct": 24.97
+      "price": 119.99,
+      "prev_close": 127.74,
+      "change_pct": -6.07,
+      "ytd_pct": 17.38
     },
     "GLD": {
-      "price": 416.29,
-      "prev_close": 404.13,
-      "change_pct": 3.01
+      "price": 400.64,
+      "prev_close": 416.29,
+      "change_pct": -3.76
     },
     "^VIX": {
-      "price": 25.33,
-      "prev_close": 26.95,
-      "change_pct": -6.01
+      "price": 27.44,
+      "prev_close": 25.33,
+      "change_pct": 8.33
     },
     "THB=X": {
-      "price": 32.73,
-      "prev_close": 32.47,
-      "change_pct": 0.8
+      "price": 32.8,
+      "prev_close": 32.77,
+      "change_pct": 0.09
     }
   },
   "ytd_ref": {
@@ -120,73 +120,73 @@
   },
   "gate": {
     "vix_freeze": true,
-    "vix": 25.33,
+    "vix": 27.44,
     "thb_zone": "B",
-    "thb": 32.73
+    "thb": 32.8
   },
   "adv": {
     "PLTR": {
-      "adv_20d": 50408365,
-      "today_vol": 37993457,
-      "adv_ratio": 0.75,
+      "adv_20d": 49681615,
+      "today_vol": 42874800,
+      "adv_ratio": 0.86,
       "gate_met": false
     },
     "TSEM": {
-      "adv_20d": 3093150,
-      "today_vol": 5918335,
-      "adv_ratio": 1.91,
+      "adv_20d": 3305880,
+      "today_vol": 5462400,
+      "adv_ratio": 1.65,
       "gate_met": true
     },
     "NBIS": {
-      "adv_20d": 17832955,
-      "today_vol": 12086937,
-      "adv_ratio": 0.68,
+      "adv_20d": 18002650,
+      "today_vol": 13373800,
+      "adv_ratio": 0.74,
       "gate_met": false
     },
     "BWXT": {
-      "adv_20d": 1051455,
-      "today_vol": 1331597,
-      "adv_ratio": 1.27,
+      "adv_20d": 1063830,
+      "today_vol": 1470400,
+      "adv_ratio": 1.38,
       "gate_met": false
     },
     "KTOS": {
-      "adv_20d": 5079725,
-      "today_vol": 3796832,
-      "adv_ratio": 0.75,
+      "adv_20d": 5159730,
+      "today_vol": 3021000,
+      "adv_ratio": 0.59,
       "gate_met": false
     },
     "FN": {
-      "adv_20d": 717645,
-      "today_vol": 782085,
-      "adv_ratio": 1.09,
+      "adv_20d": 715185,
+      "today_vol": 605100,
+      "adv_ratio": 0.85,
       "gate_met": false
     }
   },
   "news": {
     "PLTR": {
-      "headline": "A Look At General Electric (GE) Valuation As New Energy Orders And Aerospace Investments Build Momentum",
+      "headline": "Palantir\u2019s Golden Dome Role Reframes Defense Growth And Valuation Debate",
       "publisher": "Simply Wall St.",
-      "date": "2026-03-26"
+      "date": "2026-03-27"
     },
     "TSEM": {
-      "headline": "How The Tower Semiconductor (NasdaqGS:TSEM) RF Connectivity Story Is Reframing The Investment Narrative",
-      "publisher": "Simply Wall St.",
-      "date": "2026-03-25"
+      "headline": "GlobalFoundries Sues Tower Semiconductor for Patent Infringement",
+      "publisher": "The Wall Street Journal",
+      "date": "2026-03-26"
     },
     "NBIS": {
-      "headline": "Bank of America Is Betting That Nebius Stock Still Has 30% Upside Potential. Should You Buy It Here?",
-      "publisher": "Barchart",
-      "date": "2026-03-25"
+      "headline": "Nebius AI Cloud 3.5 Targets Physical AI And Valuation Debate",
+      "publisher": "Simply Wall St.",
+      "date": "2026-03-27"
     },
     "BWXT": {
-      "headline": "Dow Jones Futures: Stock Market Fades Amid Iran War Deal Hopes, Doubts",
+      "headline": "Funds Go Nuclear For This IBD 50 Stock With Unique Power. AI Data Centers, U.S. Navy Fuel Growth.",
       "publisher": "Investor's Business Daily",
       "date": "2026-03-26"
     },
     "KTOS": {
-      "headline": "Defense Stock Worth Watching for Bullish Options Traders",
-      "publisher": "Schaeffer's Investment Research",
-      "date": "2026-03-25"
+      "headline": "Kratos Hypersonic Test Win And Board Addition Shape Investor Focus",
+      "publisher": "Simply Wall St.",
+      "date": "2026-03-26"
     }
   }
 }
