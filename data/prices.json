@@ -1,115 +1,115 @@
 {
-  "updated": "2026-03-30T04:35:40Z",
-  "updated_bkk": "2026-03-30 11:35 GMT+7",
+  "updated": "2026-03-31T04:26:45Z",
+  "updated_bkk": "2026-03-31 11:26 GMT+7",
   "prices": {
     "VRT": {
-      "price": 251.07,
-      "prev_close": 252.4,
-      "change_pct": -0.53
+      "price": 234.22,
+      "prev_close": 251.07,
+      "change_pct": -6.71
     },
     "ASTS": {
-      "price": 78.67,
-      "prev_close": 87.86,
-      "change_pct": -10.46
+      "price": 73.82,
+      "prev_close": 78.67,
+      "change_pct": -6.16
     },
     "VST": {
-      "price": 155.48,
-      "prev_close": 152.3,
-      "change_pct": 2.09
+      "price": 147.54,
+      "prev_close": 155.48,
+      "change_pct": -5.11
     },
     "MU": {
-      "price": 357.22,
-      "prev_close": 355.46,
-      "change_pct": 0.5
+      "price": 321.8,
+      "prev_close": 357.22,
+      "change_pct": -9.92
     },
     "APH": {
-      "price": 123.62,
-      "prev_close": 123.13,
-      "change_pct": 0.4
+      "price": 119.15,
+      "prev_close": 123.62,
+      "change_pct": -3.62
     },
     "ANET": {
-      "price": 120.77,
-      "prev_close": 122.55,
-      "change_pct": -1.45
+      "price": 116.13,
+      "prev_close": 120.77,
+      "change_pct": -3.84
     },
     "TSM": {
-      "price": 326.74,
-      "prev_close": 326.11,
-      "change_pct": 0.19
+      "price": 316.5,
+      "prev_close": 326.74,
+      "change_pct": -3.13
     },
     "ONDS": {
-      "price": 8.8,
-      "prev_close": 9.44,
-      "change_pct": -6.78
+      "price": 8.15,
+      "prev_close": 8.8,
+      "change_pct": -7.39
     },
     "FN": {
-      "price": 551.97,
-      "prev_close": 549.7,
-      "change_pct": 0.41
+      "price": 491.88,
+      "prev_close": 551.97,
+      "change_pct": -10.89
     },
     "PLTR": {
-      "price": 143.06,
-      "prev_close": 147.56,
-      "change_pct": -3.05
+      "price": 137.55,
+      "prev_close": 143.06,
+      "change_pct": -3.85
     },
     "TSEM": {
-      "price": 171.92,
-      "prev_close": 174.68,
-      "change_pct": -1.58
+      "price": 158.58,
+      "prev_close": 171.92,
+      "change_pct": -7.76
     },
     "NBIS": {
-      "price": 100.82,
-      "prev_close": 105.97,
-      "change_pct": -4.86
+      "price": 92.26,
+      "prev_close": 100.82,
+      "change_pct": -8.49
     },
     "BWXT": {
-      "price": 202.59,
-      "prev_close": 205.09,
-      "change_pct": -1.22
+      "price": 191.59,
+      "prev_close": 202.59,
+      "change_pct": -5.43
     },
     "KTOS": {
-      "price": 71.94,
-      "prev_close": 75.86,
-      "change_pct": -5.17
+      "price": 65.28,
+      "prev_close": 71.94,
+      "change_pct": -9.26
     },
     "SOXX": {
-      "price": 323.48,
-      "prev_close": 328.85,
-      "change_pct": -1.63,
-      "ytd_pct": 3.12
+      "price": 309.79,
+      "prev_close": 323.48,
+      "change_pct": -4.23,
+      "ytd_pct": -1.24
     },
     "VOO": {
-      "price": 582.96,
-      "prev_close": 593.048,
-      "change_pct": -1.7,
-      "ytd_pct": -7.22
+      "price": 580.93,
+      "prev_close": 582.96,
+      "change_pct": -0.35,
+      "ytd_pct": -7.54
     },
     "QQQ": {
-      "price": 562.58,
-      "prev_close": 573.79,
-      "change_pct": -1.95,
-      "ytd_pct": -8.24
+      "price": 558.28,
+      "prev_close": 562.58,
+      "change_pct": -0.76,
+      "ytd_pct": -8.94
     },
     "EWY": {
-      "price": 120.98,
-      "prev_close": 119.99,
-      "change_pct": 0.83,
-      "ytd_pct": 18.35
+      "price": 116.43,
+      "prev_close": 120.98,
+      "change_pct": -3.76,
+      "ytd_pct": 13.9
     },
     "GLD": {
-      "price": 414.7,
-      "prev_close": 400.64,
-      "change_pct": 3.51
+      "price": 414.58,
+      "prev_close": 414.7,
+      "change_pct": -0.03
     },
     "^VIX": {
-      "price": 31.05,
-      "prev_close": 27.44,
-      "change_pct": 13.16
+      "price": 30.61,
+      "prev_close": 31.05,
+      "change_pct": -1.42
     },
     "THB=X": {
-      "price": 32.79,
+      "price": 32.9,
       "prev_close": 32.96,
-      "change_pct": -0.52
+      "change_pct": -0.18
     }
   },
   "ytd_ref": {
@@ -120,73 +120,73 @@
   },
   "gate": {
     "vix_freeze": true,
-    "vix": 31.05,
+    "vix": 30.61,
     "thb_zone": "B",
-    "thb": 32.79
+    "thb": 32.9
   },
   "adv": {
     "PLTR": {
-      "adv_20d": 49578535,
-      "today_vol": 35650500,
-      "adv_ratio": 0.72,
-      "gate_met": false
-    },
-    "TSEM": {
-      "adv_20d": 3480425,
-      "today_vol": 4196500,
-      "adv_ratio": 1.21,
-      "gate_met": false
-    },
-    "NBIS": {
-      "adv_20d": 18246460,
-      "today_vol": 11489200,
-      "adv_ratio": 0.63,
-      "gate_met": false
-    },
-    "BWXT": {
-      "adv_20d": 1082500,
-      "today_vol": 923200,
+      "adv_20d": 48397455,
+      "today_vol": 40945600,
       "adv_ratio": 0.85,
       "gate_met": false
     },
+    "TSEM": {
+      "adv_20d": 3601350,
+      "today_vol": 5165400,
+      "adv_ratio": 1.43,
+      "gate_met": false
+    },
+    "NBIS": {
+      "adv_20d": 17676805,
+      "today_vol": 16596300,
+      "adv_ratio": 0.94,
+      "gate_met": false
+    },
+    "BWXT": {
+      "adv_20d": 1088635,
+      "today_vol": 1038200,
+      "adv_ratio": 0.95,
+      "gate_met": false
+    },
     "KTOS": {
-      "adv_20d": 5180685,
-      "today_vol": 3183300,
-      "adv_ratio": 0.61,
+      "adv_20d": 4674090,
+      "today_vol": 5465700,
+      "adv_ratio": 1.17,
       "gate_met": false
     },
     "FN": {
-      "adv_20d": 690750,
-      "today_vol": 529400,
-      "adv_ratio": 0.77,
+      "adv_20d": 673845,
+      "today_vol": 792000,
+      "adv_ratio": 1.18,
       "gate_met": false
     }
   },
   "news": {
     "PLTR": {
-      "headline": "Should You Forget Palantir and Buy These 2 Under-the-Radar AI Stocks Instead?",
+      "headline": "Dow Jones Futures: Nasdaq Falls After Trump, Powell Comments; Micron, Nvidia, Palantir, Tesla Are Key Losers",
+      "publisher": "Investor's Business Daily",
+      "date": "2026-03-31"
+    },
+    "TSEM": {
+      "headline": "GlobalFoundries sues Tower Semiconductor for patent infringement",
+      "publisher": "Manufacturing Dive",
+      "date": "2026-03-30"
+    },
+    "NBIS": {
+      "headline": "Another Day, Another Massive AI Infrastructure Deal",
       "publisher": "Motley Fool",
       "date": "2026-03-30"
     },
-    "TSEM": {
-      "headline": "Jim Cramer on Tower Semiconductor (TSEM): \u201cI Would Take a Little Off Just Because It\u2019s Had, It\u2019s Had a Parabolic Move in",
-      "publisher": "Insider Monkey",
-      "date": "2026-03-28"
-    },
-    "NBIS": {
-      "headline": "Nebius Serverless AI Deal Highlights Nvidia Blackwell Adoption And Valuation Gap",
-      "publisher": "Simply Wall St.",
-      "date": "2026-03-29"
-    },
     "BWXT": {
-      "headline": "Will BWXT\u2019s NextGen MURR Role in Cancer Isotope Supply Change BWX Technologies' (BWXT) Narrative",
-      "publisher": "Simply Wall St.",
-      "date": "2026-03-28"
+      "headline": "Primoris, Rocket Lab, Curtiss-Wright, American Superconductor, and BWX Stocks Trade Down, What You Need To Know",
+      "publisher": "StockStory",
+      "date": "2026-03-31"
     },
     "KTOS": {
-      "headline": "Drones are now expected to become a $250 billion market by 2035",
-      "publisher": "Investing.com",
-      "date": "2026-03-28"
+      "headline": "Why Did Kratos Defense Stock Continue to Slide Today?",
+      "publisher": "Motley Fool",
+      "date": "2026-03-30"
     }
   }
 }
