@@ -24,3 +24,16 @@ Static HTML only. No Python. No server. No build step.
 2. VAULT HEALTH
 3. WATCHTOWER (CMD-2 — ✅ Session 3 complete)
 4. BACKTESTER (CMD-3 — ✅ Session 4 complete)
+5. WAR ROOM (CMD-4 — ✅ Agent-based pixel art visualization)
+
+## War Room architecture (CMD-4)
+- Canvas 2D rendering engine with `requestAnimationFrame` game loop
+- `WarRoom` IIFE module: `init()`, `start()`, `stop()`, `updateFromPriceData(d)`, `syncPrices()`
+- `Agent` class: ticker, zone (arsenal/watchtower/sentinel/commander), state machine, pixel art rendering
+- 28 agents created from existing `ARSENAL_CORE`, `ARSENAL_SAT`, `WT_CORE_ROSTER`, `WT_SAT_ROSTER` arrays
+- Sector-based color palettes: semi, defense, space, network, energy, vault, commander, sentinel
+- Regime-based visual effects: CSS overlay changes with VIX regime (GREEN/YELLOW/ORANGE/RED)
+- Game loop starts only when WAR ROOM tab is active (performance optimization)
+- Integrates with `fetchPrices()` via `WarRoom.updateFromPriceData(d)` call
+- VIX Sentinel agent changes color palette with regime state
+- All agents freeze visually when VIX ≥ 25 (ORANGE/RED regime)

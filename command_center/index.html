@@ -1978,11 +1978,13 @@ const WarRoom = (function() {
   'use strict';
 
   // ── Constants ──
-  const TILE = 16;
-  const ROOM_COLS = 40;
-  const ROOM_ROWS = 26;
+  const TILE = 16;               // base tile size in pixels
+  const ROOM_COLS = 40;          // room width in tiles (40 × 16 = 640px base)
+  const ROOM_ROWS = 26;          // room height in tiles (26 × 16 = 416px base)
   const ROOM_W = ROOM_COLS * TILE;
   const ROOM_H = ROOM_ROWS * TILE;
+  const WALK_SPEED = 28;         // agent walk speed in pixels/sec
+  const HEADER_FOOTER_H = 130;   // approximate height of header + tab nav + footer in px
 
   // ── Sector palettes ──
   const PAL = {
@@ -2091,7 +2093,7 @@ const WarRoom = (function() {
         const dy = this.targetY - this.y;
         const d = Math.sqrt(dx * dx + dy * dy);
         if (d > 1.5) {
-          const spd = 28;
+          const spd = WALK_SPEED;
           this.x += (dx / d) * spd * dt;
           this.y += (dy / d) * spd * dt;
           if (Math.abs(dx) > 1) this.facing = dx > 0 ? 1 : -1;
@@ -2156,7 +2158,7 @@ const WarRoom = (function() {
     const wrap = document.getElementById('warRoomWrap');
     if (!wrap) return;
     const maxW = wrap.clientWidth;
-    const maxH = wrap.clientHeight || (window.innerHeight - 130);
+    const maxH = wrap.clientHeight || (window.innerHeight - HEADER_FOOTER_H);
     scale = Math.max(1, Math.min(Math.floor(maxW / ROOM_W), Math.floor(maxH / ROOM_H), 3));
     canvas.width = ROOM_W * scale;
     canvas.height = ROOM_H * scale;

@@ -49,6 +49,7 @@ Commander from the decision chain, do not build it.
 | 2 | Streamlit restyle + plugin skills population | CSS block replaced, `skills/` files populated | ✅ Complete |
 | 3 | CMD-2 Watchtower panel + ADV/news pipeline + price pipeline upgrade | 3rd tab in `index.html`; `fetch_prices.py` doctrine v1.15.1 tickers + enriched data (SMA, 52w, regime) | ✅ Complete |
 | 4 | CMD-3 Live Backtester panel | 4th tab in `index.html` — DCA simulation, Matrix allocation vs equal-weight | ✅ Complete |
+| 4b | CMD-4 War Room — Agent-Based Pixel Art | 5th tab in `index.html` — Canvas 2D game engine, 28 pixel agents, regime effects, speech bubbles | ✅ Complete |
 | 5+ | P7 alert pipeline | Post-Level 1 (฿800K trigger) | 🔜 Not started |
 
 ## Reference
