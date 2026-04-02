@@ -381,6 +381,50 @@
   .wt-sat-header { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--cyan); padding: 6px 8px; background: rgba(0,200,224,0.06); border: 1px solid rgba(0,200,224,0.2); border-radius: 2px; margin: 12px 0 6px; }
   .china-watch-card { background: var(--amber-dim); border: 1px solid var(--amber); border-radius: 3px; padding: 10px 12px; margin-top: 12px; }
   .china-watch-card h4 { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--amber); margin-bottom: 6px; }
+  /* ─── WAR ROOM ─── */
+  .warroom-wrap {
+    position: relative; width: 100%; min-height: calc(100vh - 120px);
+    background: #050608; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+  .warroom-canvas {
+    display: block; image-rendering: pixelated; image-rendering: crisp-edges; cursor: crosshair;
+  }
+  .warroom-tooltip {
+    position: absolute; background: var(--bg-2); border: 1px solid var(--border-bright);
+    border-radius: 4px; padding: 12px 14px; pointer-events: none; opacity: 0;
+    transition: opacity 0.15s; z-index: 10; min-width: 220px; max-width: 300px;
+    font-size: 11px; line-height: 1.6; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .warroom-tooltip.visible { opacity: 1; }
+  .warroom-tooltip .tt-ticker { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-white); letter-spacing: 1px; }
+  .warroom-tooltip .tt-zone { font-size: 9px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px; padding: 1px 6px; border-radius: 2px; margin-left: 6px; }
+  .warroom-tooltip .tt-zone.arsenal { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .warroom-tooltip .tt-zone.watchtower { background: rgba(0,200,224,0.1); color: var(--cyan); border: 1px solid rgba(0,200,224,0.3); }
+  .warroom-tooltip .tt-zone.vault { background: var(--bg-3); color: var(--text-mid); border: 1px solid var(--border-bright); }
+  .warroom-tooltip .tt-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .warroom-tooltip .tt-key { color: var(--text-dim); }
+  .warroom-tooltip .tt-val { color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .warroom-tooltip .tt-flags { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border); font-size: 10px; color: var(--amber); }
+  .warroom-hud {
+    position: absolute; top: 8px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none; font-size: 10px; color: var(--text-dim);
+  }
+  .warroom-regime-overlay {
+    position: absolute; inset: 0; pointer-events: none; transition: background 1s ease;
+  }
+  .warroom-regime-overlay.regime-green  { background: radial-gradient(ellipse at center, rgba(0,208,132,0.03) 0%, transparent 70%); }
+  .warroom-regime-overlay.regime-yellow { background: radial-gradient(ellipse at center, rgba(255,184,0,0.06) 0%, rgba(255,184,0,0.02) 50%, transparent 80%); }
+  .warroom-regime-overlay.regime-orange { background: radial-gradient(ellipse at center, rgba(255,140,0,0.10) 0%, rgba(255,100,0,0.04) 50%, transparent 80%); animation: wr-pulse-orange 3s ease-in-out infinite; }
+  .warroom-regime-overlay.regime-red    { background: radial-gradient(ellipse at center, rgba(255,64,85,0.12) 0%, rgba(255,0,0,0.05) 50%, transparent 80%); animation: wr-pulse-red 1.5s ease-in-out infinite; }
+  @keyframes wr-pulse-orange { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+  @keyframes wr-pulse-red { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+  .warroom-legend {
+    position: absolute; bottom: 8px; left: 12px; display: flex; gap: 12px;
+    font-size: 9px; color: var(--text-dim); pointer-events: none;
+  }
+  .warroom-legend .leg-item { display: flex; align-items: center; gap: 4px; }
+  .warroom-legend .leg-dot { width: 6px; height: 6px; border-radius: 1px; }
 </style>
 </head>
 <body class="locked">
@@ -448,6 +492,7 @@
   <button class="tab-btn" onclick="switchTab('vault', this)">VAULT HEALTH</button>
   <button class="tab-btn" onclick="switchTab('watchtower', this)">WATCHTOWER</button>
   <button class="tab-btn" onclick="switchTab('backtester', this)">BACKTESTER</button>
+  <button class="tab-btn" onclick="switchTab('warroom', this)">WAR ROOM</button>
 </nav>
 <!-- TAB: ARSENAL + STATUS -->
 <div class="tab-pane active" id="tab-arsenal">
@@ -1169,6 +1214,26 @@
   </div>
 </div>
 </div><!-- end tab-backtester -->
+<!-- TAB: WAR ROOM -->
+<div class="tab-pane" id="tab-warroom">
+  <div class="warroom-wrap" id="warRoomWrap">
+    <canvas id="warRoomCanvas" class="warroom-canvas"></canvas>
+    <div class="warroom-regime-overlay" id="wrRegimeOverlay"></div>
+    <div class="warroom-tooltip" id="wrTooltip"></div>
+    <div class="warroom-hud" id="wrHud">
+      <span id="wrHudLeft"></span>
+      <span id="wrHudRight" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-dim)">SNIPER WAR ROOM v3.0 · INFORMATIONAL ONLY</span>
+    </div>
+    <div class="warroom-legend" id="wrLegend">
+      <div class="leg-item"><div class="leg-dot" style="background:#3a9fff"></div>SEMI</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#4aba6a"></div>DEFENSE</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#8a5aee"></div>SPACE</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#ee8a20"></div>NETWORK</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#00aacc"></div>ENERGY</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#6a7a8a"></div>VAULT</div>
+    </div>
+  </div>
+</div>
 <footer class="footer">
   <div class="footer-note">SNIPER COMMAND CENTER v2 · READ ONLY · No buy/sell signals · Commander-in-loop required for all execution decisions</div>
   <div class="data-source">
@@ -1601,6 +1666,7 @@ async function fetchPrices() {
     renderArsenal(ARSENAL_CORE, 'arsenalCore');
     renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
     updateWatchtowerLive(d);
+    WarRoom.updateFromPriceData(d);
     document.getElementById('lastRefresh').textContent = 'Last refresh: ' + d.updated_bkk;
     barDone(true);
 
@@ -1905,6 +1971,752 @@ function runBacktest() {
     `Advisory simulation — prices static at current snapshot · Not a real backtest · ${pricesStale ? 'cached prices' : 'live prices loaded'}`;
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// ─── WAR ROOM ENGINE — Agent-Based Pixel Art Visualization ───────────
+// ═══════════════════════════════════════════════════════════════════════
+const WarRoom = (function() {
+  'use strict';
+
+  // ── Constants ──
+  const TILE = 16;
+  const ROOM_COLS = 40;
+  const ROOM_ROWS = 26;
+  const ROOM_W = ROOM_COLS * TILE;
+  const ROOM_H = ROOM_ROWS * TILE;
+
+  // ── Sector palettes ──
+  const PAL = {
+    semi:    { body: '#2070c0', head: '#4a9aee', hi: '#6ab8ff', dk: '#103860', skin: '#e8c8a0' },
+    defense: { body: '#2a7040', head: '#4aba6a', hi: '#6ada8a', dk: '#0a3018', skin: '#d8b890' },
+    space:   { body: '#5a2aaa', head: '#8a5aee', hi: '#aa7aff', dk: '#2a0a5a', skin: '#e0c0b0' },
+    network: { body: '#b06000', head: '#ee8a20', hi: '#ffaa40', dk: '#5a2800', skin: '#e8c8a0' },
+    energy:  { body: '#007898', head: '#00aacc', hi: '#20ccee', dk: '#003040', skin: '#d8c0a0' },
+    vault:   { body: '#4a5a6a', head: '#7a8a9a', hi: '#9aaaba', dk: '#1a2a3a', skin: '#d0b8a0' },
+    cmd:     { body: '#8a6a10', head: '#ccaa30', hi: '#eedd60', dk: '#3a2800', skin: '#f0d8b8' },
+    sentinel:{ body: '#505050', head: '#808080', hi: '#a0a0a0', dk: '#282828', skin: '#c0c0c0' },
+  };
+
+  // ── Ticker → sector ──
+  const SEC = {
+    VRT:'semi',MU:'semi',TSM:'semi',COHR:'semi',TSEM:'semi',FORM:'semi',ENTG:'semi',
+    ONTO:'semi',SKYT:'semi',QRVO:'semi',NBIS:'semi',MOD:'semi',
+    ASTS:'space',RKLB:'space',SATL:'space',PL:'space',
+    ANET:'network',FN:'network',LITE:'network',ONDS:'network',APH:'network',
+    VST:'energy', BWXT:'defense',KTOS:'defense',PLTR:'defense',
+  };
+
+  // ── Floor tile colors ──
+  const FLOOR_A = '#0c1018';
+  const FLOOR_B = '#0e1220';
+  const WALL_COLOR = '#161e2c';
+  const WALL_TOP = '#1e2a3c';
+  const ZONE_ARSENAL = 'rgba(58,159,255,0.04)';
+  const ZONE_WT = 'rgba(0,200,224,0.03)';
+  const ZONE_VAULT = 'rgba(128,128,128,0.03)';
+  const DESK_COLOR = '#1a2438';
+  const DESK_TOP = '#243050';
+
+  // ── Zone positions (tile coordinates) ──
+  // Commander: row 2, col 18-21
+  // Arsenal Core: rows 4-7, cols 3-36 (8 desks in 2 rows)
+  // Arsenal Sat: row 8, cols 3-12 (2 desks)
+  // Watchtower Core: rows 11-16, cols 3-36 (12 agents in 3 rows)
+  // Watchtower Sat: row 17, cols 3-14 (3 agents)
+  // Vault: rows 20-22, cols 3-14
+  // VIX Sentinel: row 2, col 36
+
+  function arsenalPos(idx) {
+    const row = Math.floor(idx / 5);
+    const col = idx % 5;
+    return { x: 4 + col * 7, y: 5 + row * 3 };
+  }
+  function wtCorePos(idx) {
+    const row = Math.floor(idx / 4);
+    const col = idx % 4;
+    return { x: 4 + col * 9, y: 13 + row * 3 };
+  }
+  function wtSatPos(idx) {
+    return { x: 4 + idx * 9, y: 22 };
+  }
+
+  // ── Agent class ──
+  class Agent {
+    constructor(ticker, zone, tileX, tileY) {
+      this.ticker = ticker;
+      this.zone = zone;
+      this.sector = zone === 'sentinel' ? 'sentinel' : zone === 'commander' ? 'cmd' : (SEC[ticker] || 'semi');
+      this.pal = PAL[this.sector];
+      // pixel position
+      this.x = tileX * TILE + TILE * 2;
+      this.y = tileY * TILE + TILE;
+      this.homeX = this.x;
+      this.homeY = this.y;
+      this.targetX = this.x;
+      this.targetY = this.y;
+      // desk position (behind agent)
+      this.deskX = tileX * TILE;
+      this.deskY = tileY * TILE;
+      // state
+      this.state = zone === 'arsenal' ? 'deployed' : zone === 'watchtower' ? 'watching' : 'idle';
+      this.flags = [];
+      this.score = null;
+      this.price = null;
+      this.change = null;
+      this.changePct = null;
+      this.adv = null;
+      this.tier = null;
+      this.thesis = null;
+      this.removal = null;
+      // animation
+      this.t = Math.random() * 10;
+      this.bobAmp = zone === 'watchtower' ? 0.5 : 1.0;
+      this.bobSpd = 1.2 + Math.random() * 0.6;
+      this.frame = 0;
+      this.facing = Math.random() > 0.5 ? -1 : 1;
+      this.walkTimer = 2 + Math.random() * 6;
+      // speech
+      this.speech = null;
+      this.speechLife = 0;
+    }
+
+    get bob() { return Math.sin(this.t * this.bobSpd) * this.bobAmp; }
+
+    update(dt) {
+      this.t += dt;
+      this.frame = Math.floor(this.t * 3) % 2;
+
+      // walking
+      if (this.state === 'walking') {
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d > 1.5) {
+          const spd = 28;
+          this.x += (dx / d) * spd * dt;
+          this.y += (dy / d) * spd * dt;
+          if (Math.abs(dx) > 1) this.facing = dx > 0 ? 1 : -1;
+        } else {
+          this.x = this.targetX;
+          this.y = this.targetY;
+          this.state = this.zone === 'arsenal' ? 'deployed' : 'watching';
+        }
+      }
+
+      // watchtower patrol wander
+      if (this.state === 'watching' && this.zone === 'watchtower') {
+        this.walkTimer -= dt;
+        if (this.walkTimer <= 0) {
+          this.walkTimer = 4 + Math.random() * 8;
+          this.targetX = this.homeX + (Math.random() - 0.5) * TILE * 2.5;
+          this.targetY = this.homeY + (Math.random() - 0.5) * TILE * 1.2;
+          this.state = 'walking';
+        }
+      }
+
+      // speech
+      if (this.speechLife > 0) {
+        this.speechLife -= dt;
+        if (this.speechLife <= 0) this.speech = null;
+      }
+    }
+
+    hitTest(px, py) {
+      const hw = 14, hh = 18;
+      return px >= this.x - hw && px <= this.x + hw && py >= this.y - hh && py <= this.y + 4;
+    }
+  }
+
+  // ── State ──
+  let canvas, ctx, agents = [], running = false, lastTime = 0;
+  let scale = 2;
+  let regime = 'GREEN';
+  let hoveredAgent = null;
+  let vixVal = 24.54, thbVal = 32.72;
+
+  // ── Initialize ──
+  function init() {
+    canvas = document.getElementById('warRoomCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Mouse events
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('click', onClick);
+    canvas.addEventListener('mouseleave', () => { hoveredAgent = null; hideTooltip(); });
+
+    // Create agents
+    createAgents();
+    syncPrices();
+  }
+
+  function resize() {
+    const wrap = document.getElementById('warRoomWrap');
+    if (!wrap) return;
+    const maxW = wrap.clientWidth;
+    const maxH = wrap.clientHeight || (window.innerHeight - 130);
+    scale = Math.max(1, Math.min(Math.floor(maxW / ROOM_W), Math.floor(maxH / ROOM_H), 3));
+    canvas.width = ROOM_W * scale;
+    canvas.height = ROOM_H * scale;
+    canvas.style.width = (ROOM_W * scale) + 'px';
+    canvas.style.height = (ROOM_H * scale) + 'px';
+  }
+
+  function createAgents() {
+    agents = [];
+    // Arsenal Core (8)
+    ARSENAL_CORE.forEach((p, i) => {
+      const pos = arsenalPos(i);
+      const a = new Agent(p.ticker, 'arsenal', pos.x, pos.y);
+      a.cost = p.cost;
+      a.thesis = p.thesis;
+      a.price = prices[p.ticker] || null;
+      if (p.flag && p.flag !== '—') a.flags.push('FLAG ' + p.flag);
+      if (p.note) {
+        if (p.note.includes('CHINA')) a.flags.push('⚠ CHINA WATCH');
+        if (p.note.includes('ISRAEL')) a.flags.push('⚠ ISRAEL WATCH');
+        if (p.note.includes('WINNER') || p.note.includes('🥇')) { a.score = 70; a.flags.push('🥇 WINNER'); }
+        if (p.note.includes('Yellow')) a.flags.push('⚡ YELLOW WATCH');
+        if (p.note.includes('Victory')) a.flags.push('🎯 VICTORY TARGET');
+      }
+      agents.push(a);
+    });
+    // Arsenal Satellite (2)
+    ARSENAL_SAT.forEach((p, i) => {
+      const pos = arsenalPos(8 + i);
+      const a = new Agent(p.ticker, 'arsenal', pos.x, pos.y);
+      a.cost = p.cost;
+      a.thesis = p.thesis;
+      a.price = prices[p.ticker] || null;
+      if (!p.thesis) a.flags.push('⚠ THESIS NOT SET');
+      agents.push(a);
+    });
+    // Watchtower Core (12)
+    WT_CORE_ROSTER.forEach((p, i) => {
+      const pos = wtCorePos(i);
+      const a = new Agent(p.ticker, 'watchtower', pos.x, pos.y);
+      a.tier = p.tier;
+      a.thesis = p.thesis;
+      a.removal = p.removal;
+      a.price = prices[p.ticker] || null;
+      if (p.flag) a.flags.push('⚠ ' + p.flag);
+      agents.push(a);
+    });
+    // Watchtower Satellite (3)
+    WT_SAT_ROSTER.forEach((p, i) => {
+      const pos = wtSatPos(i);
+      const a = new Agent(p.ticker, 'watchtower', pos.x, pos.y);
+      a.tier = p.tier;
+      a.thesis = p.thesis;
+      a.removal = p.removal;
+      a.price = prices[p.ticker] || null;
+      agents.push(a);
+    });
+    // VIX Sentinel
+    const sentinel = new Agent('VIX', 'sentinel', 36, 2);
+    sentinel.price = vixVal;
+    agents.push(sentinel);
+    // Commander
+    const cmd = new Agent('CMD', 'commander', 18, 2);
+    cmd.speech = 'COMMANDER-IN-LOOP';
+    cmd.speechLife = 99999;
+    agents.push(cmd);
+
+    // Set initial speeches based on flags
+    agents.forEach(a => {
+      if (a.flags.length > 0 && !a.speech) {
+        a.speech = a.flags[0];
+        a.speechLife = 99999;
+      }
+    });
+  }
+
+  function syncPrices() {
+    agents.forEach(a => {
+      if (a.zone === 'sentinel') {
+        a.price = prices['^VIX'] || vixVal;
+        regime = getRegime(a.price);
+        updateSentinelColor(a);
+        return;
+      }
+      if (a.zone === 'commander') return;
+      const p = prices[a.ticker];
+      if (p) a.price = p;
+    });
+    // Update regime overlay
+    const overlay = document.getElementById('wrRegimeOverlay');
+    if (overlay) {
+      overlay.className = 'warroom-regime-overlay regime-' + regime.toLowerCase();
+    }
+  }
+
+  function updateSentinelColor(a) {
+    const r = regime;
+    if (r === 'GREEN')  a.pal = { body: '#00a060', head: '#00d084', hi: '#40f0a0', dk: '#004020', skin: '#c0ffc0' };
+    if (r === 'YELLOW') a.pal = { body: '#a08000', head: '#ccaa00', hi: '#eedd40', dk: '#503800', skin: '#ffe060' };
+    if (r === 'ORANGE') a.pal = { body: '#c06000', head: '#ff8c00', hi: '#ffaa40', dk: '#602800', skin: '#ffa040' };
+    if (r === 'RED')    a.pal = { body: '#c02020', head: '#ff4055', hi: '#ff7080', dk: '#600010', skin: '#ff8080' };
+  }
+
+  // Called after fetchPrices completes
+  function updateFromPriceData(d) {
+    if (!d) return;
+    vixVal = d.gate?.vix ?? vixVal;
+    thbVal = d.gate?.thb ?? thbVal;
+    regime = getRegime(vixVal);
+    agents.forEach(a => {
+      if (a.zone === 'sentinel') {
+        a.price = vixVal;
+        updateSentinelColor(a);
+        a.speech = regime;
+        a.speechLife = 99999;
+        return;
+      }
+      if (a.zone === 'commander') return;
+      const entry = d.prices?.[a.ticker];
+      if (entry) {
+        a.price = entry.price;
+        a.changePct = entry.change;
+        a.adv = entry.adv;
+      }
+    });
+    // Freeze all agents when VIX >= 25 (ORANGE/RED)
+    if (regime === 'ORANGE' || regime === 'RED') {
+      agents.forEach(a => {
+        if (a.zone === 'arsenal' || a.zone === 'watchtower') {
+          a.state = 'frozen';
+          a.speech = '❄ ' + regime + ' FREEZE';
+          a.speechLife = 99999;
+        }
+      });
+    } else {
+      agents.forEach(a => {
+        if (a.state === 'frozen') {
+          a.state = a.zone === 'arsenal' ? 'deployed' : 'watching';
+          // Restore original speech
+          a.speech = a.flags.length > 0 ? a.flags[0] : null;
+          a.speechLife = a.speech ? 99999 : 0;
+        }
+      });
+    }
+    const overlay = document.getElementById('wrRegimeOverlay');
+    if (overlay) overlay.className = 'warroom-regime-overlay regime-' + regime.toLowerCase();
+  }
+
+  // ── Drawing ──
+  function drawFloor() {
+    // Checkerboard floor
+    for (let r = 0; r < ROOM_ROWS; r++) {
+      for (let c = 0; c < ROOM_COLS; c++) {
+        ctx.fillStyle = (r + c) % 2 === 0 ? FLOOR_A : FLOOR_B;
+        ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
+      }
+    }
+    // Walls (top 2 rows, bottom row)
+    for (let c = 0; c < ROOM_COLS; c++) {
+      ctx.fillStyle = WALL_COLOR;
+      ctx.fillRect(c * TILE, 0, TILE, TILE * 1.5);
+      ctx.fillStyle = WALL_TOP;
+      ctx.fillRect(c * TILE, 0, TILE, 2);
+      ctx.fillStyle = WALL_COLOR;
+      ctx.fillRect(c * TILE, (ROOM_ROWS - 1) * TILE, TILE, TILE);
+    }
+    // Side walls
+    for (let r = 0; r < ROOM_ROWS; r++) {
+      ctx.fillStyle = WALL_COLOR;
+      ctx.fillRect(0, r * TILE, TILE, TILE);
+      ctx.fillRect((ROOM_COLS - 1) * TILE, r * TILE, TILE, TILE);
+    }
+  }
+
+  function drawZones() {
+    // Arsenal zone highlight
+    ctx.fillStyle = ZONE_ARSENAL;
+    ctx.fillRect(2 * TILE, 3.5 * TILE, 36 * TILE, 7.5 * TILE);
+    // Watchtower zone highlight
+    ctx.fillStyle = ZONE_WT;
+    ctx.fillRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
+    // Vault zone highlight
+    ctx.fillStyle = ZONE_VAULT;
+    ctx.fillRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
+
+    // Zone labels
+    ctx.save();
+    ctx.font = '5px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#1a3050';
+    ctx.fillText('ARSENAL', 2.5 * TILE, 4.2 * TILE);
+    ctx.fillStyle = '#0a3040';
+    ctx.fillText('WATCHTOWER', 2.5 * TILE, 12.2 * TILE);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillText('VAULT / RESERVE', 2.5 * TILE, 20.6 * TILE);
+    ctx.restore();
+  }
+
+  function drawDesk(x, y) {
+    // Small desk behind agent
+    ctx.fillStyle = DESK_COLOR;
+    ctx.fillRect(x, y - 2, TILE * 3, TILE + 2);
+    ctx.fillStyle = DESK_TOP;
+    ctx.fillRect(x, y - 2, TILE * 3, 2);
+    // Monitor on desk
+    ctx.fillStyle = '#0a1820';
+    ctx.fillRect(x + 10, y - 6, 12, 6);
+    ctx.fillStyle = '#1a3050';
+    ctx.fillRect(x + 11, y - 5, 10, 4);
+    // Tiny screen glow
+    ctx.fillStyle = 'rgba(58,159,255,0.15)';
+    ctx.fillRect(x + 11, y - 5, 10, 4);
+  }
+
+  function drawAgent(a) {
+    const x = Math.round(a.x);
+    const y = Math.round(a.y + a.bob);
+    const p = a.pal;
+    const frozen = a.state === 'frozen';
+    const isTyping = a.state === 'deployed' && a.frame === 0;
+
+    // Desk for arsenal agents
+    if (a.zone === 'arsenal') {
+      drawDesk(a.deskX, a.deskY);
+    }
+
+    ctx.save();
+    if (frozen) ctx.globalAlpha = 0.5;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 2, 5, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const f = a.facing;
+
+    // Legs
+    const legSpread = a.state === 'walking' ? (a.frame === 0 ? 2 : -1) : 0;
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(x - 3, y - 3, 2, 4 + legSpread);
+    ctx.fillRect(x + 1, y - 3, 2, 4 - legSpread);
+
+    // Body
+    ctx.fillStyle = p.body;
+    ctx.fillRect(x - 4, y - 10, 8, 8);
+    // Body highlight
+    ctx.fillStyle = p.hi;
+    ctx.fillRect(x - 4 + (f > 0 ? 0 : 6), y - 10, 2, 8);
+
+    // Arms
+    if (isTyping) {
+      // Typing pose - arms forward
+      ctx.fillStyle = p.body;
+      ctx.fillRect(x - 6, y - 8, 2, 4);
+      ctx.fillRect(x + 4, y - 8, 2, 4);
+      ctx.fillStyle = p.skin;
+      ctx.fillRect(x - 6, y - 5, 2, 2);
+      ctx.fillRect(x + 4, y - 5, 2, 2);
+    } else {
+      // Idle arms
+      ctx.fillStyle = p.body;
+      ctx.fillRect(x - 6, y - 9, 2, 5);
+      ctx.fillRect(x + 4, y - 9, 2, 5);
+      ctx.fillStyle = p.skin;
+      ctx.fillRect(x - 6, y - 4, 2, 2);
+      ctx.fillRect(x + 4, y - 4, 2, 2);
+    }
+
+    // Head
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(x - 3, y - 16, 6, 6);
+    // Hair
+    ctx.fillStyle = p.head;
+    ctx.fillRect(x - 3, y - 16, 6, 2);
+    ctx.fillRect(x - 3 + (f > 0 ? 0 : 4), y - 16, 2, 4);
+    // Eyes
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(x - 1 + (f > 0 ? 0 : 2), y - 13, 1, 1);
+    ctx.fillRect(x + 1 + (f > 0 ? 0 : -1), y - 13, 1, 1);
+
+    ctx.restore();
+
+    // Frozen overlay
+    if (frozen) {
+      ctx.fillStyle = 'rgba(100,180,255,0.2)';
+      ctx.fillRect(x - 5, y - 17, 10, 20);
+      // Ice crystals
+      ctx.fillStyle = 'rgba(150,220,255,0.6)';
+      ctx.fillRect(x - 4, y - 15, 1, 1);
+      ctx.fillRect(x + 3, y - 11, 1, 1);
+      ctx.fillRect(x - 2, y - 5, 1, 1);
+    }
+
+    // Hovered highlight
+    if (a === hoveredAgent) {
+      ctx.strokeStyle = '#3a9fff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - 7, y - 18, 14, 22);
+    }
+
+    // Ticker label below
+    ctx.save();
+    ctx.font = 'bold 4px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = a === hoveredAgent ? '#ffffff' : (frozen ? '#6090c0' : '#607898');
+    ctx.fillText(a.ticker, x, y + 8);
+    ctx.restore();
+
+    // Score badge (if applicable)
+    if (a.score) {
+      ctx.save();
+      ctx.font = 'bold 3px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffb800';
+      ctx.fillText(a.score + 'pts', x, y + 12);
+      ctx.restore();
+    }
+  }
+
+  function drawSpeechBubble(a) {
+    if (!a.speech) return;
+    const x = Math.round(a.x);
+    const y = Math.round(a.y + a.bob);
+
+    ctx.save();
+    ctx.font = '3.5px monospace';
+    const text = a.speech;
+    const tw = ctx.measureText(text).width;
+    const bw = tw + 6;
+    const bh = 7;
+    const bx = x - bw / 2;
+    const by = y - 24 - bh;
+
+    // Bubble background
+    ctx.fillStyle = '#0d1420';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = '#2a3a50';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(bx, by, bw, bh);
+    // Pointer
+    ctx.fillStyle = '#0d1420';
+    ctx.fillRect(x - 1, by + bh, 2, 2);
+
+    // Text
+    const isWarning = text.includes('⚠') || text.includes('❄') || text.includes('FREEZE');
+    const isWinner = text.includes('🥇') || text.includes('WINNER');
+    const isVictory = text.includes('🎯');
+    ctx.fillStyle = isWarning ? '#ffb800' : isWinner ? '#00d084' : isVictory ? '#3a9fff' : '#8098b8';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, x, by + 5);
+    ctx.restore();
+  }
+
+  function drawStatusBar() {
+    // Bottom status bar
+    const barY = (ROOM_ROWS - 1) * TILE;
+    ctx.fillStyle = '#0a0e14';
+    ctx.fillRect(TILE, barY, (ROOM_COLS - 2) * TILE, TILE);
+
+    ctx.save();
+    ctx.font = '4px monospace';
+    ctx.textAlign = 'left';
+
+    // VIX
+    const vixColor = regime === 'GREEN' ? '#00d084' : regime === 'YELLOW' ? '#ffb800' : regime === 'ORANGE' ? '#ff8c00' : '#ff4055';
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('VIX', 2 * TILE, barY + 6);
+    ctx.fillStyle = vixColor;
+    ctx.fillText(vixVal.toFixed(2), 2 * TILE + 16, barY + 6);
+
+    // Regime
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('REGIME', 2 * TILE + 50, barY + 6);
+    ctx.fillStyle = vixColor;
+    ctx.fillText(regime, 2 * TILE + 78, barY + 6);
+
+    // THB
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('THB', 2 * TILE + 110, barY + 6);
+    ctx.fillStyle = '#00d084';
+    ctx.fillText(thbVal.toFixed(2), 2 * TILE + 126, barY + 6);
+
+    // Agent count
+    const arsenalCount = agents.filter(a => a.zone === 'arsenal').length;
+    const wtCount = agents.filter(a => a.zone === 'watchtower').length;
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('ARSENAL ' + arsenalCount + ' · WT ' + wtCount, 2 * TILE + 170, barY + 6);
+
+    // Time
+    const now = new Date();
+    const bkk = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    const timeStr = String(bkk.getHours()).padStart(2, '0') + ':' + String(bkk.getMinutes()).padStart(2, '0');
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText(timeStr + ' BKK', (ROOM_COLS - 2) * TILE, barY + 6);
+
+    // Frozen indicator
+    if (regime === 'ORANGE' || regime === 'RED') {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = regime === 'RED' ? '#ff4055' : '#ff8c00';
+      ctx.fillText('❄ DEPLOYMENT FREEZE ❄', ROOM_COLS * TILE / 2, barY + 12);
+    }
+    ctx.restore();
+  }
+
+  function drawRoomTitle() {
+    ctx.save();
+    ctx.font = 'bold 6px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#2a3a50';
+    ctx.fillText('SNIPER WAR ROOM', ROOM_W / 2, 10);
+    ctx.font = '4px monospace';
+    ctx.fillStyle = '#1a2a40';
+    ctx.fillText('AGENT-BASED PORTFOLIO OS · INFORMATIONAL ONLY', ROOM_W / 2, 16);
+    ctx.restore();
+  }
+
+  // ── Render frame ──
+  function render() {
+    ctx.save();
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.clearRect(0, 0, ROOM_W, ROOM_H);
+
+    drawFloor();
+    drawZones();
+    drawRoomTitle();
+
+    // Sort agents by Y for depth (paint back-to-front)
+    const sorted = [...agents].sort((a, b) => a.y - b.y);
+
+    // Draw agents
+    sorted.forEach(a => drawAgent(a));
+    // Draw speech bubbles on top
+    sorted.forEach(a => drawSpeechBubble(a));
+
+    drawStatusBar();
+    ctx.restore();
+  }
+
+  // ── Game loop ──
+  function loop(timestamp) {
+    if (!running) return;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    lastTime = timestamp;
+
+    agents.forEach(a => a.update(dt));
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function stop() {
+    running = false;
+  }
+
+  // ── Mouse interaction ──
+  function canvasToRoom(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    };
+  }
+
+  function onMouseMove(e) {
+    const p = canvasToRoom(e);
+    hoveredAgent = null;
+    // Check agents in reverse (front-to-back) for hit test
+    for (let i = agents.length - 1; i >= 0; i--) {
+      if (agents[i].hitTest(p.x, p.y)) {
+        hoveredAgent = agents[i];
+        break;
+      }
+    }
+    if (hoveredAgent) {
+      showTooltip(hoveredAgent, e);
+      canvas.style.cursor = 'pointer';
+    } else {
+      hideTooltip();
+      canvas.style.cursor = 'crosshair';
+    }
+  }
+
+  function onClick(e) {
+    if (hoveredAgent) {
+      showTooltip(hoveredAgent, e);
+    }
+  }
+
+  function showTooltip(a, e) {
+    const tip = document.getElementById('wrTooltip');
+    if (!tip) return;
+
+    let zoneBadge = '';
+    if (a.zone === 'arsenal') zoneBadge = '<span class="tt-zone arsenal">ARSENAL</span>';
+    else if (a.zone === 'watchtower') zoneBadge = '<span class="tt-zone watchtower">WATCHTOWER</span>';
+    else if (a.zone === 'sentinel') zoneBadge = '<span class="tt-zone" style="background:rgba(255,64,85,0.1);color:var(--red);border:1px solid var(--red)">SENTINEL</span>';
+    else if (a.zone === 'commander') zoneBadge = '<span class="tt-zone" style="background:rgba(255,184,0,0.1);color:var(--amber);border:1px solid var(--amber)">COMMANDER</span>';
+
+    const priceStr = a.price != null ? '$' + a.price.toFixed(2) : '—';
+    const changeStr = a.changePct != null
+      ? `<span style="color:${a.changePct >= 0 ? 'var(--green)' : 'var(--red)'}"> ${a.changePct >= 0 ? '+' : ''}${a.changePct.toFixed(2)}%</span>`
+      : '';
+    const advStr = a.adv ? fmtVol(a.adv) : '—';
+
+    let rows = '';
+    if (a.zone !== 'commander') {
+      rows += `<div class="tt-row"><span class="tt-key">Price</span><span class="tt-val">${priceStr}${changeStr}</span></div>`;
+    }
+    if (a.cost) rows += `<div class="tt-row"><span class="tt-key">Cost basis</span><span class="tt-val">$${a.cost.toFixed(2)}</span></div>`;
+    if (a.tier) rows += `<div class="tt-row"><span class="tt-key">Tier</span><span class="tt-val">${a.tier}</span></div>`;
+    if (a.adv) rows += `<div class="tt-row"><span class="tt-key">ADV (20d)</span><span class="tt-val">${advStr}</span></div>`;
+    if (a.removal) rows += `<div class="tt-row"><span class="tt-key">Removal</span><span class="tt-val">${a.removal}</span></div>`;
+    rows += `<div class="tt-row"><span class="tt-key">State</span><span class="tt-val" style="color:${a.state === 'frozen' ? 'var(--cyan)' : 'var(--text-bright)'}">${a.state.toUpperCase()}</span></div>`;
+
+    const flagStr = a.flags.length > 0 ? `<div class="tt-flags">${a.flags.join(' · ')}</div>` : '';
+    const thesisStr = a.thesis ? `<div style="margin-top:4px;font-size:10px;color:var(--text-mid);border-top:1px solid var(--border);padding-top:4px">${a.thesis}</div>` : '';
+
+    tip.innerHTML = `
+      <div style="margin-bottom:6px"><span class="tt-ticker">${a.ticker}</span>${zoneBadge}</div>
+      ${rows}${flagStr}${thesisStr}
+    `;
+    tip.classList.add('visible');
+
+    // Position tooltip
+    const wrap = document.getElementById('warRoomWrap');
+    const wrapRect = wrap.getBoundingClientRect();
+    let tx = e.clientX - wrapRect.left + 16;
+    let ty = e.clientY - wrapRect.top - 10;
+    if (tx + 300 > wrapRect.width) tx = e.clientX - wrapRect.left - 280;
+    if (ty + 200 > wrapRect.height) ty = Math.max(0, ty - 120);
+    tip.style.left = tx + 'px';
+    tip.style.top = ty + 'px';
+  }
+
+  function hideTooltip() {
+    const tip = document.getElementById('wrTooltip');
+    if (tip) tip.classList.remove('visible');
+  }
+
+  // ── Public API ──
+  return {
+    init: init,
+    start: start,
+    stop: stop,
+    resize: resize,
+    syncPrices: syncPrices,
+    updateFromPriceData: updateFromPriceData,
+    get agents() { return agents; },
+    get regime() { return regime; },
+  };
+})();
+
 // ─── SINGLE LOAD HANDLER ───
 window.addEventListener('load', () => {
   // Render initial Watchtower tables with cached roster data
@@ -1912,6 +2724,8 @@ window.addEventListener('load', () => {
   renderWatchtowerTable(WT_SAT_ROSTER,  'wtSatTable',  null, null);
   // Render initial backtester alloc table
   renderBtAllocTable(100000, 5000, 'matrix');
+  // Initialize War Room canvas
+  WarRoom.init();
   // Fetch live data
   setTimeout(fetchPrices, 300);
   setTimeout(fetchPrivate, 300);
@@ -1920,6 +2734,7 @@ window.addEventListener('load', () => {
 
 // ─── TAB SWITCHING ───
 let vaultChartReady = false;
+let warRoomReady = false;
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1935,6 +2750,16 @@ function switchTab(name, btn) {
       parseFloat(document.getElementById('btDca').value) || 5000,
       document.getElementById('btMode').value
     );
+  }
+  // War Room: start game loop when visible, stop when hidden
+  if (name === 'warroom') {
+    if (!warRoomReady) {
+      WarRoom.resize();
+      warRoomReady = true;
+    }
+    WarRoom.start();
+  } else {
+    WarRoom.stop();
   }
 }
 
