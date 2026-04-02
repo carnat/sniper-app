@@ -1980,7 +1980,7 @@ const WarRoom = (function() {
   // ── Constants ──
   const TILE = 16;               // base tile size in pixels
   const ROOM_COLS = 40;          // room width in tiles (40 × 16 = 640px base)
-  const ROOM_ROWS = 26;          // room height in tiles (26 × 16 = 416px base)
+  const ROOM_ROWS = 30;          // room height in tiles (30 × 16 = 480px base)
   const ROOM_W = ROOM_COLS * TILE;
   const ROOM_H = ROOM_ROWS * TILE;
   const WALK_SPEED = 28;         // agent walk speed in pixels/sec
@@ -1996,6 +1996,9 @@ const WarRoom = (function() {
     vault:   { body: '#4a5a6a', head: '#7a8a9a', hi: '#9aaaba', dk: '#1a2a3a', skin: '#d0b8a0' },
     cmd:     { body: '#8a6a10', head: '#ccaa30', hi: '#eedd60', dk: '#3a2800', skin: '#f0d8b8' },
     sentinel:{ body: '#505050', head: '#808080', hi: '#a0a0a0', dk: '#282828', skin: '#c0c0c0' },
+    doctrine:{ body: '#5a20a0', head: '#9060e0', hi: '#b080ff', dk: '#200860', skin: '#e0d0f8' },
+    gate:    { body: '#1a508a', head: '#2a80cc', hi: '#50a8f0', dk: '#081828', skin: '#c0d8f8' },
+    watcher: { body: '#1a7a3a', head: '#2aaa5a', hi: '#50cc80', dk: '#083818', skin: '#c0f0d0' },
   };
 
   // ── Ticker → sector ──
@@ -2015,6 +2018,7 @@ const WarRoom = (function() {
   const ZONE_ARSENAL = 'rgba(58,159,255,0.04)';
   const ZONE_WT = 'rgba(0,200,224,0.03)';
   const ZONE_VAULT = 'rgba(128,128,128,0.03)';
+  const ZONE_COUNCIL = 'rgba(80,40,120,0.05)';
   const DESK_COLOR = '#1a2438';
   const DESK_TOP = '#243050';
 
@@ -2039,6 +2043,13 @@ const WarRoom = (function() {
   }
   function wtSatPos(idx) {
     return { x: 4 + idx * 9, y: 22 };
+  }
+  function councilPos(idx) {
+    return [
+      { x: 6,  y: 27 },  // DOCTRINE (left)
+      { x: 20, y: 27 },  // GATE (center)
+      { x: 34, y: 27 },  // WATCHER (right)
+    ][idx];
   }
 
   // ── Agent class ──
@@ -2071,7 +2082,7 @@ const WarRoom = (function() {
       this.removal = null;
       // animation
       this.t = Math.random() * 10;
-      this.bobAmp = zone === 'watchtower' ? 0.5 : 1.0;
+      this.bobAmp = zone === 'watchtower' ? 0.5 : zone === 'council' ? 0.4 : 1.0;
       this.bobSpd = 1.2 + Math.random() * 0.6;
       this.frame = 0;
       this.facing = Math.random() > 0.5 ? -1 : 1;
@@ -2079,6 +2090,12 @@ const WarRoom = (function() {
       // speech
       this.speech = null;
       this.speechLife = 0;
+      this.speechSeverity = null;
+      // triad council
+      this.findings = [];
+      this.findingIdx = 0;
+      this.findingTimer = 3 + Math.random() * 3;
+      this.role = null;
     }
 
     get bob() { return Math.sin(this.t * this.bobSpd) * this.bobAmp; }
@@ -2115,6 +2132,18 @@ const WarRoom = (function() {
         }
       }
 
+      // council finding rotation
+      if (this.zone === 'council' && this.findings.length > 0) {
+        this.findingTimer -= dt;
+        if (this.findingTimer <= 0) {
+          this.findingIdx = (this.findingIdx + 1) % this.findings.length;
+          this.speech = this.findings[this.findingIdx].text;
+          this.speechSeverity = this.findings[this.findingIdx].severity;
+          this.speechLife = 99999;
+          this.findingTimer = 6;
+        }
+      }
+
       // speech
       if (this.speechLife > 0) {
         this.speechLife -= dt;
@@ -2134,6 +2163,7 @@ const WarRoom = (function() {
   let regime = 'GREEN';
   let hoveredAgent = null;
   let vixVal = 24.54, thbVal = 32.72;
+  let consensusTickers = [];
 
   // ── Initialize ──
   function init() {
@@ -2225,14 +2255,33 @@ const WarRoom = (function() {
     cmd.speech = 'COMMANDER-IN-LOOP';
     cmd.speechLife = 99999;
     agents.push(cmd);
+    // Triad Council (3 members)
+    const triadDefs = [
+      { id: 'DOCTRINE', role: 'Rules Auditor',         pal: 'doctrine' },
+      { id: 'GATE',     role: 'Deployment Gatekeeper', pal: 'gate'     },
+      { id: 'WATCHER',  role: 'Portfolio Health',       pal: 'watcher'  },
+    ];
+    triadDefs.forEach((def, i) => {
+      const pos = councilPos(i);
+      const a = new Agent(def.id, 'council', pos.x, pos.y);
+      a.pal = PAL[def.pal];
+      a.role = def.role;
+      a.speech = def.id;
+      a.speechSeverity = 'info';
+      a.speechLife = 99999;
+      agents.push(a);
+    });
 
     // Set initial speeches based on flags
     agents.forEach(a => {
-      if (a.flags.length > 0 && !a.speech) {
+      if (a.zone !== 'council' && a.flags.length > 0 && !a.speech) {
         a.speech = a.flags[0];
         a.speechLife = 99999;
       }
     });
+
+    // Run initial audit with cached prices (no live data yet)
+    runTriadAudits(null);
   }
 
   function syncPrices() {
@@ -2244,6 +2293,7 @@ const WarRoom = (function() {
         return;
       }
       if (a.zone === 'commander') return;
+      if (a.zone === 'council') return;
       const p = prices[a.ticker];
       if (p) a.price = p;
     });
@@ -2277,6 +2327,7 @@ const WarRoom = (function() {
         return;
       }
       if (a.zone === 'commander') return;
+      if (a.zone === 'council') return;
       const entry = d.prices?.[a.ticker];
       if (entry) {
         a.price = entry.price;
@@ -2305,6 +2356,207 @@ const WarRoom = (function() {
     }
     const overlay = document.getElementById('wrRegimeOverlay');
     if (overlay) overlay.className = 'warroom-regime-overlay regime-' + regime.toLowerCase();
+    runTriadAudits(d);
+  }
+
+  // ── Triad Council Audit Engine ──
+  function _daysSince(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  }
+  function _daysUntil(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return Math.ceil((d.getTime() - Date.now()) / 86400000);
+  }
+  const SEV_ORDER = { critical: 0, warning: 1, info: 2, ok: 3 };
+  function _sortFindings(arr) {
+    return arr.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
+  }
+
+  function doctrineAudit(d) {
+    const findings = [];
+    // Thesis age checks for all Arsenal positions
+    [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+      if (!p.thesis) {
+        findings.push({ text: p.ticker + ': NO THESIS', severity: 'critical', ticker: p.ticker });
+      } else {
+        const age = _daysSince(p.thesis);
+        if (age !== null && age > 60) {
+          findings.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' /COUNCIL', severity: 'critical', ticker: p.ticker });
+        } else if (age !== null && age > 30) {
+          findings.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' NEGLECT', severity: 'warning', ticker: p.ticker });
+        }
+      }
+    });
+    // China Watch (DC-46)
+    findings.push({ text: 'APH: ⚠ CHINA 15.6% (DC-46)', severity: 'warning', ticker: 'APH' });
+    // Geopolitical Watch (DC-47)
+    findings.push({ text: 'TSEM: ⚠ ISRAEL WATCH', severity: 'warning', ticker: 'TSEM' });
+    findings.push({ text: 'TSM: ⚠ ISRAEL/LNG CLIFF', severity: 'warning', ticker: 'TSM' });
+    // Blackout windows (earnings ±30d / +7d)
+    const blackouts = [
+      { ticker: 'BWXT', earnings: 'Apr 14, 2026' },
+      { ticker: 'KTOS', earnings: 'Apr 17, 2026' },
+      { ticker: 'ASTS', earnings: 'Apr 11, 2026' },
+    ];
+    blackouts.forEach(({ ticker, earnings }) => {
+      const eDate  = new Date(earnings);
+      const bStart = new Date(eDate.getTime() - 30 * 86400000);
+      const bEnd   = new Date(eDate.getTime() +  7 * 86400000);
+      const now    = Date.now();
+      if (now >= bStart.getTime() && now <= bEnd.getTime()) {
+        const dLeft = Math.ceil((bEnd.getTime() - now) / 86400000);
+        findings.push({ text: ticker + ': ❄ BLACKOUT (' + dLeft + 'd left)', severity: 'critical', ticker });
+      } else if (now < bStart.getTime()) {
+        const dToStart = Math.ceil((bStart.getTime() - now) / 86400000);
+        if (dToStart <= 14) {
+          findings.push({ text: ticker + ': BLACKOUT in ' + dToStart + 'd', severity: 'warning', ticker });
+        }
+      }
+    });
+    _sortFindings(findings);
+    if (findings.length === 0) findings.push({ text: '✓ ALL CLEAR', severity: 'ok', ticker: null });
+    return findings;
+  }
+
+  function gateAudit(d) {
+    const findings = [];
+    const vix    = d?.gate?.vix ?? d?.vix ?? vixVal;
+    const spyAbv = d?.spy_above_200dma ?? null;
+    const reg    = getRegime(vix);
+    // VIX regime
+    if (reg === 'RED')      findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → HARD FREEZE', severity: 'critical', ticker: null });
+    else if (reg === 'ORANGE') findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → FREEZE',   severity: 'critical', ticker: null });
+    else if (reg === 'YELLOW') findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → YELLOW ⚠', severity: 'warning',  ticker: null });
+    else                       findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → GREEN ✓',  severity: 'ok',       ticker: null });
+    // SPY vs 200DMA
+    if (spyAbv === false) findings.push({ text: '⚠ SPY below 200DMA', severity: 'warning', ticker: null });
+    else if (spyAbv === true) findings.push({ text: 'SPY above 200DMA ✓', severity: 'ok', ticker: null });
+    // ADV gate (DC-16) for key deployment candidates
+    const advCheck = ['FN', 'BWXT', 'ANET', 'MU', 'VRT', 'APH'];
+    if (d?.prices) {
+      advCheck.forEach(ticker => {
+        const entry = d.prices[ticker];
+        if (!entry || !entry.adv || !entry.volume) return;
+        const ratio = entry.volume / entry.adv;
+        if (ratio >= 1.5) {
+          findings.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x ✓', severity: 'ok', ticker });
+        } else {
+          findings.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x (< 1.5x)', severity: 'info', ticker });
+        }
+      });
+    }
+    // Heartbeat protocol when VIX >= 25
+    if (vix >= 25) findings.push({ text: 'HEARTBEAT: daily session req', severity: 'warning', ticker: null });
+    _sortFindings(findings);
+    if (findings.length === 0) findings.push({ text: '✓ ALL GATES CLEAR', severity: 'ok', ticker: null });
+    return findings;
+  }
+
+  function watchtowerAudit(d) {
+    const findings = [];
+    // DC-40 capacity status
+    const coreOk = WT_CORE_ROSTER.length === 12;
+    const satOk  = WT_SAT_ROSTER.length === 3;
+    findings.push({
+      text: 'WT: ' + WT_CORE_ROSTER.length + '/12 Core · ' + WT_SAT_ROSTER.length + '/3 Sat',
+      severity: coreOk && satOk ? 'ok' : 'warning',
+      ticker: null,
+    });
+    // Removal date proximity (<= 60 days)
+    [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].forEach(p => {
+      if (!p.removal) return;
+      const remStr = p.removal.includes(',') ? p.removal : p.removal + ', 2026';
+      const days = _daysUntil(remStr);
+      if (days !== null && days >= 0 && days <= 30) {
+        findings.push({ text: p.ticker + ': REMOVAL ' + days + 'd ⚠', severity: 'critical', ticker: p.ticker });
+      } else if (days !== null && days > 30 && days <= 60) {
+        findings.push({ text: p.ticker + ': removal ' + days + 'd', severity: 'warning', ticker: p.ticker });
+      }
+    });
+    // Tripwire status (static from doctrine_core_tripwires v1.0.0)
+    const tripwires = [
+      { ticker: 'APH',  code: 'TW-5', note: 'China 15.6% watch'   },
+      { ticker: 'ONDS', code: 'TW-1', note: 'Mistral merger watch' },
+      { ticker: 'TSEM', code: 'TW-2', note: 'Israel conflict'      },
+      { ticker: 'TSM',  code: 'TW-2', note: 'LNG cliff May'        },
+    ];
+    tripwires.forEach(({ ticker, code, note }) => {
+      findings.push({ text: ticker + ' ' + code + ': ' + note, severity: 'warning', ticker });
+    });
+    // F3 live validation: price vs SMA50/SMA200
+    if (d?.prices) {
+      const f3Check = [...ARSENAL_CORE, ...ARSENAL_SAT, ...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker);
+      f3Check.forEach(ticker => {
+        const entry = d.prices[ticker];
+        if (!entry || entry.sma50 == null || entry.sma200 == null || entry.price == null) return;
+        const aboveSma50  = entry.price > entry.sma50;
+        const aboveSma200 = entry.price > entry.sma200;
+        if (!aboveSma200) {
+          findings.push({ text: ticker + ': F3=0 below SMA200', severity: 'warning', ticker });
+        } else if (!aboveSma50) {
+          findings.push({ text: ticker + ': F3↓ below SMA50', severity: 'info', ticker });
+        }
+      });
+    }
+    _sortFindings(findings);
+    if (findings.length === 0) findings.push({ text: '✓ WT ALL CLEAR', severity: 'ok', ticker: null });
+    return findings;
+  }
+
+  function _getConsensusTickers(f1, f2, f3) {
+    const counts = {};
+    [f1, f2, f3].forEach(findings => {
+      const seen = new Set();
+      findings.forEach(f => {
+        if (f.ticker && !seen.has(f.ticker)) {
+          seen.add(f.ticker);
+          counts[f.ticker] = (counts[f.ticker] || 0) + 1;
+        }
+      });
+    });
+    return Object.keys(counts).filter(t => counts[t] >= 2);
+  }
+
+  function runTriadAudits(d) {
+    const triadAgents = agents.filter(a => a.zone === 'council');
+    if (triadAgents.length < 3) return;
+
+    const docFindings  = doctrineAudit(d);
+    const gateFindings = gateAudit(d);
+    const wtFindings   = watchtowerAudit(d);
+    consensusTickers   = _getConsensusTickers(docFindings, gateFindings, wtFindings);
+
+    // Promote consensus tickers to front of each member's queue
+    function withConsensus(findings) {
+      if (consensusTickers.length === 0) return findings;
+      const promoted = findings
+        .filter(f => f.ticker && consensusTickers.includes(f.ticker))
+        .map(f => ({ ...f, text: '⚡ ' + f.text }));
+      const rest = findings.filter(f => !f.ticker || !consensusTickers.includes(f.ticker));
+      return [...promoted, ...rest];
+    }
+
+    const allFindings = [
+      withConsensus(docFindings),
+      withConsensus(gateFindings),
+      withConsensus(wtFindings),
+    ];
+
+    triadAgents.forEach((a, i) => {
+      a.findings = allFindings[i];
+      a.findingIdx = 0;
+      a.findingTimer = 6 + i * 2; // stagger start so they don't speak simultaneously
+      if (a.findings.length > 0) {
+        a.speech = a.findings[0].text;
+        a.speechSeverity = a.findings[0].severity;
+        a.speechLife = 99999;
+      }
+    });
   }
 
   // ── Drawing ──
@@ -2343,6 +2595,9 @@ const WarRoom = (function() {
     // Vault zone highlight
     ctx.fillStyle = ZONE_VAULT;
     ctx.fillRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
+    // Triad Council zone highlight
+    ctx.fillStyle = ZONE_COUNCIL;
+    ctx.fillRect(2 * TILE, 24.5 * TILE, 36 * TILE, 4 * TILE);
 
     // Zone labels
     ctx.save();
@@ -2354,7 +2609,43 @@ const WarRoom = (function() {
     ctx.fillText('WATCHTOWER', 2.5 * TILE, 12.2 * TILE);
     ctx.fillStyle = '#1a1a1a';
     ctx.fillText('VAULT / RESERVE', 2.5 * TILE, 20.6 * TILE);
+    ctx.fillStyle = '#1a1030';
+    ctx.fillText('TRIAD COUNCIL', 2.5 * TILE, 25.1 * TILE);
     ctx.restore();
+  }
+
+  function drawCouncilTable() {
+    const cx = Math.round(ROOM_W / 2);
+    const cy = Math.round(25.8 * TILE);
+    // Table shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 3, TILE * 5, TILE * 1.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Table surface
+    ctx.fillStyle = '#12162a';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, TILE * 5, TILE * 1.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#252848';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Table center label
+    ctx.save();
+    ctx.font = 'bold 5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#20224a';
+    ctx.fillText('TRIAD', cx, cy + 2);
+    ctx.restore();
+    // Consensus glow when 2-of-3 agree on same ticker
+    if (consensusTickers.length > 0) {
+      ctx.save();
+      ctx.font = 'bold 4px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#cc8800';
+      ctx.fillText('⚡ ' + consensusTickers.slice(0, 3).join(' · '), cx, cy - 8);
+      ctx.restore();
+    }
   }
 
   function drawDesk(x, y) {
@@ -2383,6 +2674,11 @@ const WarRoom = (function() {
     // Desk for arsenal agents
     if (a.zone === 'arsenal') {
       drawDesk(a.deskX, a.deskY);
+    }
+    // Council agents: small seat indicator
+    if (a.zone === 'council') {
+      ctx.fillStyle = '#0d1020';
+      ctx.fillRect(Math.round(a.x) - 4, Math.round(a.y + a.bob) + 1, 8, 4);
     }
 
     ctx.save();
@@ -2504,10 +2800,23 @@ const WarRoom = (function() {
     ctx.fillRect(x - 1, by + bh, 2, 2);
 
     // Text
-    const isWarning = text.includes('⚠') || text.includes('❄') || text.includes('FREEZE');
-    const isWinner = text.includes('🥇') || text.includes('WINNER');
-    const isVictory = text.includes('🎯');
-    ctx.fillStyle = isWarning ? '#ffb800' : isWinner ? '#00d084' : isVictory ? '#3a9fff' : '#8098b8';
+    let speechColor;
+    if (a.speechSeverity) {
+      const sevCols = { critical: '#ff4055', warning: '#ffb800', info: '#00c8e0', ok: '#00d084' };
+      speechColor = sevCols[a.speechSeverity] || '#8098b8';
+    } else {
+      const isWarning = text.includes('⚠') || text.includes('❄') || text.includes('FREEZE');
+      const isWinner  = text.includes('🥇') || text.includes('WINNER');
+      const isVictory = text.includes('🎯');
+      speechColor = isWarning ? '#ffb800' : isWinner ? '#00d084' : isVictory ? '#3a9fff' : '#8098b8';
+    }
+    // Council bubbles get a severity-tinted border
+    if (a.zone === 'council' && a.speechSeverity) {
+      const sevBorders = { critical: '#cc1028', warning: '#aa6600', info: '#006688', ok: '#006030' };
+      ctx.strokeStyle = sevBorders[a.speechSeverity] || '#2a3a50';
+      ctx.strokeRect(bx, by, bw, bh);
+    }
+    ctx.fillStyle = speechColor;
     ctx.textAlign = 'center';
     ctx.fillText(text, x, by + 5);
     ctx.restore();
@@ -2586,6 +2895,7 @@ const WarRoom = (function() {
     drawFloor();
     drawZones();
     drawRoomTitle();
+    drawCouncilTable();
 
     // Sort agents by Y for depth (paint back-to-front)
     const sorted = [...agents].sort((a, b) => a.y - b.y);
@@ -2658,6 +2968,48 @@ const WarRoom = (function() {
   function showTooltip(a, e) {
     const tip = document.getElementById('wrTooltip');
     if (!tip) return;
+
+    // Position helper (shared)
+    function positionTip() {
+      const wrap = document.getElementById('warRoomWrap');
+      const wrapRect = wrap.getBoundingClientRect();
+      let tx = e.clientX - wrapRect.left + 16;
+      let ty = e.clientY - wrapRect.top - 10;
+      if (tx + 300 > wrapRect.width) tx = e.clientX - wrapRect.left - 280;
+      if (ty + 260 > wrapRect.height) ty = Math.max(0, ty - 140);
+      tip.style.left = tx + 'px';
+      tip.style.top  = ty + 'px';
+    }
+
+    // Triad Council: show full findings list
+    if (a.zone === 'council') {
+      const roleColor = a.ticker === 'DOCTRINE' ? '#b080ff' : a.ticker === 'GATE' ? '#50a8f0' : '#50cc80';
+      const sevColors = { critical: 'var(--red)', warning: 'var(--amber)', info: 'var(--cyan)', ok: 'var(--green)' };
+      const critCount = a.findings.filter(f => f.severity === 'critical').length;
+      const warnCount = a.findings.filter(f => f.severity === 'warning').length;
+      let findingsHtml = '';
+      if (a.findings.length > 0) {
+        findingsHtml = `<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">${a.findings.length} findings &middot; <span style="color:var(--red)">${critCount} crit</span> &middot; <span style="color:var(--amber)">${warnCount} warn</span></div>`;
+        a.findings.slice(0, 12).forEach(f => {
+          const color = sevColors[f.severity] || 'var(--text-mid)';
+          findingsHtml += `<div style="font-size:11px;color:${color};padding:1px 0">${f.text}</div>`;
+        });
+        if (a.findings.length > 12) {
+          findingsHtml += `<div style="font-size:10px;color:var(--text-dim);margin-top:2px">+${a.findings.length - 12} more</div>`;
+        }
+      }
+      tip.innerHTML = `
+        <div style="margin-bottom:6px">
+          <span class="tt-ticker" style="color:${roleColor}">${a.ticker}</span>
+          <span class="tt-zone" style="background:rgba(130,60,200,0.1);color:${roleColor};border:1px solid ${roleColor}">TRIAD</span>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${a.role || 'Council Member'}</div>
+        ${findingsHtml}
+      `;
+      tip.classList.add('visible');
+      positionTip();
+      return;
+    }
 
     let zoneBadge = '';
     if (a.zone === 'arsenal') zoneBadge = '<span class="tt-zone arsenal">ARSENAL</span>';
