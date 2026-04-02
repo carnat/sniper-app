@@ -35,7 +35,7 @@ description: Sniper Portfolio State — current positions, ammo, Watchtower, sta
 | ONDS | 1 | $9.05 | NOT SET | A | Tracking position only. SO-2 hold. Mar 25 earnings + Mistral merger. No capital expansion. DC-06 Day 0: Mar 13. |
 | FN | 0 | — | Mar 16, 2026 | — | Fabrinet. Matrix Winner (tied 70pts). Deploy ฿7,000 at gate clear. DC-11: F2=0, no cost basis. DC-06 Day 0: Mar 13. |
 
-**Arsenal Count: 9 holdings**
+**Arsenal Count: 10 holdings** (portfolio_state v1.3.14 — VRT, ASTS, VST, MU, APH, ANET, TSM, ONDS, FN, COHR)
 
 **DC-06 NOTE:** NEGLECT flag (⚠️ NEGLECT) activates **Apr 12, 2026** for all NOT SET positions (Day 0 = Mar 13). Forced /council trim activates **May 12, 2026** if still NOT SET.
 
@@ -68,9 +68,13 @@ All Watchtower positions: Alpha Filters 1-4 passed. Satellite cap: max 15% of to
 | BWXT | Mar 15, 2026 | BWX Technologies. Sole-source US Navy nuclear component manufacturer + commercial nuclear renaissance (steam generators, fuel assemblies, TRISO fuel). Medical radioisotopes optionality. Iran war = direct thesis accelerant — nuclear urgency globally surging. CORE CANDIDATE — competes in Core Matrix (not Satellite). Deploy ฿11,000 from ฿18,000 tax refund. /thesis CLEAR Mar 15. | VIX < 25 + green close >= 1.5x 20-day ADV | Sep 15, 2026 | Waiting for trigger. Matrix Winner (tied 70pts). ⚠️ BLACKOUT ~Apr 14 (earnings May 4). Execution window ~4 weeks. ADV gate: 1,417,695. |
 | KTOS | Mar 15, 2026 | Kratos Defense. Jet-powered attritable UAVs (Valkyrie), hypersonic vehicles, propulsion systems. Purest hardware play on US DoD "affordable mass" doctrine. Iran war = active conflict validates thesis directly. Airbus partnership opens NATO market. SATELLITE — max 15% total liquid portfolio. /thesis CLEAR Mar 15. | VIX < 25 + green close >= 1.5x 20-day ADV | Sep 15, 2026 | Waiting for trigger. DC-13 Satellite Priority Score: 25/30. ⚠️ BLACKOUT ~Apr 17 (earnings May 7). ⚠️ SATELLITE CAP: /audit required at execution. |
 
-**WATCHTOWER: 5/6 SLOTS FILLED. 1 OPEN SLOT** (AAOI removed Mar 16, 2026 — permanent ban).
+**WATCHTOWER: 12/12 CORE SLOTS + 3/3 SATELLITE SLOTS** (doctrine_ops v1.15.1 — expanded from legacy 6-slot to 15-position roster).
 
-**WATCHTOWER CAPACITY:** 5/6 slots filled as of Mar 16, 2026. Next Scorecard run: Jun 2026.
+**WATCHTOWER CAPACITY (doctrine_ops v1.15.1):**
+- **Core (12/12):** TSEM, BWXT, MOD, NBIS, FORM, ENTG, ONTO, LITE, QRVO, PLTR, KTOS, SKYT
+- **Satellite (3/3):** RKLB, SATL, PL
+- Next Scorecard review: **Jun 2026** (Q2 window opens Jun 1)
+- Carry-forward candidates: AVAV, GEV, VSAT
 
 ---
 

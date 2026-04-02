@@ -24,6 +24,17 @@ BLOCKLIST = [
     # Database destruction
     "drop table",
     "delete from",
+    # COMET-02: NVDA exclusion from Arsenal code
+    "NVDA",
+    # Commander-in-loop: no build tooling in command_center/
+    "node_modules",
+    "package.json",
+    "webpack",
+]
+
+# Patterns that must never appear in committed files
+SENSITIVE_FILE_PATTERNS = [
+    "private.json",     # gitignored — must never be committed
 ]
 
 
@@ -35,12 +46,22 @@ def main():
         sys.exit(0)  # on parse failure, allow (don't block everything)
 
     for term in BLOCKLIST:
-        if term in command:
+        if term.lower() in command:
             print(
                 f"GUARDRAIL BLOCKED: '{term}' found in command. Commander-in-loop required.",
                 file=sys.stderr,
             )
             sys.exit(1)
+
+    # Check for private.json being committed
+    if "git add" in command or "git commit" in command:
+        for pattern in SENSITIVE_FILE_PATTERNS:
+            if pattern in command:
+                print(
+                    f"GUARDRAIL BLOCKED: '{pattern}' must not be committed (gitignored).",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
 
     sys.exit(0)
 

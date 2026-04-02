@@ -24,7 +24,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install yfinance
+        run: pip install yfinance ratelimit
 
       - name: Fetch prices
         run: python scripts/fetch_prices.py

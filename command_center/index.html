@@ -366,6 +366,65 @@
     font-size: 10px; color: var(--text-dim); letter-spacing: 0.3px;
   }
   .beta-notice .alert-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 1px; color: var(--text-mid); }
+  /* ─── REGIME BADGE STATES ─── */
+  .gate-badge.regime-green { background: var(--green-dim); border-color: var(--green); color: var(--green); box-shadow: 0 0 16px var(--green-glow), inset 0 0 8px var(--green-glow); }
+  .gate-badge.regime-yellow { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+  .gate-badge.regime-orange { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); box-shadow: 0 0 16px var(--amber-glow), inset 0 0 8px var(--amber-glow); animation: pulse-amber 2s ease-in-out infinite; }
+  .gate-badge.regime-red { background: var(--red-dim); border-color: var(--red); color: var(--red); box-shadow: 0 0 16px var(--red-glow), inset 0 0 8px var(--red-glow); animation: pulse-amber 1s ease-in-out infinite; }
+  /* ─── BACKTESTER ─── */
+  .bt-label { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--text-dim); display: block; margin-bottom: 4px; }
+  .bt-input { background: var(--bg-2); border: 1px solid var(--border-bright); color: var(--text-white); font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 6px 8px; border-radius: 3px; width: 100%; outline: none; }
+  .bt-input:focus { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(58,159,255,0.15); }
+  .bt-input-group { display: flex; flex-direction: column; }
+  /* ─── WATCHTOWER SECTIONS ─── */
+  .wt-section-header { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--blue); padding: 6px 8px; background: var(--blue-dim); border: 1px solid var(--border-bright); border-radius: 2px; margin: 8px 0 6px; }
+  .wt-sat-header { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--cyan); padding: 6px 8px; background: rgba(0,200,224,0.06); border: 1px solid rgba(0,200,224,0.2); border-radius: 2px; margin: 12px 0 6px; }
+  .china-watch-card { background: var(--amber-dim); border: 1px solid var(--amber); border-radius: 3px; padding: 10px 12px; margin-top: 12px; }
+  .china-watch-card h4 { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--amber); margin-bottom: 6px; }
+  /* ─── WAR ROOM ─── */
+  .warroom-wrap {
+    position: relative; width: 100%; min-height: calc(100vh - 120px);
+    background: #050608; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  }
+  .warroom-canvas {
+    display: block; image-rendering: pixelated; image-rendering: crisp-edges; cursor: crosshair;
+  }
+  .warroom-tooltip {
+    position: absolute; background: var(--bg-2); border: 1px solid var(--border-bright);
+    border-radius: 4px; padding: 12px 14px; pointer-events: none; opacity: 0;
+    transition: opacity 0.15s; z-index: 10; min-width: 220px; max-width: 300px;
+    font-size: 11px; line-height: 1.6; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .warroom-tooltip.visible { opacity: 1; }
+  .warroom-tooltip .tt-ticker { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-white); letter-spacing: 1px; }
+  .warroom-tooltip .tt-zone { font-size: 9px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px; padding: 1px 6px; border-radius: 2px; margin-left: 6px; }
+  .warroom-tooltip .tt-zone.arsenal { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .warroom-tooltip .tt-zone.watchtower { background: rgba(0,200,224,0.1); color: var(--cyan); border: 1px solid rgba(0,200,224,0.3); }
+  .warroom-tooltip .tt-zone.vault { background: var(--bg-3); color: var(--text-mid); border: 1px solid var(--border-bright); }
+  .warroom-tooltip .tt-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .warroom-tooltip .tt-key { color: var(--text-dim); }
+  .warroom-tooltip .tt-val { color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .warroom-tooltip .tt-flags { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--border); font-size: 10px; color: var(--amber); }
+  .warroom-hud {
+    position: absolute; top: 8px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none; font-size: 10px; color: var(--text-dim);
+  }
+  .warroom-regime-overlay {
+    position: absolute; inset: 0; pointer-events: none; transition: background 1s ease;
+  }
+  .warroom-regime-overlay.regime-green  { background: radial-gradient(ellipse at center, rgba(0,208,132,0.03) 0%, transparent 70%); }
+  .warroom-regime-overlay.regime-yellow { background: radial-gradient(ellipse at center, rgba(255,184,0,0.06) 0%, rgba(255,184,0,0.02) 50%, transparent 80%); }
+  .warroom-regime-overlay.regime-orange { background: radial-gradient(ellipse at center, rgba(255,140,0,0.10) 0%, rgba(255,100,0,0.04) 50%, transparent 80%); animation: wr-pulse-orange 3s ease-in-out infinite; }
+  .warroom-regime-overlay.regime-red    { background: radial-gradient(ellipse at center, rgba(255,64,85,0.12) 0%, rgba(255,0,0,0.05) 50%, transparent 80%); animation: wr-pulse-red 1.5s ease-in-out infinite; }
+  @keyframes wr-pulse-orange { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+  @keyframes wr-pulse-red { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+  .warroom-legend {
+    position: absolute; bottom: 8px; left: 12px; display: flex; gap: 12px;
+    font-size: 9px; color: var(--text-dim); pointer-events: none;
+  }
+  .warroom-legend .leg-item { display: flex; align-items: center; gap: 4px; }
+  .warroom-legend .leg-dot { width: 6px; height: 6px; border-radius: 1px; }
 </style>
 </head>
 <body class="locked">
@@ -432,6 +491,8 @@
   <button class="tab-btn active" onclick="switchTab('arsenal', this)">ARSENAL + STATUS</button>
   <button class="tab-btn" onclick="switchTab('vault', this)">VAULT HEALTH</button>
   <button class="tab-btn" onclick="switchTab('watchtower', this)">WATCHTOWER</button>
+  <button class="tab-btn" onclick="switchTab('backtester', this)">BACKTESTER</button>
+  <button class="tab-btn" onclick="switchTab('warroom', this)">WAR ROOM</button>
 </nav>
 <!-- TAB: ARSENAL + STATUS -->
 <div class="tab-pane active" id="tab-arsenal">
@@ -455,7 +516,7 @@
         <span id="level1Remaining">—</span>
       </div>
     </div>
-    <div class="section-label">ARSENAL — CORE (7)</div>
+    <div class="section-label">ARSENAL — CORE (8)</div>
     <table>
       <thead>
         <tr>
@@ -855,137 +916,97 @@
 <div class="vault-tab-grid">
   <!-- MAIN PANEL -->
   <div class="panel">
-    <!-- Slot capacity -->
+    <!-- Slot capacity: 12 Core + 3 Satellite = 15 -->
     <div class="wt-capacity">
-      <span class="capacity-label">WATCHTOWER SLOTS</span>
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="display:flex;gap:5px;align-items:center">
-          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
-          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
-          <div style="width:11px;height:11px;border-radius:50%;background:var(--amber);box-shadow:0 0 5px rgba(255,184,0,0.6)"></div>
-          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
-          <div style="width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 5px rgba(58,159,255,0.6)"></div>
-          <div style="width:11px;height:11px;border-radius:50%;background:var(--bg-3);border:1px solid var(--border-bright)"></div>
+      <span class="capacity-label">WATCHTOWER CAPACITY</span>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div>
+          <span style="font-size:10px;color:var(--blue);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px">CORE</span>
+          <span style="font-size:14px;font-weight:700;color:var(--text-white);font-variant-numeric:tabular-nums;margin-left:6px">12 / 12</span>
         </div>
-        <span style="font-size:14px;font-weight:700;color:var(--text-white);font-variant-numeric:tabular-nums">5 / 6</span>
-        <span style="font-size:10px;color:var(--text-dim)">1 slot open · AAOI removed Mar 16</span>
+        <div>
+          <span style="font-size:10px;color:var(--cyan);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px">SATELLITE</span>
+          <span style="font-size:14px;font-weight:700;color:var(--text-white);font-variant-numeric:tabular-nums;margin-left:6px">3 / 3</span>
+        </div>
+        <span style="font-size:10px;color:var(--text-dim)">doctrine_ops v1.15.1</span>
       </div>
     </div>
-    <!-- Watchtower roster table -->
-    <div class="section-label" style="margin-top:14px">WATCHTOWER ROSTER — Q1/Q2 2026</div>
+    <!-- CORE ROSTER -->
+    <div class="wt-section-header">WATCHTOWER CORE (12) — S1/S2/S3 TIERS</div>
     <table>
       <thead>
         <tr>
           <th>TICKER</th>
-          <th>CLASS</th>
+          <th>TIER</th>
           <th>THESIS / FLAGS</th>
-          <th>TRIGGER CONDITION</th>
+          <th>PRICE / ADV</th>
           <th class="center">STATUS</th>
           <th class="right">REMOVAL</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td class="ticker-cell">PLTR</td>
-          <td><span class="flag flag-b">CORE</span></td>
-          <td class="thesis-cell thesis-set">Defense AI — NATO edge exception confirmed</td>
-          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-PLTR" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
-          <td class="center"><span class="wt-status waiting">WAITING</span></td>
-          <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 12</td>
-        </tr>
-        <tr>
-          <td class="ticker-cell">TSEM</td>
-          <td><span class="flag flag-b">CORE</span></td>
-          <td class="thesis-cell" style="color:var(--amber)">⚠ ISRAEL WATCH · /thesis refresh required</td>
-          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGER HIT · gate only (VIX &lt;25)<br><span id="wt-adv-TSEM" style="font-size:9px;color:var(--text-dim);font-weight:400">vol: —</span></td>
-          <td class="center"><span class="wt-status ready">TRIGGER READY</span></td>
-          <td class="right" style="font-size:10px;color:var(--text-dim)">Jun 10</td>
-        </tr>
-        <tr class="wt-table-row-crit">
-          <td class="ticker-cell" style="color:var(--amber)">NBIS</td>
-          <td><span class="flag flag-c">SAT</span></td>
-          <td class="thesis-cell thesis-set">AI interconnect · score 30/30 · Option C active</td>
-          <td style="font-size:10px;color:var(--green);font-weight:600">TRIGGERED Mar 12 · T1 expiry Mar 26<br><span id="wt-adv-NBIS" style="font-size:9px;color:var(--text-dim);font-weight:400">vol: —</span></td>
-          <td class="center"><span class="wt-status deploy">DEPLOYING</span></td>
-          <td class="right" style="font-size:10px">
-            <span style="color:var(--text-dim)">Jun 10</span><br>
-            <span style="color:var(--red);font-size:9px;font-weight:700">⚠ T1 EXPIRY MAR 26</span>
-          </td>
-        </tr>
-        <tr>
-          <td class="ticker-cell">BWXT</td>
-          <td><span class="flag flag-b">CORE★</span></td>
-          <td class="thesis-cell thesis-set">Nuclear propulsion · Matrix Winner (tied 70pts) · ฿11K</td>
-          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-BWXT" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
-          <td class="center"><span class="wt-status waiting">WAITING</span></td>
-          <td class="right" style="font-size:10px">
-            <span style="color:var(--text-dim)">Sep 15</span><br>
-            <span style="color:var(--amber);font-size:9px">⚠ BLACKOUT Apr 14</span>
-          </td>
-        </tr>
-        <tr>
-          <td class="ticker-cell">KTOS</td>
-          <td><span class="flag flag-c">SAT</span></td>
-          <td class="thesis-cell thesis-set">Defense autonomy · score 25/30 · satellite capital only</td>
-          <td style="font-size:10px;color:var(--text-mid)">VIX &lt;25 + green close + 1.5× ADV<br><span id="wt-adv-KTOS" style="font-size:9px;color:var(--text-dim)">vol: —</span></td>
-          <td class="center"><span class="wt-status waiting">WAITING</span></td>
-          <td class="right" style="font-size:10px">
-            <span style="color:var(--text-dim)">Sep 15</span><br>
-            <span style="color:var(--amber);font-size:9px">⚠ BLACKOUT Apr 17</span>
-          </td>
-        </tr>
-        <tr style="opacity:0.4">
-          <td class="ticker-cell" style="color:var(--text-dim)">— OPEN —</td>
-          <td style="color:var(--text-dim);font-size:10px">—</td>
-          <td style="font-size:10px;color:var(--text-dim);font-style:italic">Slot available · AAOI removed Mar 16 (permanent China rule ban)</td>
-          <td style="font-size:10px;color:var(--text-dim)">—</td>
-          <td class="center" style="font-size:10px;color:var(--text-dim)">OPEN</td>
-          <td class="right" style="font-size:10px;color:var(--text-dim)">—</td>
-        </tr>
+      <tbody id="wtCoreTable">
+        <!-- Populated by JS renderWatchtowerTable() -->
+        <tr><td colspan="6" style="color:var(--text-dim);font-size:10px;padding:8px">Loading — click Refresh to populate</td></tr>
       </tbody>
     </table>
-    <!-- News pulse (populated by JS from prices.json d.news) -->
+    <!-- SATELLITE ROSTER -->
+    <div class="wt-sat-header">WATCHTOWER SATELLITE (3) — SAT TIERS</div>
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>TIER</th>
+          <th>THESIS / FLAGS</th>
+          <th>PRICE / ADV</th>
+          <th class="center">STATUS</th>
+          <th class="right">REMOVAL</th>
+        </tr>
+      </thead>
+      <tbody id="wtSatTable">
+        <tr><td colspan="6" style="color:var(--text-dim);font-size:10px;padding:8px">Loading — click Refresh to populate</td></tr>
+      </tbody>
+    </table>
+    <!-- China Watch Register (DC-46) -->
+    <div class="china-watch-card">
+      <h4>⚠ CHINA WATCH EXTERNAL REGISTER — DC-46</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>TICKER</th><th class="right">CHINA EXPOSURE</th><th>STATUS</th><th>NOTES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="ticker-cell" style="color:var(--amber)">KEYS</td>
+            <td class="right" style="color:var(--amber);font-weight:700">~17.4%</td>
+            <td><span class="wt-status blocked" style="font-size:9px">WATCH</span></td>
+            <td style="font-size:10px;color:var(--text-mid)">Keysight. External register only — not in Arsenal/WT</td>
+          </tr>
+          <tr>
+            <td class="ticker-cell" style="color:var(--amber)">APH</td>
+            <td class="right" style="color:var(--amber);font-weight:700">~15.6%</td>
+            <td><span class="wt-status blocked" style="font-size:9px">WATCH</span></td>
+            <td style="font-size:10px;color:var(--text-mid)">Arsenal Core. Trajectory: falling toward 15%. /audit each thesis.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:9px;color:var(--amber);margin-top:6px">DC-46: Max 20% tolerated. ≥15% = CHINA WATCH mandatory. ≥20% = disqualification. NVDA excluded (COMET-02).</div>
+    </div>
+    <!-- News pulse -->
     <div class="section-label" style="margin-top:16px">NEWS PULSE — WATCHTOWER</div>
     <div id="wtNewsPulse" style="display:grid;gap:4px">
       <div style="font-size:10px;color:var(--text-dim);padding:4px 0">Loading — click Refresh to populate</div>
     </div>
-    <!-- Blackout calendar -->
-    <div class="section-label" style="margin-top:16px">BLACKOUT CALENDAR</div>
-    <div class="wt-blackout-grid">
-      <div class="wt-blackout-card crit">
-        <div class="wt-blackout-label" style="color:var(--red)">⚠ CRITICAL — EXPIRY</div>
-        <div class="wt-blackout-ticker">NBIS · MAR 26</div>
-        <div class="wt-blackout-desc">Option C T1 ฿12,014 — deploy or forfeit</div>
-        <div class="wt-blackout-sub">T2 ฿12,014 triggers on ≥5% retrace after T1 deploy</div>
-      </div>
-      <div class="wt-blackout-card">
-        <div class="wt-blackout-label" style="color:var(--text-dim)">BLACKOUT WINDOW</div>
-        <div class="wt-blackout-ticker">ASTS · ~APR 11</div>
-        <div class="wt-blackout-desc">Pre-earnings window · SO-1 must be submitted before</div>
-        <div class="wt-blackout-sub">Earnings ~May 12 · ±30d window opens</div>
-      </div>
-      <div class="wt-blackout-card warn">
-        <div class="wt-blackout-label" style="color:var(--amber)">BLACKOUT WINDOW</div>
-        <div class="wt-blackout-ticker">BWXT · ~APR 14</div>
-        <div class="wt-blackout-desc">No new DCA in window · Core candidate blocked</div>
-        <div class="wt-blackout-sub">Earnings May 4 · ±30d window</div>
-      </div>
-      <div class="wt-blackout-card warn">
-        <div class="wt-blackout-label" style="color:var(--amber)">BLACKOUT WINDOW</div>
-        <div class="wt-blackout-ticker">KTOS · ~APR 17</div>
-        <div class="wt-blackout-desc">No new DCA in window · Satellite blocked</div>
-        <div class="wt-blackout-sub">Earnings May 7 · ±30d window</div>
-      </div>
-    </div>
     <!-- Removal logic -->
-    <div class="section-label" style="margin-top:16px">REMOVAL LOGIC</div>
+    <div class="section-label" style="margin-top:16px">REMOVAL LOGIC (DC-40)</div>
     <div class="wt-removal-rules">
       <span style="color:var(--text-base);font-weight:600">Auto-removal triggers (any one):</span><br>
       1 · Removal date reached with no trigger → exit without execution, free slot<br>
       2 · Thesis break confirmed → immediate removal + Consensus Log entry<br>
       3 · Core graduation → promoted to Arsenal, slot freed immediately<br>
       4 · Satellite deploy complete → hold in Arsenal, Watchtower slot freed<br>
-      <span style="color:var(--text-dim)">Slot 6 open. Next new entries considered at Q2 scorecard or post-trigger slot open.</span>
+      5 · Alpha Filter breach (China >20% or permanent ban) → immediate removal<br>
+      <span style="color:var(--text-dim)">Max capacity: 12 Core + 3 Satellite. New admissions at Q scorecard or post-trigger slot open.</span>
     </div>
     <!-- Scorecard countdown -->
     <div class="wt-countdown-bar">
@@ -1001,8 +1022,53 @@
   </div>
   <!-- RIGHT PANEL -->
   <div class="panel">
-    <!-- Active Standing Orders -->
+    <!-- ADV Gate Live (populated by JS) -->
     <div class="status-block">
+      <div class="status-block-header">ADV GATE — LIVE</div>
+      <div id="wtAdvPanel" style="padding:6px 0">
+        <div style="padding:8px 10px;font-size:10px;color:var(--text-dim)">Click Refresh to load live ADV data</div>
+      </div>
+      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">ADV = 20-day avg daily volume. Trigger: 1 green close ≥1.5× ADV + VIX gate.</div>
+    </div>
+    <!-- Blackout Calendar -->
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">BLACKOUT CALENDAR</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">ASTS</span><span class="so-status gate">~APR 11</span></div>
+          <div class="so-desc">Pre-earnings window · SO-1 must be submitted before · Earnings ~May 12</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">BWXT</span><span class="so-status gate">~APR 14</span></div>
+          <div class="so-desc">No new DCA in window · Core★ candidate · Earnings May 4 ±30d</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id" style="color:var(--amber)">KTOS</span><span class="so-status gate">~APR 17</span></div>
+          <div class="so-desc">No new DCA in window · Satellite blocked · Earnings May 7 ±30d</div>
+        </div>
+      </div>
+    </div>
+    <!-- Satellite Priority (DC-13) -->
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">SATELLITE PRIORITY — DC-13</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">RKLB</span><span class="so-status watch">SAT-1</span></div>
+          <div class="so-desc">Rocket Lab — launch cadence + Neutron development</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">SATL</span><span class="so-status watch">SAT-2</span></div>
+          <div class="so-desc">Satellogic — EO data + defense analytics</div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">PL</span><span class="so-status watch">SAT-3</span></div>
+          <div class="so-desc">Planet Labs — satellite data services</div>
+        </div>
+      </div>
+      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">Satellite capital only. DC-13 score ≥25 required. Re-scored each Q session.</div>
+    </div>
+    <!-- Standing Orders reference -->
+    <div class="status-block" style="margin-top:10px">
       <div class="status-block-header">STANDING ORDERS — ACTIVE</div>
       <div class="so-list">
         <div class="so-item">
@@ -1017,67 +1083,157 @@
           <div class="so-header"><span class="so-id">SO-5</span><span class="so-status gate">GATE</span></div>
           <div class="so-desc">FN · Matrix Winner (tied 70pts) · await VIX &lt;25 + 1.5× ADV. Deploy ฿7,000.</div>
         </div>
-        <div class="so-item" style="border-left:2px solid var(--red)">
-          <div class="so-header"><span class="so-id" style="color:var(--amber)">SO-6</span><span class="so-status gate" style="border-color:var(--red);color:var(--red)">EXPIRY MAR 26</span></div>
-          <div class="so-desc">NBIS Option C T1 · <span class="warn">฿12,014 — DEPLOY NOW or forfeit</span><br>T2 ฿12,014 on ≥5% retrace post-T1</div>
-        </div>
       </div>
-    </div>
-    <!-- Resolved orders (dimmed) -->
-    <div class="status-block" style="margin-top:10px;opacity:0.45">
-      <div class="status-block-header" style="color:var(--text-dim)">RESOLVED ORDERS</div>
-      <div class="so-list">
-        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-3</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ ASTS blackout Apr 11 noted</div></div>
-        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-4</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ /thesis MU completed Mar 15</div></div>
-        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-7</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ APH China % confirmed 16.3%</div></div>
-        <div class="so-item"><div class="so-header"><span class="so-id" style="color:var(--text-dim)">SO-8</span><span class="so-status pending">CLOSED</span></div><div class="so-desc" style="color:var(--text-dim)">✓ AAOI China 45.4% — permanent ban</div></div>
-      </div>
-    </div>
-    <!-- Satellite Priority Scores DC-13 -->
-    <div class="status-block" style="margin-top:10px">
-      <div class="status-block-header">SATELLITE PRIORITY — DC-13</div>
-      <div class="so-list">
-        <div class="so-item">
-          <div class="so-header"><span class="so-id" style="color:var(--green)">NBIS</span><span class="so-status" style="background:var(--green-dim);color:var(--green);border:1px solid var(--green)">30 / 30</span></div>
-          <div class="so-desc" style="color:var(--green)">TRIGGERED · Option C T1 active · expiry Mar 26</div>
-        </div>
-        <div class="so-item">
-          <div class="so-header"><span class="so-id">KTOS</span><span class="so-status watch">25 / 30</span></div>
-          <div class="so-desc">Waiting for trigger · blackout Apr 17</div>
-        </div>
-      </div>
-      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">Score ≥25 = deploy from Satellite capital only. Re-scored each Q scorecard session.</div>
-    </div>
-    <!-- ADV gate reference -->
-    <div class="status-block" style="margin-top:10px">
-      <div class="status-block-header">ADV GATE REFERENCE</div>
-      <div class="so-list">
-        <div class="so-item">
-          <div class="so-header"><span class="so-id">FN</span><span class="wt-adv-val">967,560</span></div>
-          <div class="so-desc">1.5× gate = 1,451,340 · Matrix Winner · Deploy ฿7,000</div>
-        </div>
-        <div class="so-item">
-          <div class="so-header"><span class="so-id">BWXT</span><span class="wt-adv-val">1,417,695</span></div>
-          <div class="so-desc">1.5× gate = 2,126,543 · Core candidate · Deploy ฿11,000</div>
-        </div>
-        <div class="so-item">
-          <div class="so-header"><span class="so-id">PLTR</span><span class="wt-adv-val" style="color:var(--text-dim)">high vol</span></div>
-          <div class="so-desc">ADV generally far above 1.5× · VIX gate is binding constraint</div>
-        </div>
-        <div class="so-item">
-          <div class="so-header"><span class="so-id">KTOS</span><span class="wt-adv-val" style="color:var(--text-dim)">confirm on day</span></div>
-          <div class="so-desc">Satellite class · verify 1.5× ADV on trigger day · blackout Apr 17</div>
-        </div>
-        <div class="so-item">
-          <div class="so-header"><span class="so-id">TSEM</span><span class="wt-adv-val" style="color:var(--amber)">⚠ Israel Watch</span></div>
-          <div class="so-desc">Confirm thesis intact + ADV before execution · /thesis refresh required</div>
-        </div>
-      </div>
-      <div style="padding:4px 10px 6px;font-size:10px;color:var(--text-dim)">ADV = 20-day avg daily volume. All triggers: 1 green close ≥1.5× ADV + VIX gate.</div>
     </div>
   </div>
 </div>
 </div><!-- end tab-watchtower -->
+<!-- TAB: BACKTESTER (CMD-3) -->
+<div class="tab-pane" id="tab-backtester">
+<div class="vault-tab-grid">
+  <!-- MAIN PANEL: inputs + chart -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">CMD-3 <span>BACKTESTER</span></div>
+      <div style="font-size:10px;color:var(--amber)">⚠ ADVISORY ONLY — No execution · Commander-in-loop required</div>
+    </div>
+    <div class="bt-advisory" style="background:var(--amber-dim);border:1px solid var(--amber);border-radius:3px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:var(--amber);line-height:1.5">
+      This is a hypothetical DCA simulation tool. All results are illustrative and educational only.
+      Past performance is not indicative of future results. No signals, no auto-execution, no broker connection.
+    </div>
+    <!-- Input controls -->
+    <div class="bt-controls" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="bt-input-group">
+        <label class="bt-label">STARTING CAPITAL (฿)</label>
+        <input id="btCapital" class="bt-input" type="number" value="100000" min="1000" step="1000">
+      </div>
+      <div class="bt-input-group">
+        <label class="bt-label">DCA PER CYCLE (฿)</label>
+        <input id="btDca" class="bt-input" type="number" value="5000" min="100" step="100">
+      </div>
+      <div class="bt-input-group">
+        <label class="bt-label">PERIODS (months)</label>
+        <input id="btPeriods" class="bt-input" type="number" value="12" min="1" max="60" step="1">
+      </div>
+      <div class="bt-input-group">
+        <label class="bt-label">ALLOCATION MODE</label>
+        <select id="btMode" class="bt-input">
+          <option value="matrix">Matrix-weighted</option>
+          <option value="equal">Equal-weight</option>
+          <option value="compare">Compare both</option>
+        </select>
+      </div>
+    </div>
+    <button class="refresh-btn" onclick="runBacktest()" style="margin-bottom:14px">
+      ▶ RUN SIMULATION
+    </button>
+    <!-- Chart -->
+    <div class="section-label">CUMULATIVE PORTFOLIO VALUE</div>
+    <div style="position:relative;height:260px;margin:10px 0">
+      <canvas id="btChart"></canvas>
+    </div>
+    <div style="font-size:10px;color:var(--text-dim);margin-top:4px" id="btChartNote">
+      Configure inputs above and click RUN SIMULATION
+    </div>
+    <!-- Results table -->
+    <div class="section-label" style="margin-top:14px">ALLOCATION BREAKDOWN</div>
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th class="right">MATRIX PTS</th>
+          <th class="right">MATRIX WEIGHT</th>
+          <th class="right">EQUAL WEIGHT</th>
+          <th class="right">PRICE (REF)</th>
+          <th class="right">MATRIX ALLOC/CYCLE</th>
+        </tr>
+      </thead>
+      <tbody id="btAllocTable"></tbody>
+    </table>
+  </div>
+  <!-- RIGHT PANEL: methodology + summary -->
+  <div class="panel">
+    <div class="status-block">
+      <div class="status-block-header">SIMULATION METHODOLOGY</div>
+      <div class="so-list">
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">MATRIX MODE</span></div>
+          <div class="so-desc" style="font-size:10px;color:var(--text-mid)">
+            Allocates each DCA cycle proportionally to Matrix scores (F1–F5 total).
+            Higher-scored tickers receive more capital per cycle.
+            Uses current prices as reference — prices assumed static (hypothetical).
+          </div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">EQUAL WEIGHT MODE</span></div>
+          <div class="so-desc" style="font-size:10px;color:var(--text-mid)">
+            Splits each DCA cycle equally across all Arsenal positions.
+            Baseline comparison for Matrix allocation benefit.
+          </div>
+        </div>
+        <div class="so-item">
+          <div class="so-header"><span class="so-id">COMPARE MODE</span></div>
+          <div class="so-desc" style="font-size:10px;color:var(--text-mid)">
+            Shows both Matrix and Equal-weight on the same chart.
+            Illustrates how score-based allocation differs from naive diversification.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="status-block" style="margin-top:10px" id="btSummaryBlock">
+      <div class="status-block-header">SIMULATION RESULTS</div>
+      <div style="padding:10px">
+        <div class="hwm-row"><span class="status-key">Starting capital</span><span class="status-val" id="btResStart">—</span></div>
+        <div class="hwm-row"><span class="status-key">Total invested</span><span class="status-val" id="btResInvested">—</span></div>
+        <div class="hwm-row"><span class="status-key">Final value (Matrix)</span><span class="status-val green" id="btResFinalMatrix">—</span></div>
+        <div class="hwm-row"><span class="status-key">Final value (Equal)</span><span class="status-val" id="btResFinalEqual">—</span></div>
+        <div class="hwm-row"><span class="status-key">Matrix advantage</span><span class="status-val" id="btResAdvantage">—</span></div>
+        <div class="hwm-row"><span class="status-key">Total periods</span><span class="status-val" id="btResPeriods">—</span></div>
+      </div>
+    </div>
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">MATRIX SCORES — REFERENCE</div>
+      <div style="padding:6px 10px;font-size:10px;color:var(--text-dim);line-height:1.7">
+        Scores are from Mar 16, 2026 War Council scorecard.<br>
+        <span style="color:var(--amber)">FN = BWXT = 70pts</span> (tied — 🥇)<br>
+        APH = 65pts · VRT / TSM = 50pts<br>
+        Others: default 40pts pending next scorecard.<br>
+        Update scores in private.json → <span style="font-family:'JetBrains Mono'">btMatrixScores</span> override.
+      </div>
+    </div>
+    <div class="status-block" style="margin-top:10px">
+      <div class="status-block-header">LIMITATIONS</div>
+      <div style="padding:6px 10px;font-size:10px;color:var(--text-dim);line-height:1.7">
+        • Uses current price snapshot — no real historical data<br>
+        • Price assumed constant (illustrative allocation only)<br>
+        • Does not model slippage, fees, or FX movement<br>
+        • Does not account for blackout windows or gate failures<br>
+        • ADVISORY ONLY — Commander makes all real decisions
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- end tab-backtester -->
+<!-- TAB: WAR ROOM -->
+<div class="tab-pane" id="tab-warroom">
+  <div class="warroom-wrap" id="warRoomWrap">
+    <canvas id="warRoomCanvas" class="warroom-canvas"></canvas>
+    <div class="warroom-regime-overlay" id="wrRegimeOverlay"></div>
+    <div class="warroom-tooltip" id="wrTooltip"></div>
+    <div class="warroom-hud" id="wrHud">
+      <span id="wrHudLeft"></span>
+      <span id="wrHudRight" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-dim)">SNIPER WAR ROOM v3.0 · INFORMATIONAL ONLY</span>
+    </div>
+    <div class="warroom-legend" id="wrLegend">
+      <div class="leg-item"><div class="leg-dot" style="background:#3a9fff"></div>SEMI</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#4aba6a"></div>DEFENSE</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#8a5aee"></div>SPACE</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#ee8a20"></div>NETWORK</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#00aacc"></div>ENERGY</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#6a7a8a"></div>VAULT</div>
+    </div>
+  </div>
+</div>
 <footer class="footer">
   <div class="footer-note">SNIPER COMMAND CENTER v2 · READ ONLY · No buy/sell signals · Commander-in-loop required for all execution decisions</div>
   <div class="data-source">
@@ -1092,23 +1248,47 @@ const TODAY = new Date();
 const ARSENAL_CORE = [
   { ticker: 'VRT',  shares: 0, cost: 235.92, flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: 'Yellow Watch · F3=0 · 50pts' },
   { ticker: 'VST',  shares: 0, cost: 158.32, flag: 'C',  thesis: 'Mar 10, 2026', day0: false, note: 'Yellow Watch active' },
-  { ticker: 'MU',   shares: 0, cost: 294.01, flag: 'B',  thesis: 'Mar 15, 2026', day0: false, note: '✅ INTACT · Mar 18 earnings ⚠️' },
-  { ticker: 'APH',  shares: 0, cost: 136.95, flag: '—',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ CHINA WATCH 16.3% · 65pts' },
+  { ticker: 'MU',   shares: 0, cost: 294.01, flag: 'B',  thesis: 'Mar 15, 2026', day0: false, note: '✅ INTACT · earnings watch' },
+  { ticker: 'APH',  shares: 0, cost: 136.95, flag: '—',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ CHINA WATCH 15.6% · 65pts' },
   { ticker: 'ANET', shares: 0, cost: 122.12, flag: '—',  thesis: 'Mar 10, 2026', day0: false, note: 'Victory target $200' },
   { ticker: 'TSM',  shares: 0, cost: 296.42, flag: 'B',  thesis: 'Mar 16, 2026', day0: false, note: '⚠️ ISRAEL WATCH · 50pts' },
   { ticker: 'FN',   shares: 0, cost: null,   flag: '—',  thesis: 'Mar 16, 2026', day0: true,  note: '🥇 WINNER 70pts · Deploy ฿7,000' },
+  { ticker: 'COHR', shares: 0, cost: null,   flag: '—',  thesis: null,           day0: true,  note: 'Coherent · SiPho + datacenter optics' },
 ];
 const ARSENAL_SAT = [
   { ticker: 'ASTS', shares: 0, cost: 74.50, flag: 'A', thesis: null, day0: true,  note: 'SO-1 pending broker · Blackout ~Apr 11' },
-  { ticker: 'ONDS', shares: 0, cost: 9.05,  flag: 'A', thesis: null, day0: true,  note: 'Mar 25 earnings · no expansion' },
+  { ticker: 'ONDS', shares: 0, cost: 9.05,  flag: 'A', thesis: null, day0: true,  note: 'Earnings watch · no expansion' },
 ];
 const NEGLECT_TICKERS = ['ASTS', 'ONDS'];
-// Cached prices (Mar 13, 2026 — stale; replaced on first prices.json load)
+
+// Watchtower roster (doctrine_ops v1.15.1) — overridden by private.json if available
+const WT_CORE_ROSTER = [
+  { ticker: 'TSEM', tier: 'S1', thesis: 'SiPho foundry · ⚠ ISRAEL WATCH', removal: 'Jun 10', flag: 'ISRAEL WATCH' },
+  { ticker: 'BWXT', tier: 'S1', thesis: 'Nuclear propulsion · Matrix Winner (tied 70pts)', removal: 'Sep 15', flag: 'BLACKOUT Apr 14' },
+  { ticker: 'MOD', tier: 'S2', thesis: 'Modine Manufacturing · thermal management', removal: 'Sep 15', flag: '' },
+  { ticker: 'NBIS', tier: 'S2', thesis: 'AI IaaS / GPU cloud · Option C active', removal: 'Jun 10', flag: '' },
+  { ticker: 'FORM', tier: 'S2', thesis: 'FormFactor · semiconductor test', removal: 'Sep 15', flag: '' },
+  { ticker: 'ENTG', tier: 'S2', thesis: 'Entegris · semiconductor materials', removal: 'Sep 15', flag: '' },
+  { ticker: 'ONTO', tier: 'S3', thesis: 'Onto Innovation · process control', removal: 'Sep 15', flag: '' },
+  { ticker: 'LITE', tier: 'S3', thesis: 'Lumentum · photonics / optical', removal: 'Sep 15', flag: '' },
+  { ticker: 'QRVO', tier: 'S3', thesis: 'Qorvo · RF semiconductors', removal: 'Sep 15', flag: '' },
+  { ticker: 'PLTR', tier: 'S1', thesis: 'Defense AI OS · NATO edge exception', removal: 'Jun 12', flag: '' },
+  { ticker: 'KTOS', tier: 'S2', thesis: 'Defense drones/UAV · score 25/30', removal: 'Sep 15', flag: 'BLACKOUT Apr 17' },
+  { ticker: 'SKYT', tier: 'S3', thesis: 'SkyWater Technology · domestic semi fab', removal: 'Sep 15', flag: '' },
+];
+const WT_SAT_ROSTER = [
+  { ticker: 'RKLB', tier: 'SAT-1', thesis: 'Rocket Lab · launch cadence + Neutron', removal: 'Sep 15', flag: '' },
+  { ticker: 'SATL', tier: 'SAT-2', thesis: 'Satellogic · EO data + defense analytics', removal: 'Sep 15', flag: '' },
+  { ticker: 'PL',   tier: 'SAT-3', thesis: 'Planet Labs · satellite data services', removal: 'Sep 15', flag: '' },
+];
+
+// Cached prices (Apr 2, 2026 snapshot — replaced on first prices.json load)
 let prices = {
-  VRT: 258.88, ASTS: 86.34, VST: 158.95, MU: 426.13,
-  APH: 133.92, ANET: 133.57, TSM: 338.31, ONDS: 10.16,
-  FN: 502.14, BWXT: 194.13, NBIS: 112.95,
-  '^VIX': 27.19, 'THB=X': 32.42
+  VRT: 259.37, ASTS: 83.99, VST: 153.96, MU: 367.85,
+  APH: 127.70, ANET: 124.85, TSM: 341.49, ONDS: 8.81,
+  FN: 534.98, COHR: 80.0,
+  BWXT: 212.81, NBIS: 101.95, TSEM: 187.07, KTOS: 67.70, PLTR: 146.49,
+  '^VIX': 24.54, 'THB=X': 32.72
 };
 let pricesStale = true;
 let privateUnlocked = false;
@@ -1220,20 +1400,29 @@ renderArsenal(ARSENAL_CORE, 'arsenalCore');
 renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
 
 // ─── GATE STATUS ───
+function getRegime(vix) {
+  if (vix < 22) return 'GREEN';
+  if (vix < 25) return 'YELLOW';
+  if (vix <= 30) return 'ORANGE';
+  return 'RED';
+}
 function updateGate(vix) {
   const badge = document.getElementById('gateBadge');
   const gateText = document.getElementById('gateText');
   const vixEl = document.getElementById('vixVal');
   vixEl.textContent = vix.toFixed(2);
-  if (vix >= 25) {
-    badge.className = 'gate-badge freeze';
-    gateText.textContent = 'FREEZE';
-    vixEl.style.color = 'var(--amber)';
-  } else {
-    badge.className = 'gate-badge clear';
-    gateText.textContent = 'CLEAR';
-    vixEl.style.color = 'var(--green)';
-  }
+  const regime = getRegime(vix);
+  const regimeClass = {
+    GREEN: 'regime-green', YELLOW: 'regime-yellow',
+    ORANGE: 'regime-orange', RED: 'regime-red'
+  }[regime];
+  badge.className = 'gate-badge ' + regimeClass;
+  gateText.textContent = regime;
+  const regimeColor = {
+    GREEN: 'var(--green)', YELLOW: 'var(--amber)',
+    ORANGE: 'var(--amber)', RED: 'var(--red)'
+  }[regime];
+  vixEl.style.color = regimeColor;
 }
 function updateTHB(rate) {
   const el = document.getElementById('thbVal');
@@ -1477,6 +1666,7 @@ async function fetchPrices() {
     renderArsenal(ARSENAL_CORE, 'arsenalCore');
     renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
     updateWatchtowerLive(d);
+    WarRoom.updateFromPriceData(d);
     document.getElementById('lastRefresh').textContent = 'Last refresh: ' + d.updated_bkk;
     barDone(true);
 
@@ -1495,45 +1685,127 @@ async function fetchPrices() {
   }
 }
 
-// ─── WATCHTOWER LIVE: ADV RATIOS + NEWS PULSE ───
-function updateWatchtowerLive(d) {
-  // P1 — ADV ratios injected into table trigger cells
-  const adv = d.adv || {};
-  ['PLTR', 'TSEM', 'NBIS', 'BWXT', 'KTOS', 'FN'].forEach(sym => {
-    const el = document.getElementById('wt-adv-' + sym);
-    if (!el || !adv[sym]) return;
-    const { today_vol, adv_20d, adv_ratio, gate_met } = adv[sym];
-    const volStr = today_vol >= 1e6
-      ? (today_vol / 1e6).toFixed(1) + 'M'
-      : Math.round(today_vol / 1e3) + 'K';
-    const ratioStr = adv_ratio != null ? adv_ratio.toFixed(2) + '×' : '—';
-    const color = gate_met
-      ? 'var(--green)'
-      : adv_ratio >= 1.0 ? 'var(--amber)' : 'var(--text-dim)';
-    el.style.color = color;
-    el.textContent = `vol ${volStr} · ${ratioStr} ADV${gate_met ? ' ✓ GATE' : ''}`;
-  });
+// ─── WATCHTOWER LIVE: TABLE + ADV PANEL + NEWS PULSE ───
+function fmtVol(v) {
+  if (v == null) return '—';
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  return Math.round(v / 1e3) + 'K';
+}
 
-  // P3 — News pulse section
+// ADV color: green if gate met, amber if ratio ≥1.0, dim otherwise
+function advColor(gateMet, ratio) {
+  return gateMet ? 'var(--green)' : (ratio >= 1.0 ? 'var(--amber)' : 'var(--text-dim)');
+}
+
+function renderWatchtowerTable(roster, tbodyId, pricesData, advData) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  roster.forEach(pos => {
+    const sym = pos.ticker;
+    const pEntry = (pricesData || {})[sym] || {};
+    const aEntry = (advData || {})[sym] || {};
+    const p = pEntry.price || (prices[sym] || null);
+    const change = pEntry.change ?? pEntry.change_pct;
+
+    // Price cell
+    const priceStr = p
+      ? `$${p.toFixed(2)}<span style="color:${change >= 0 ? 'var(--green)' : 'var(--red)'};font-size:9px;margin-left:4px">${change >= 0 ? '+' : ''}${(change ?? 0).toFixed(2)}%</span>`
+      : '<span style="color:var(--text-dim)">—</span>';
+
+    // ADV cell
+    let advStr = '<span style="color:var(--text-dim)">—</span>';
+    if (aEntry.adv_20d) {
+      const ratio = aEntry.adv_ratio;
+      const gm = aEntry.gate_met;
+      const color = advColor(gm, ratio);
+      advStr = `<span style="color:${color};font-size:9px">${fmtVol(aEntry.today_vol)} · ${ratio != null ? ratio.toFixed(2) + '×' : '—'}${gm ? ' ✓' : ''}</span>`;
+    } else if (pEntry.adv) {
+      advStr = `<span style="color:var(--text-dim);font-size:9px">ADV ${fmtVol(pEntry.adv)}</span>`;
+    }
+
+    // Tier badge
+    const tierColor = pos.tier.startsWith('SAT') ? 'var(--cyan)' : pos.tier === 'S1' ? 'var(--blue)' : pos.tier === 'S2' ? 'var(--text-mid)' : 'var(--text-dim)';
+    const tierBadge = `<span style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:${tierColor};letter-spacing:1px">${pos.tier}</span>`;
+
+    // Status
+    const hasFlag = pos.flag && pos.flag !== '';
+    const statusHtml = hasFlag
+      ? `<span class="wt-status blocked" style="font-size:9px">⚠</span>`
+      : `<span class="wt-status waiting" style="font-size:9px">WATCH</span>`;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ticker-cell">${sym}</td>
+      <td>${tierBadge}</td>
+      <td class="thesis-cell thesis-set">${pos.thesis}${hasFlag ? `<br><span style="color:var(--amber);font-size:9px">⚠ ${pos.flag}</span>` : ''}</td>
+      <td style="font-size:10px">${priceStr}<br>${advStr}</td>
+      <td class="center">${statusHtml}</td>
+      <td class="right" style="font-size:10px;color:var(--text-dim)">${pos.removal}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateWatchtowerLive(d) {
+  const advData  = d.adv    || {};
+  const priceMap = d.prices || {};
+
+  // Render full Watchtower tables
+  renderWatchtowerTable(WT_CORE_ROSTER, 'wtCoreTable', priceMap, advData);
+  renderWatchtowerTable(WT_SAT_ROSTER,  'wtSatTable',  priceMap, advData);
+
+  // ADV panel (right side, all Watchtower tickers)
+  const advPanel = document.getElementById('wtAdvPanel');
+  if (advPanel) {
+    const allWt = [...WT_CORE_ROSTER, ...WT_SAT_ROSTER];
+    const rows = allWt
+      .filter(p => advData[p.ticker])
+      .map(p => {
+        const sym = p.ticker;
+        const a = advData[sym];
+        const gm = a.gate_met;
+        const color = advColor(gm, a.adv_ratio);
+        return `<div class="so-item" style="padding:4px 10px">
+          <div class="so-header">
+            <span class="so-id">${sym}</span>
+            <span style="font-size:9px;color:${color};font-weight:700">${fmtVol(a.today_vol)} / ${a.adv_ratio != null ? a.adv_ratio.toFixed(2) + '× ADV' : '—'}${gm ? ' ✓ GATE' : ''}</span>
+          </div>
+          <div class="so-desc" style="font-size:9px;color:var(--text-dim)">20d ADV: ${fmtVol(a.adv_20d)} · gate ≥1.5×</div>
+        </div>`;
+      });
+    advPanel.innerHTML = rows.length
+      ? rows.join('')
+      : '<div style="padding:8px 10px;font-size:10px;color:var(--text-dim)">No ADV data — refresh to load</div>';
+  }
+
+  // News pulse — all Watchtower tickers (Core + Sat)
   const news = d.news || {};
   const container = document.getElementById('wtNewsPulse');
   if (!container) return;
   const cutoff = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
-  const rows = ['PLTR', 'TSEM', 'NBIS', 'BWXT', 'KTOS']
+  const wtTickers = [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker);
+  const newsRows = wtTickers
     .filter(s => news[s])
     .map(sym => {
       const n = news[sym];
       const fresh = n.date >= cutoff;
+      // Support both new (news array per ticker in prices) and old (top-level news dict) format
+      const headline = n.title || n.headline || '';
+      const url = n.url || '#';
+      const linkAttr = url !== '#' ? `href="${url}" target="_blank" rel="noopener"` : '';
       return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:2px solid ${fresh ? 'var(--blue)' : 'var(--border)'};border-radius:2px;padding:6px 8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
           <span style="font-weight:700;color:var(--text-white);font-size:11px">${sym}</span>
-          <span style="font-size:9px;color:var(--text-dim)">${n.date} · ${n.publisher}</span>
+          <span style="font-size:9px;color:var(--text-dim)">${n.date} · ${n.publisher || ''}</span>
         </div>
-        <div style="font-size:10px;color:${fresh ? 'var(--text-base)' : 'var(--text-dim)'};line-height:1.4">${n.headline}</div>
+        <div style="font-size:10px;color:${fresh ? 'var(--text-base)' : 'var(--text-dim)'};line-height:1.4">
+          ${linkAttr ? `<a ${linkAttr} style="color:inherit;text-decoration:none">${headline}</a>` : headline}
+        </div>
       </div>`;
     });
-  container.innerHTML = rows.length
-    ? rows.join('')
+  container.innerHTML = newsRows.length
+    ? newsRows.join('')
     : '<div style="font-size:10px;color:var(--text-dim);padding:4px 0">No headlines — prices.json may be stale</div>';
 }
 
@@ -1547,8 +1819,1268 @@ function updateWtCountdown() {
   el.textContent = days;
 }
 
-// Auto-load on page open
+// ─── BACKTESTER (CMD-3) ───
+// Matrix scores (Mar 16, 2026 final — override from private.json if available)
+let btMatrixScores = {
+  FN: 70, BWXT: 70, APH: 65, VRT: 50, TSM: 50,
+  MU: 50, ANET: 50, VST: 40, ASTS: 40, ONDS: 40, COHR: 40
+};
+let btChartInstance = null;
+
+function renderBtAllocTable(capital, dcaAmount, mode) {
+  const tbody = document.getElementById('btAllocTable');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const tickers = Object.keys(btMatrixScores);
+  const totalScore = tickers.reduce((s, t) => s + btMatrixScores[t], 0);
+  const n = tickers.length;
+
+  tickers.sort((a, b) => btMatrixScores[b] - btMatrixScores[a]);
+  tickers.forEach(t => {
+    const score = btMatrixScores[t];
+    const matrixWgt = (score / totalScore * 100).toFixed(1);
+    const equalWgt  = (100 / n).toFixed(1);
+    const matrixAlloc = (dcaAmount * score / totalScore).toFixed(0);
+    const p = prices[t] || null;
+    const priceStr = p ? `$${p.toFixed(2)}` : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="ticker-cell">${t}</td>
+      <td class="right" style="color:var(--amber)">${score}</td>
+      <td class="right" style="color:var(--blue)">${matrixWgt}%</td>
+      <td class="right" style="color:var(--text-mid)">${equalWgt}%</td>
+      <td class="right" style="color:var(--text-mid)">${priceStr}</td>
+      <td class="right" style="color:var(--green)">฿${parseInt(matrixAlloc).toLocaleString()}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function runBacktest() {
+  const capital  = parseFloat(document.getElementById('btCapital').value)  || 100000;
+  const dcaAmt   = parseFloat(document.getElementById('btDca').value)       || 5000;
+  const periods  = parseInt(document.getElementById('btPeriods').value)     || 12;
+  const mode     = document.getElementById('btMode').value;
+
+  renderBtAllocTable(capital, dcaAmt, mode);
+
+  const tickers    = Object.keys(btMatrixScores);
+  const totalScore = tickers.reduce((s, t) => s + btMatrixScores[t], 0);
+  const n          = tickers.length;
+
+  // Build allocation weights per mode
+  const matrixWeights = {};
+  const equalWeights  = {};
+  tickers.forEach(t => {
+    matrixWeights[t] = btMatrixScores[t] / totalScore;
+    equalWeights[t]  = 1 / n;
+  });
+
+  // Simulate DCA: each period invest dcaAmt per allocation
+  // Prices assumed static (hypothetical advisory only)
+  // Value = capital + cumulative DCA × simulated growth factor
+  // We use a simple random-walk illustration for educational purposes
+  // (not a real backtest — prices held constant, just shows allocation divergence)
+  const labels = ['Start'];
+  const matrixValues = [capital];
+  const equalValues  = [capital];
+
+  // Track shares owned per ticker
+  const matrixShares = {};
+  const equalShares  = {};
+  tickers.forEach(t => { matrixShares[t] = 0; equalShares[t] = 0; });
+
+  for (let i = 1; i <= periods; i++) {
+    labels.push(`M${i}`);
+
+    // Buy shares based on allocation weights
+    tickers.forEach(t => {
+      const p = prices[t] || 100;  // fallback to $100 if no price
+      const matrixAlloc = dcaAmt * matrixWeights[t];
+      const equalAlloc  = dcaAmt * equalWeights[t];
+      matrixShares[t] += matrixAlloc / p;
+      equalShares[t]  += equalAlloc  / p;
+    });
+
+    // Portfolio value = capital + shares × current price
+    const matrixVal = capital + tickers.reduce((s, t) => s + matrixShares[t] * (prices[t] || 100), 0);
+    const equalVal  = capital + tickers.reduce((s, t) => s + equalShares[t]  * (prices[t] || 100), 0);
+    matrixValues.push(Math.round(matrixVal));
+    equalValues.push(Math.round(equalVal));
+  }
+
+  const totalInvested = capital + dcaAmt * periods;
+  const finalMatrix   = matrixValues[matrixValues.length - 1];
+  const finalEqual    = equalValues[equalValues.length - 1];
+
+  // Update summary
+  document.getElementById('btResStart').textContent     = '฿' + capital.toLocaleString();
+  document.getElementById('btResInvested').textContent  = '฿' + totalInvested.toLocaleString();
+  document.getElementById('btResFinalMatrix').textContent = '฿' + finalMatrix.toLocaleString();
+  document.getElementById('btResFinalEqual').textContent  = '฿' + finalEqual.toLocaleString();
+  const adv = finalMatrix - finalEqual;
+  const advEl = document.getElementById('btResAdvantage');
+  advEl.textContent = (adv >= 0 ? '+' : '') + '฿' + Math.abs(adv).toLocaleString();
+  advEl.style.color = adv >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('btResPeriods').textContent = periods + ' months';
+
+  // Chart
+  const ctx = document.getElementById('btChart');
+  if (!ctx || typeof Chart === 'undefined') return;
+
+  if (btChartInstance) btChartInstance.destroy();
+
+  const datasets = [];
+  if (mode === 'matrix' || mode === 'compare') {
+    datasets.push({
+      label: 'Matrix-weighted',
+      data: matrixValues,
+      borderColor: '#3a9fff', backgroundColor: 'rgba(58,159,255,0.1)',
+      borderWidth: 2, pointRadius: 2, tension: 0.3, fill: mode === 'matrix'
+    });
+  }
+  if (mode === 'equal' || mode === 'compare') {
+    datasets.push({
+      label: 'Equal-weight',
+      data: equalValues,
+      borderColor: '#607090', backgroundColor: 'rgba(96,112,144,0.08)',
+      borderWidth: 2, pointRadius: 2, tension: 0.3, borderDash: [4,4], fill: false
+    });
+  }
+
+  btChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: mode === 'compare', labels: { color: '#8098b8', font: { size: 11, family: 'JetBrains Mono' } } },
+        tooltip: { callbacks: { label: (c) => c.dataset.label + ': ฿' + c.raw.toLocaleString() } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(30,42,58,0.6)' }, ticks: { color: '#607090', font: { size: 10, family: 'JetBrains Mono' } } },
+        y: {
+          grid: { color: 'rgba(30,42,58,0.6)' },
+          ticks: { color: '#607090', font: { size: 10, family: 'JetBrains Mono' }, callback: v => '฿' + v.toLocaleString() }
+        }
+      }
+    }
+  });
+
+  document.getElementById('btChartNote').textContent =
+    `Advisory simulation — prices static at current snapshot · Not a real backtest · ${pricesStale ? 'cached prices' : 'live prices loaded'}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ─── WAR ROOM ENGINE — Agent-Based Pixel Art Visualization ───────────
+// ═══════════════════════════════════════════════════════════════════════
+const WarRoom = (function() {
+  'use strict';
+
+  // ── Constants ──
+  const TILE = 16;               // base tile size in pixels
+  const ROOM_COLS = 40;          // room width in tiles (40 × 16 = 640px base)
+  const ROOM_ROWS = 30;          // room height in tiles (30 × 16 = 480px base)
+  const ROOM_W = ROOM_COLS * TILE;
+  const ROOM_H = ROOM_ROWS * TILE;
+  const WALK_SPEED = 28;         // agent walk speed in pixels/sec
+  const HEADER_FOOTER_H = 130;   // approximate height of header + tab nav + footer in px
+
+  // ── Sector palettes ──
+  const PAL = {
+    semi:    { body: '#2070c0', head: '#4a9aee', hi: '#6ab8ff', dk: '#103860', skin: '#e8c8a0' },
+    defense: { body: '#2a7040', head: '#4aba6a', hi: '#6ada8a', dk: '#0a3018', skin: '#d8b890' },
+    space:   { body: '#5a2aaa', head: '#8a5aee', hi: '#aa7aff', dk: '#2a0a5a', skin: '#e0c0b0' },
+    network: { body: '#b06000', head: '#ee8a20', hi: '#ffaa40', dk: '#5a2800', skin: '#e8c8a0' },
+    energy:  { body: '#007898', head: '#00aacc', hi: '#20ccee', dk: '#003040', skin: '#d8c0a0' },
+    vault:   { body: '#4a5a6a', head: '#7a8a9a', hi: '#9aaaba', dk: '#1a2a3a', skin: '#d0b8a0' },
+    cmd:     { body: '#8a6a10', head: '#ccaa30', hi: '#eedd60', dk: '#3a2800', skin: '#f0d8b8' },
+    sentinel:{ body: '#505050', head: '#808080', hi: '#a0a0a0', dk: '#282828', skin: '#c0c0c0' },
+    doctrine:{ body: '#5a20a0', head: '#9060e0', hi: '#b080ff', dk: '#200860', skin: '#e0d0f8' },
+    gate:    { body: '#1a508a', head: '#2a80cc', hi: '#50a8f0', dk: '#081828', skin: '#c0d8f8' },
+    watcher: { body: '#1a7a3a', head: '#2aaa5a', hi: '#50cc80', dk: '#083818', skin: '#c0f0d0' },
+  };
+
+  // ── Ticker → sector ──
+  const SEC = {
+    VRT:'semi',MU:'semi',TSM:'semi',COHR:'semi',TSEM:'semi',FORM:'semi',ENTG:'semi',
+    ONTO:'semi',SKYT:'semi',QRVO:'semi',NBIS:'semi',MOD:'semi',
+    ASTS:'space',RKLB:'space',SATL:'space',PL:'space',
+    ANET:'network',FN:'network',LITE:'network',ONDS:'network',APH:'network',
+    VST:'energy', BWXT:'defense',KTOS:'defense',PLTR:'defense',
+  };
+
+  // ── Floor tile colors ──
+  const FLOOR_A = '#0c1018';
+  const FLOOR_B = '#0e1220';
+  const WALL_COLOR = '#161e2c';
+  const WALL_TOP = '#1e2a3c';
+  const ZONE_ARSENAL = 'rgba(58,159,255,0.04)';
+  const ZONE_WT = 'rgba(0,200,224,0.03)';
+  const ZONE_VAULT = 'rgba(128,128,128,0.03)';
+  const ZONE_COUNCIL = 'rgba(80,40,120,0.05)';
+  const DESK_COLOR = '#1a2438';
+  const DESK_TOP = '#243050';
+
+  // ── Zone positions (tile coordinates) ──
+  // Commander: row 2, col 18-21
+  // Arsenal Core: rows 4-7, cols 3-36 (8 desks in 2 rows)
+  // Arsenal Sat: row 8, cols 3-12 (2 desks)
+  // Watchtower Core: rows 11-16, cols 3-36 (12 agents in 3 rows)
+  // Watchtower Sat: row 17, cols 3-14 (3 agents)
+  // Vault: rows 20-22, cols 3-14
+  // VIX Sentinel: row 2, col 36
+
+  function arsenalPos(idx) {
+    const row = Math.floor(idx / 5);
+    const col = idx % 5;
+    return { x: 4 + col * 7, y: 5 + row * 3 };
+  }
+  function wtCorePos(idx) {
+    const row = Math.floor(idx / 4);
+    const col = idx % 4;
+    return { x: 4 + col * 9, y: 13 + row * 3 };
+  }
+  function wtSatPos(idx) {
+    return { x: 4 + idx * 9, y: 22 };
+  }
+  function councilPos(idx) {
+    return [
+      { x: 6,  y: 27 },  // DOCTRINE (left)
+      { x: 20, y: 27 },  // GATE (center)
+      { x: 34, y: 27 },  // WATCHER (right)
+    ][idx];
+  }
+
+  // ── Agent class ──
+  class Agent {
+    constructor(ticker, zone, tileX, tileY) {
+      this.ticker = ticker;
+      this.zone = zone;
+      this.sector = zone === 'sentinel' ? 'sentinel' : zone === 'commander' ? 'cmd' : (SEC[ticker] || 'semi');
+      this.pal = PAL[this.sector];
+      // pixel position
+      this.x = tileX * TILE + TILE * 2;
+      this.y = tileY * TILE + TILE;
+      this.homeX = this.x;
+      this.homeY = this.y;
+      this.targetX = this.x;
+      this.targetY = this.y;
+      // desk position (behind agent)
+      this.deskX = tileX * TILE;
+      this.deskY = tileY * TILE;
+      // state
+      this.state = zone === 'arsenal' ? 'deployed' : zone === 'watchtower' ? 'watching' : 'idle';
+      this.flags = [];
+      this.score = null;
+      this.price = null;
+      this.change = null;
+      this.changePct = null;
+      this.adv = null;
+      this.tier = null;
+      this.thesis = null;
+      this.removal = null;
+      // animation
+      this.t = Math.random() * 10;
+      this.bobAmp = zone === 'watchtower' ? 0.5 : zone === 'council' ? 0.4 : 1.0;
+      this.bobSpd = 1.2 + Math.random() * 0.6;
+      this.frame = 0;
+      this.facing = Math.random() > 0.5 ? -1 : 1;
+      this.walkTimer = 2 + Math.random() * 6;
+      // speech
+      this.speech = null;
+      this.speechLife = 0;
+      this.speechSeverity = null;
+      // triad council
+      this.findings = [];
+      this.findingIdx = 0;
+      this.findingTimer = 3 + Math.random() * 3;
+      this.role = null;
+    }
+
+    get bob() { return Math.sin(this.t * this.bobSpd) * this.bobAmp; }
+
+    update(dt) {
+      this.t += dt;
+      this.frame = Math.floor(this.t * 3) % 2;
+
+      // walking
+      if (this.state === 'walking') {
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d > 1.5) {
+          const spd = WALK_SPEED;
+          this.x += (dx / d) * spd * dt;
+          this.y += (dy / d) * spd * dt;
+          if (Math.abs(dx) > 1) this.facing = dx > 0 ? 1 : -1;
+        } else {
+          this.x = this.targetX;
+          this.y = this.targetY;
+          this.state = this.zone === 'arsenal' ? 'deployed' : 'watching';
+        }
+      }
+
+      // watchtower patrol wander
+      if (this.state === 'watching' && this.zone === 'watchtower') {
+        this.walkTimer -= dt;
+        if (this.walkTimer <= 0) {
+          this.walkTimer = 4 + Math.random() * 8;
+          this.targetX = this.homeX + (Math.random() - 0.5) * TILE * 2.5;
+          this.targetY = this.homeY + (Math.random() - 0.5) * TILE * 1.2;
+          this.state = 'walking';
+        }
+      }
+
+      // council finding rotation
+      if (this.zone === 'council' && this.findings.length > 0) {
+        this.findingTimer -= dt;
+        if (this.findingTimer <= 0) {
+          this.findingIdx = (this.findingIdx + 1) % this.findings.length;
+          this.speech = this.findings[this.findingIdx].text;
+          this.speechSeverity = this.findings[this.findingIdx].severity;
+          this.speechLife = 99999;
+          this.findingTimer = 6;
+        }
+      }
+
+      // speech
+      if (this.speechLife > 0) {
+        this.speechLife -= dt;
+        if (this.speechLife <= 0) this.speech = null;
+      }
+    }
+
+    hitTest(px, py) {
+      const hw = 14, hh = 18;
+      return px >= this.x - hw && px <= this.x + hw && py >= this.y - hh && py <= this.y + 4;
+    }
+  }
+
+  // ── State ──
+  let canvas, ctx, agents = [], running = false, lastTime = 0;
+  let scale = 2;
+  let regime = 'GREEN';
+  let hoveredAgent = null;
+  let vixVal = 24.54, thbVal = 32.72;
+  let consensusTickers = [];
+
+  // ── Initialize ──
+  function init() {
+    canvas = document.getElementById('warRoomCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Mouse events
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('click', onClick);
+    canvas.addEventListener('mouseleave', () => { hoveredAgent = null; hideTooltip(); });
+
+    // Create agents
+    createAgents();
+    syncPrices();
+  }
+
+  function resize() {
+    const wrap = document.getElementById('warRoomWrap');
+    if (!wrap) return;
+    const maxW = wrap.clientWidth;
+    const maxH = wrap.clientHeight || (window.innerHeight - HEADER_FOOTER_H);
+    scale = Math.max(1, Math.min(Math.floor(maxW / ROOM_W), Math.floor(maxH / ROOM_H), 3));
+    canvas.width = ROOM_W * scale;
+    canvas.height = ROOM_H * scale;
+    canvas.style.width = (ROOM_W * scale) + 'px';
+    canvas.style.height = (ROOM_H * scale) + 'px';
+  }
+
+  function createAgents() {
+    agents = [];
+    // Arsenal Core (8)
+    ARSENAL_CORE.forEach((p, i) => {
+      const pos = arsenalPos(i);
+      const a = new Agent(p.ticker, 'arsenal', pos.x, pos.y);
+      a.cost = p.cost;
+      a.thesis = p.thesis;
+      a.price = prices[p.ticker] || null;
+      if (p.flag && p.flag !== '—') a.flags.push('FLAG ' + p.flag);
+      if (p.note) {
+        if (p.note.includes('CHINA')) a.flags.push('⚠ CHINA WATCH');
+        if (p.note.includes('ISRAEL')) a.flags.push('⚠ ISRAEL WATCH');
+        if (p.note.includes('WINNER') || p.note.includes('🥇')) { a.score = 70; a.flags.push('🥇 WINNER'); }
+        if (p.note.includes('Yellow')) a.flags.push('⚡ YELLOW WATCH');
+        if (p.note.includes('Victory')) a.flags.push('🎯 VICTORY TARGET');
+      }
+      agents.push(a);
+    });
+    // Arsenal Satellite (2)
+    ARSENAL_SAT.forEach((p, i) => {
+      const pos = arsenalPos(8 + i);
+      const a = new Agent(p.ticker, 'arsenal', pos.x, pos.y);
+      a.cost = p.cost;
+      a.thesis = p.thesis;
+      a.price = prices[p.ticker] || null;
+      if (!p.thesis) a.flags.push('⚠ THESIS NOT SET');
+      agents.push(a);
+    });
+    // Watchtower Core (12)
+    WT_CORE_ROSTER.forEach((p, i) => {
+      const pos = wtCorePos(i);
+      const a = new Agent(p.ticker, 'watchtower', pos.x, pos.y);
+      a.tier = p.tier;
+      a.thesis = p.thesis;
+      a.removal = p.removal;
+      a.price = prices[p.ticker] || null;
+      if (p.flag) a.flags.push('⚠ ' + p.flag);
+      agents.push(a);
+    });
+    // Watchtower Satellite (3)
+    WT_SAT_ROSTER.forEach((p, i) => {
+      const pos = wtSatPos(i);
+      const a = new Agent(p.ticker, 'watchtower', pos.x, pos.y);
+      a.tier = p.tier;
+      a.thesis = p.thesis;
+      a.removal = p.removal;
+      a.price = prices[p.ticker] || null;
+      agents.push(a);
+    });
+    // VIX Sentinel
+    const sentinel = new Agent('VIX', 'sentinel', 36, 2);
+    sentinel.price = vixVal;
+    agents.push(sentinel);
+    // Commander
+    const cmd = new Agent('CMD', 'commander', 18, 2);
+    cmd.speech = 'COMMANDER-IN-LOOP';
+    cmd.speechLife = 99999;
+    agents.push(cmd);
+    // Triad Council (3 members)
+    const triadDefs = [
+      { id: 'DOCTRINE', role: 'Rules Auditor',         pal: 'doctrine' },
+      { id: 'GATE',     role: 'Deployment Gatekeeper', pal: 'gate'     },
+      { id: 'WATCHER',  role: 'Portfolio Health',       pal: 'watcher'  },
+    ];
+    triadDefs.forEach((def, i) => {
+      const pos = councilPos(i);
+      const a = new Agent(def.id, 'council', pos.x, pos.y);
+      a.pal = PAL[def.pal];
+      a.role = def.role;
+      a.speech = def.id;
+      a.speechSeverity = 'info';
+      a.speechLife = 99999;
+      agents.push(a);
+    });
+
+    // Set initial speeches based on flags
+    agents.forEach(a => {
+      if (a.zone !== 'council' && a.flags.length > 0 && !a.speech) {
+        a.speech = a.flags[0];
+        a.speechLife = 99999;
+      }
+    });
+
+    // Run initial audit with cached prices (no live data yet)
+    runTriadAudits(null);
+  }
+
+  function syncPrices() {
+    agents.forEach(a => {
+      if (a.zone === 'sentinel') {
+        a.price = prices['^VIX'] || vixVal;
+        regime = getRegime(a.price);
+        updateSentinelColor(a);
+        return;
+      }
+      if (a.zone === 'commander') return;
+      if (a.zone === 'council') return;
+      const p = prices[a.ticker];
+      if (p) a.price = p;
+    });
+    // Update regime overlay
+    const overlay = document.getElementById('wrRegimeOverlay');
+    if (overlay) {
+      overlay.className = 'warroom-regime-overlay regime-' + regime.toLowerCase();
+    }
+  }
+
+  function updateSentinelColor(a) {
+    const r = regime;
+    if (r === 'GREEN')  a.pal = { body: '#00a060', head: '#00d084', hi: '#40f0a0', dk: '#004020', skin: '#c0ffc0' };
+    if (r === 'YELLOW') a.pal = { body: '#a08000', head: '#ccaa00', hi: '#eedd40', dk: '#503800', skin: '#ffe060' };
+    if (r === 'ORANGE') a.pal = { body: '#c06000', head: '#ff8c00', hi: '#ffaa40', dk: '#602800', skin: '#ffa040' };
+    if (r === 'RED')    a.pal = { body: '#c02020', head: '#ff4055', hi: '#ff7080', dk: '#600010', skin: '#ff8080' };
+  }
+
+  // Called after fetchPrices completes
+  function updateFromPriceData(d) {
+    if (!d) return;
+    vixVal = d.gate?.vix ?? vixVal;
+    thbVal = d.gate?.thb ?? thbVal;
+    regime = getRegime(vixVal);
+    agents.forEach(a => {
+      if (a.zone === 'sentinel') {
+        a.price = vixVal;
+        updateSentinelColor(a);
+        a.speech = regime;
+        a.speechLife = 99999;
+        return;
+      }
+      if (a.zone === 'commander') return;
+      if (a.zone === 'council') return;
+      const entry = d.prices?.[a.ticker];
+      if (entry) {
+        a.price = entry.price;
+        a.changePct = entry.change;
+        a.adv = entry.adv;
+      }
+    });
+    // Freeze all agents when VIX >= 25 (ORANGE/RED)
+    if (regime === 'ORANGE' || regime === 'RED') {
+      agents.forEach(a => {
+        if (a.zone === 'arsenal' || a.zone === 'watchtower') {
+          a.state = 'frozen';
+          a.speech = '❄ ' + regime + ' FREEZE';
+          a.speechLife = 99999;
+        }
+      });
+    } else {
+      agents.forEach(a => {
+        if (a.state === 'frozen') {
+          a.state = a.zone === 'arsenal' ? 'deployed' : 'watching';
+          // Restore original speech
+          a.speech = a.flags.length > 0 ? a.flags[0] : null;
+          a.speechLife = a.speech ? 99999 : 0;
+        }
+      });
+    }
+    const overlay = document.getElementById('wrRegimeOverlay');
+    if (overlay) overlay.className = 'warroom-regime-overlay regime-' + regime.toLowerCase();
+    runTriadAudits(d);
+  }
+
+  // ── Triad Council Audit Engine ──
+  function _daysSince(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  }
+  function _daysUntil(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    return Math.ceil((d.getTime() - Date.now()) / 86400000);
+  }
+  const SEV_ORDER = { critical: 0, warning: 1, info: 2, ok: 3 };
+  function _sortFindings(arr) {
+    return arr.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
+  }
+
+  function doctrineAudit(d) {
+    const findings = [];
+    // Thesis age checks for all Arsenal positions
+    [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+      if (!p.thesis) {
+        findings.push({ text: p.ticker + ': NO THESIS', severity: 'critical', ticker: p.ticker });
+      } else {
+        const age = _daysSince(p.thesis);
+        if (age !== null && age > 60) {
+          findings.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' /COUNCIL', severity: 'critical', ticker: p.ticker });
+        } else if (age !== null && age > 30) {
+          findings.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' NEGLECT', severity: 'warning', ticker: p.ticker });
+        }
+      }
+    });
+    // China Watch (DC-46)
+    findings.push({ text: 'APH: ⚠ CHINA 15.6% (DC-46)', severity: 'warning', ticker: 'APH' });
+    // Geopolitical Watch (DC-47)
+    findings.push({ text: 'TSEM: ⚠ ISRAEL WATCH', severity: 'warning', ticker: 'TSEM' });
+    findings.push({ text: 'TSM: ⚠ ISRAEL/LNG CLIFF', severity: 'warning', ticker: 'TSM' });
+    // Blackout windows (earnings ±30d / +7d)
+    const blackouts = [
+      { ticker: 'BWXT', earnings: 'Apr 14, 2026' },
+      { ticker: 'KTOS', earnings: 'Apr 17, 2026' },
+      { ticker: 'ASTS', earnings: 'Apr 11, 2026' },
+    ];
+    blackouts.forEach(({ ticker, earnings }) => {
+      const eDate  = new Date(earnings);
+      const bStart = new Date(eDate.getTime() - 30 * 86400000);
+      const bEnd   = new Date(eDate.getTime() +  7 * 86400000);
+      const now    = Date.now();
+      if (now >= bStart.getTime() && now <= bEnd.getTime()) {
+        const dLeft = Math.ceil((bEnd.getTime() - now) / 86400000);
+        findings.push({ text: ticker + ': ❄ BLACKOUT (' + dLeft + 'd left)', severity: 'critical', ticker });
+      } else if (now < bStart.getTime()) {
+        const dToStart = Math.ceil((bStart.getTime() - now) / 86400000);
+        if (dToStart <= 14) {
+          findings.push({ text: ticker + ': BLACKOUT in ' + dToStart + 'd', severity: 'warning', ticker });
+        }
+      }
+    });
+    _sortFindings(findings);
+    if (findings.length === 0) findings.push({ text: '✓ ALL CLEAR', severity: 'ok', ticker: null });
+    return findings;
+  }
+
+  function gateAudit(d) {
+    const findings = [];
+    const vix    = d?.gate?.vix ?? d?.vix ?? vixVal;
+    const spyAbv = d?.spy_above_200dma ?? null;
+    const reg    = getRegime(vix);
+    // VIX regime
+    if (reg === 'RED')      findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → HARD FREEZE', severity: 'critical', ticker: null });
+    else if (reg === 'ORANGE') findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → FREEZE',   severity: 'critical', ticker: null });
+    else if (reg === 'YELLOW') findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → YELLOW ⚠', severity: 'warning',  ticker: null });
+    else                       findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → GREEN ✓',  severity: 'ok',       ticker: null });
+    // SPY vs 200DMA
+    if (spyAbv === false) findings.push({ text: '⚠ SPY below 200DMA', severity: 'warning', ticker: null });
+    else if (spyAbv === true) findings.push({ text: 'SPY above 200DMA ✓', severity: 'ok', ticker: null });
+    // ADV gate (DC-16) for key deployment candidates
+    const advCheck = ['FN', 'BWXT', 'ANET', 'MU', 'VRT', 'APH'];
+    if (d?.prices) {
+      advCheck.forEach(ticker => {
+        const entry = d.prices[ticker];
+        if (!entry || !entry.adv || !entry.volume) return;
+        const ratio = entry.volume / entry.adv;
+        if (ratio >= 1.5) {
+          findings.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x ✓', severity: 'ok', ticker });
+        } else {
+          findings.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x (< 1.5x)', severity: 'info', ticker });
+        }
+      });
+    }
+    // Heartbeat protocol when VIX >= 25
+    if (vix >= 25) findings.push({ text: 'HEARTBEAT: daily session req', severity: 'warning', ticker: null });
+    _sortFindings(findings);
+    if (findings.length === 0) findings.push({ text: '✓ ALL GATES CLEAR', severity: 'ok', ticker: null });
+    return findings;
+  }
+
+  function watchtowerAudit(d) {
+    const findings = [];
+    // DC-40 capacity status
+    const coreOk = WT_CORE_ROSTER.length === 12;
+    const satOk  = WT_SAT_ROSTER.length === 3;
+    findings.push({
+      text: 'WT: ' + WT_CORE_ROSTER.length + '/12 Core · ' + WT_SAT_ROSTER.length + '/3 Sat',
+      severity: coreOk && satOk ? 'ok' : 'warning',
+      ticker: null,
+    });
+    // Removal date proximity (<= 60 days)
+    [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].forEach(p => {
+      if (!p.removal) return;
+      const remStr = p.removal.includes(',') ? p.removal : p.removal + ', 2026';
+      const days = _daysUntil(remStr);
+      if (days !== null && days >= 0 && days <= 30) {
+        findings.push({ text: p.ticker + ': REMOVAL ' + days + 'd ⚠', severity: 'critical', ticker: p.ticker });
+      } else if (days !== null && days > 30 && days <= 60) {
+        findings.push({ text: p.ticker + ': removal ' + days + 'd', severity: 'warning', ticker: p.ticker });
+      }
+    });
+    // Tripwire status (static from doctrine_core_tripwires v1.0.0)
+    const tripwires = [
+      { ticker: 'APH',  code: 'TW-5', note: 'China 15.6% watch'   },
+      { ticker: 'ONDS', code: 'TW-1', note: 'Mistral merger watch' },
+      { ticker: 'TSEM', code: 'TW-2', note: 'Israel conflict'      },
+      { ticker: 'TSM',  code: 'TW-2', note: 'LNG cliff May'        },
+    ];
+    tripwires.forEach(({ ticker, code, note }) => {
+      findings.push({ text: ticker + ' ' + code + ': ' + note, severity: 'warning', ticker });
+    });
+    // F3 live validation: price vs SMA50/SMA200
+    if (d?.prices) {
+      const f3Check = [...ARSENAL_CORE, ...ARSENAL_SAT, ...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker);
+      f3Check.forEach(ticker => {
+        const entry = d.prices[ticker];
+        if (!entry || entry.sma50 == null || entry.sma200 == null || entry.price == null) return;
+        const aboveSma50  = entry.price > entry.sma50;
+        const aboveSma200 = entry.price > entry.sma200;
+        if (!aboveSma200) {
+          findings.push({ text: ticker + ': F3=0 below SMA200', severity: 'warning', ticker });
+        } else if (!aboveSma50) {
+          findings.push({ text: ticker + ': F3↓ below SMA50', severity: 'info', ticker });
+        }
+      });
+    }
+    _sortFindings(findings);
+    if (findings.length === 0) findings.push({ text: '✓ WT ALL CLEAR', severity: 'ok', ticker: null });
+    return findings;
+  }
+
+  function _getConsensusTickers(f1, f2, f3) {
+    const counts = {};
+    [f1, f2, f3].forEach(findings => {
+      const seen = new Set();
+      findings.forEach(f => {
+        if (f.ticker && !seen.has(f.ticker)) {
+          seen.add(f.ticker);
+          counts[f.ticker] = (counts[f.ticker] || 0) + 1;
+        }
+      });
+    });
+    return Object.keys(counts).filter(t => counts[t] >= 2);
+  }
+
+  function runTriadAudits(d) {
+    const triadAgents = agents.filter(a => a.zone === 'council');
+    if (triadAgents.length < 3) return;
+
+    const docFindings  = doctrineAudit(d);
+    const gateFindings = gateAudit(d);
+    const wtFindings   = watchtowerAudit(d);
+    consensusTickers   = _getConsensusTickers(docFindings, gateFindings, wtFindings);
+
+    // Promote consensus tickers to front of each member's queue
+    function withConsensus(findings) {
+      if (consensusTickers.length === 0) return findings;
+      const promoted = findings
+        .filter(f => f.ticker && consensusTickers.includes(f.ticker))
+        .map(f => ({ ...f, text: '⚡ ' + f.text }));
+      const rest = findings.filter(f => !f.ticker || !consensusTickers.includes(f.ticker));
+      return [...promoted, ...rest];
+    }
+
+    const allFindings = [
+      withConsensus(docFindings),
+      withConsensus(gateFindings),
+      withConsensus(wtFindings),
+    ];
+
+    triadAgents.forEach((a, i) => {
+      a.findings = allFindings[i];
+      a.findingIdx = 0;
+      a.findingTimer = 6 + i * 2; // stagger start so they don't speak simultaneously
+      if (a.findings.length > 0) {
+        a.speech = a.findings[0].text;
+        a.speechSeverity = a.findings[0].severity;
+        a.speechLife = 99999;
+      }
+    });
+  }
+
+  // ── Drawing ──
+  function drawFloor() {
+    // Checkerboard floor
+    for (let r = 0; r < ROOM_ROWS; r++) {
+      for (let c = 0; c < ROOM_COLS; c++) {
+        ctx.fillStyle = (r + c) % 2 === 0 ? FLOOR_A : FLOOR_B;
+        ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
+      }
+    }
+    // Walls (top 2 rows, bottom row)
+    for (let c = 0; c < ROOM_COLS; c++) {
+      ctx.fillStyle = WALL_COLOR;
+      ctx.fillRect(c * TILE, 0, TILE, TILE * 1.5);
+      ctx.fillStyle = WALL_TOP;
+      ctx.fillRect(c * TILE, 0, TILE, 2);
+      ctx.fillStyle = WALL_COLOR;
+      ctx.fillRect(c * TILE, (ROOM_ROWS - 1) * TILE, TILE, TILE);
+    }
+    // Side walls
+    for (let r = 0; r < ROOM_ROWS; r++) {
+      ctx.fillStyle = WALL_COLOR;
+      ctx.fillRect(0, r * TILE, TILE, TILE);
+      ctx.fillRect((ROOM_COLS - 1) * TILE, r * TILE, TILE, TILE);
+    }
+  }
+
+  function drawZones() {
+    // Arsenal zone highlight
+    ctx.fillStyle = ZONE_ARSENAL;
+    ctx.fillRect(2 * TILE, 3.5 * TILE, 36 * TILE, 7.5 * TILE);
+    // Watchtower zone highlight
+    ctx.fillStyle = ZONE_WT;
+    ctx.fillRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
+    // Vault zone highlight
+    ctx.fillStyle = ZONE_VAULT;
+    ctx.fillRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
+    // Triad Council zone highlight
+    ctx.fillStyle = ZONE_COUNCIL;
+    ctx.fillRect(2 * TILE, 24.5 * TILE, 36 * TILE, 4 * TILE);
+
+    // Zone labels
+    ctx.save();
+    ctx.font = '5px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#1a3050';
+    ctx.fillText('ARSENAL', 2.5 * TILE, 4.2 * TILE);
+    ctx.fillStyle = '#0a3040';
+    ctx.fillText('WATCHTOWER', 2.5 * TILE, 12.2 * TILE);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillText('VAULT / RESERVE', 2.5 * TILE, 20.6 * TILE);
+    ctx.fillStyle = '#1a1030';
+    ctx.fillText('TRIAD COUNCIL', 2.5 * TILE, 25.1 * TILE);
+    ctx.restore();
+  }
+
+  function drawCouncilTable() {
+    const cx = Math.round(ROOM_W / 2);
+    const cy = Math.round(25.8 * TILE);
+    // Table shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 3, TILE * 5, TILE * 1.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Table surface
+    ctx.fillStyle = '#12162a';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, TILE * 5, TILE * 1.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#252848';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Table center label
+    ctx.save();
+    ctx.font = 'bold 5px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#20224a';
+    ctx.fillText('TRIAD', cx, cy + 2);
+    ctx.restore();
+    // Consensus glow when 2-of-3 agree on same ticker
+    if (consensusTickers.length > 0) {
+      ctx.save();
+      ctx.font = 'bold 4px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#cc8800';
+      ctx.fillText('⚡ ' + consensusTickers.slice(0, 3).join(' · '), cx, cy - 8);
+      ctx.restore();
+    }
+  }
+
+  function drawDesk(x, y) {
+    // Small desk behind agent
+    ctx.fillStyle = DESK_COLOR;
+    ctx.fillRect(x, y - 2, TILE * 3, TILE + 2);
+    ctx.fillStyle = DESK_TOP;
+    ctx.fillRect(x, y - 2, TILE * 3, 2);
+    // Monitor on desk
+    ctx.fillStyle = '#0a1820';
+    ctx.fillRect(x + 10, y - 6, 12, 6);
+    ctx.fillStyle = '#1a3050';
+    ctx.fillRect(x + 11, y - 5, 10, 4);
+    // Tiny screen glow
+    ctx.fillStyle = 'rgba(58,159,255,0.15)';
+    ctx.fillRect(x + 11, y - 5, 10, 4);
+  }
+
+  function drawAgent(a) {
+    const x = Math.round(a.x);
+    const y = Math.round(a.y + a.bob);
+    const p = a.pal;
+    const frozen = a.state === 'frozen';
+    const isTyping = a.state === 'deployed' && a.frame === 0;
+
+    // Desk for arsenal agents
+    if (a.zone === 'arsenal') {
+      drawDesk(a.deskX, a.deskY);
+    }
+    // Council agents: small seat indicator
+    if (a.zone === 'council') {
+      ctx.fillStyle = '#0d1020';
+      ctx.fillRect(Math.round(a.x) - 4, Math.round(a.y + a.bob) + 1, 8, 4);
+    }
+
+    ctx.save();
+    if (frozen) ctx.globalAlpha = 0.5;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 2, 5, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const f = a.facing;
+
+    // Legs
+    const legSpread = a.state === 'walking' ? (a.frame === 0 ? 2 : -1) : 0;
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(x - 3, y - 3, 2, 4 + legSpread);
+    ctx.fillRect(x + 1, y - 3, 2, 4 - legSpread);
+
+    // Body
+    ctx.fillStyle = p.body;
+    ctx.fillRect(x - 4, y - 10, 8, 8);
+    // Body highlight
+    ctx.fillStyle = p.hi;
+    ctx.fillRect(x - 4 + (f > 0 ? 0 : 6), y - 10, 2, 8);
+
+    // Arms
+    if (isTyping) {
+      // Typing pose - arms forward
+      ctx.fillStyle = p.body;
+      ctx.fillRect(x - 6, y - 8, 2, 4);
+      ctx.fillRect(x + 4, y - 8, 2, 4);
+      ctx.fillStyle = p.skin;
+      ctx.fillRect(x - 6, y - 5, 2, 2);
+      ctx.fillRect(x + 4, y - 5, 2, 2);
+    } else {
+      // Idle arms
+      ctx.fillStyle = p.body;
+      ctx.fillRect(x - 6, y - 9, 2, 5);
+      ctx.fillRect(x + 4, y - 9, 2, 5);
+      ctx.fillStyle = p.skin;
+      ctx.fillRect(x - 6, y - 4, 2, 2);
+      ctx.fillRect(x + 4, y - 4, 2, 2);
+    }
+
+    // Head
+    ctx.fillStyle = p.skin;
+    ctx.fillRect(x - 3, y - 16, 6, 6);
+    // Hair
+    ctx.fillStyle = p.head;
+    ctx.fillRect(x - 3, y - 16, 6, 2);
+    ctx.fillRect(x - 3 + (f > 0 ? 0 : 4), y - 16, 2, 4);
+    // Eyes
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(x - 1 + (f > 0 ? 0 : 2), y - 13, 1, 1);
+    ctx.fillRect(x + 1 + (f > 0 ? 0 : -1), y - 13, 1, 1);
+
+    ctx.restore();
+
+    // Frozen overlay
+    if (frozen) {
+      ctx.fillStyle = 'rgba(100,180,255,0.2)';
+      ctx.fillRect(x - 5, y - 17, 10, 20);
+      // Ice crystals
+      ctx.fillStyle = 'rgba(150,220,255,0.6)';
+      ctx.fillRect(x - 4, y - 15, 1, 1);
+      ctx.fillRect(x + 3, y - 11, 1, 1);
+      ctx.fillRect(x - 2, y - 5, 1, 1);
+    }
+
+    // Hovered highlight
+    if (a === hoveredAgent) {
+      ctx.strokeStyle = '#3a9fff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - 7, y - 18, 14, 22);
+    }
+
+    // Ticker label below
+    ctx.save();
+    ctx.font = 'bold 4px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = a === hoveredAgent ? '#ffffff' : (frozen ? '#6090c0' : '#607898');
+    ctx.fillText(a.ticker, x, y + 8);
+    ctx.restore();
+
+    // Score badge (if applicable)
+    if (a.score) {
+      ctx.save();
+      ctx.font = 'bold 3px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffb800';
+      ctx.fillText(a.score + 'pts', x, y + 12);
+      ctx.restore();
+    }
+  }
+
+  function drawSpeechBubble(a) {
+    if (!a.speech) return;
+    const x = Math.round(a.x);
+    const y = Math.round(a.y + a.bob);
+
+    ctx.save();
+    ctx.font = '3.5px monospace';
+    const text = a.speech;
+    const tw = ctx.measureText(text).width;
+    const bw = tw + 6;
+    const bh = 7;
+    const bx = x - bw / 2;
+    const by = y - 24 - bh;
+
+    // Bubble background
+    ctx.fillStyle = '#0d1420';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = '#2a3a50';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(bx, by, bw, bh);
+    // Pointer
+    ctx.fillStyle = '#0d1420';
+    ctx.fillRect(x - 1, by + bh, 2, 2);
+
+    // Text
+    let speechColor;
+    if (a.speechSeverity) {
+      const sevCols = { critical: '#ff4055', warning: '#ffb800', info: '#00c8e0', ok: '#00d084' };
+      speechColor = sevCols[a.speechSeverity] || '#8098b8';
+    } else {
+      const isWarning = text.includes('⚠') || text.includes('❄') || text.includes('FREEZE');
+      const isWinner  = text.includes('🥇') || text.includes('WINNER');
+      const isVictory = text.includes('🎯');
+      speechColor = isWarning ? '#ffb800' : isWinner ? '#00d084' : isVictory ? '#3a9fff' : '#8098b8';
+    }
+    // Council bubbles get a severity-tinted border
+    if (a.zone === 'council' && a.speechSeverity) {
+      const sevBorders = { critical: '#cc1028', warning: '#aa6600', info: '#006688', ok: '#006030' };
+      ctx.strokeStyle = sevBorders[a.speechSeverity] || '#2a3a50';
+      ctx.strokeRect(bx, by, bw, bh);
+    }
+    ctx.fillStyle = speechColor;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, x, by + 5);
+    ctx.restore();
+  }
+
+  function drawStatusBar() {
+    // Bottom status bar
+    const barY = (ROOM_ROWS - 1) * TILE;
+    ctx.fillStyle = '#0a0e14';
+    ctx.fillRect(TILE, barY, (ROOM_COLS - 2) * TILE, TILE);
+
+    ctx.save();
+    ctx.font = '4px monospace';
+    ctx.textAlign = 'left';
+
+    // VIX
+    const vixColor = regime === 'GREEN' ? '#00d084' : regime === 'YELLOW' ? '#ffb800' : regime === 'ORANGE' ? '#ff8c00' : '#ff4055';
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('VIX', 2 * TILE, barY + 6);
+    ctx.fillStyle = vixColor;
+    ctx.fillText(vixVal.toFixed(2), 2 * TILE + 16, barY + 6);
+
+    // Regime
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('REGIME', 2 * TILE + 50, barY + 6);
+    ctx.fillStyle = vixColor;
+    ctx.fillText(regime, 2 * TILE + 78, barY + 6);
+
+    // THB
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('THB', 2 * TILE + 110, barY + 6);
+    ctx.fillStyle = '#00d084';
+    ctx.fillText(thbVal.toFixed(2), 2 * TILE + 126, barY + 6);
+
+    // Agent count
+    const arsenalCount = agents.filter(a => a.zone === 'arsenal').length;
+    const wtCount = agents.filter(a => a.zone === 'watchtower').length;
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText('ARSENAL ' + arsenalCount + ' · WT ' + wtCount, 2 * TILE + 170, barY + 6);
+
+    // Time
+    const now = new Date();
+    const bkk = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    const timeStr = String(bkk.getHours()).padStart(2, '0') + ':' + String(bkk.getMinutes()).padStart(2, '0');
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#5a7898';
+    ctx.fillText(timeStr + ' BKK', (ROOM_COLS - 2) * TILE, barY + 6);
+
+    // Frozen indicator
+    if (regime === 'ORANGE' || regime === 'RED') {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = regime === 'RED' ? '#ff4055' : '#ff8c00';
+      ctx.fillText('❄ DEPLOYMENT FREEZE ❄', ROOM_COLS * TILE / 2, barY + 12);
+    }
+    ctx.restore();
+  }
+
+  function drawRoomTitle() {
+    ctx.save();
+    ctx.font = 'bold 6px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#2a3a50';
+    ctx.fillText('SNIPER WAR ROOM', ROOM_W / 2, 10);
+    ctx.font = '4px monospace';
+    ctx.fillStyle = '#1a2a40';
+    ctx.fillText('AGENT-BASED PORTFOLIO OS · INFORMATIONAL ONLY', ROOM_W / 2, 16);
+    ctx.restore();
+  }
+
+  // ── Render frame ──
+  function render() {
+    ctx.save();
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.clearRect(0, 0, ROOM_W, ROOM_H);
+
+    drawFloor();
+    drawZones();
+    drawRoomTitle();
+    drawCouncilTable();
+
+    // Sort agents by Y for depth (paint back-to-front)
+    const sorted = [...agents].sort((a, b) => a.y - b.y);
+
+    // Draw agents
+    sorted.forEach(a => drawAgent(a));
+    // Draw speech bubbles on top
+    sorted.forEach(a => drawSpeechBubble(a));
+
+    drawStatusBar();
+    ctx.restore();
+  }
+
+  // ── Game loop ──
+  function loop(timestamp) {
+    if (!running) return;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    lastTime = timestamp;
+
+    agents.forEach(a => a.update(dt));
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function stop() {
+    running = false;
+  }
+
+  // ── Mouse interaction ──
+  function canvasToRoom(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    };
+  }
+
+  function onMouseMove(e) {
+    const p = canvasToRoom(e);
+    hoveredAgent = null;
+    // Check agents in reverse (front-to-back) for hit test
+    for (let i = agents.length - 1; i >= 0; i--) {
+      if (agents[i].hitTest(p.x, p.y)) {
+        hoveredAgent = agents[i];
+        break;
+      }
+    }
+    if (hoveredAgent) {
+      showTooltip(hoveredAgent, e);
+      canvas.style.cursor = 'pointer';
+    } else {
+      hideTooltip();
+      canvas.style.cursor = 'crosshair';
+    }
+  }
+
+  function onClick(e) {
+    if (hoveredAgent) {
+      showTooltip(hoveredAgent, e);
+    }
+  }
+
+  function showTooltip(a, e) {
+    const tip = document.getElementById('wrTooltip');
+    if (!tip) return;
+
+    // Position helper (shared)
+    function positionTip() {
+      const wrap = document.getElementById('warRoomWrap');
+      const wrapRect = wrap.getBoundingClientRect();
+      let tx = e.clientX - wrapRect.left + 16;
+      let ty = e.clientY - wrapRect.top - 10;
+      if (tx + 300 > wrapRect.width) tx = e.clientX - wrapRect.left - 280;
+      if (ty + 260 > wrapRect.height) ty = Math.max(0, ty - 140);
+      tip.style.left = tx + 'px';
+      tip.style.top  = ty + 'px';
+    }
+
+    // Triad Council: show full findings list
+    if (a.zone === 'council') {
+      const roleColor = a.ticker === 'DOCTRINE' ? '#b080ff' : a.ticker === 'GATE' ? '#50a8f0' : '#50cc80';
+      const sevColors = { critical: 'var(--red)', warning: 'var(--amber)', info: 'var(--cyan)', ok: 'var(--green)' };
+      const critCount = a.findings.filter(f => f.severity === 'critical').length;
+      const warnCount = a.findings.filter(f => f.severity === 'warning').length;
+      let findingsHtml = '';
+      if (a.findings.length > 0) {
+        findingsHtml = `<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">${a.findings.length} findings &middot; <span style="color:var(--red)">${critCount} crit</span> &middot; <span style="color:var(--amber)">${warnCount} warn</span></div>`;
+        a.findings.slice(0, 12).forEach(f => {
+          const color = sevColors[f.severity] || 'var(--text-mid)';
+          findingsHtml += `<div style="font-size:11px;color:${color};padding:1px 0">${f.text}</div>`;
+        });
+        if (a.findings.length > 12) {
+          findingsHtml += `<div style="font-size:10px;color:var(--text-dim);margin-top:2px">+${a.findings.length - 12} more</div>`;
+        }
+      }
+      tip.innerHTML = `
+        <div style="margin-bottom:6px">
+          <span class="tt-ticker" style="color:${roleColor}">${a.ticker}</span>
+          <span class="tt-zone" style="background:rgba(130,60,200,0.1);color:${roleColor};border:1px solid ${roleColor}">TRIAD</span>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${a.role || 'Council Member'}</div>
+        ${findingsHtml}
+      `;
+      tip.classList.add('visible');
+      positionTip();
+      return;
+    }
+
+    let zoneBadge = '';
+    if (a.zone === 'arsenal') zoneBadge = '<span class="tt-zone arsenal">ARSENAL</span>';
+    else if (a.zone === 'watchtower') zoneBadge = '<span class="tt-zone watchtower">WATCHTOWER</span>';
+    else if (a.zone === 'sentinel') zoneBadge = '<span class="tt-zone" style="background:rgba(255,64,85,0.1);color:var(--red);border:1px solid var(--red)">SENTINEL</span>';
+    else if (a.zone === 'commander') zoneBadge = '<span class="tt-zone" style="background:rgba(255,184,0,0.1);color:var(--amber);border:1px solid var(--amber)">COMMANDER</span>';
+
+    const priceStr = a.price != null ? '$' + a.price.toFixed(2) : '—';
+    const changeStr = a.changePct != null
+      ? `<span style="color:${a.changePct >= 0 ? 'var(--green)' : 'var(--red)'}"> ${a.changePct >= 0 ? '+' : ''}${a.changePct.toFixed(2)}%</span>`
+      : '';
+    const advStr = a.adv ? fmtVol(a.adv) : '—';
+
+    let rows = '';
+    if (a.zone !== 'commander') {
+      rows += `<div class="tt-row"><span class="tt-key">Price</span><span class="tt-val">${priceStr}${changeStr}</span></div>`;
+    }
+    if (a.cost) rows += `<div class="tt-row"><span class="tt-key">Cost basis</span><span class="tt-val">$${a.cost.toFixed(2)}</span></div>`;
+    if (a.tier) rows += `<div class="tt-row"><span class="tt-key">Tier</span><span class="tt-val">${a.tier}</span></div>`;
+    if (a.adv) rows += `<div class="tt-row"><span class="tt-key">ADV (20d)</span><span class="tt-val">${advStr}</span></div>`;
+    if (a.removal) rows += `<div class="tt-row"><span class="tt-key">Removal</span><span class="tt-val">${a.removal}</span></div>`;
+    rows += `<div class="tt-row"><span class="tt-key">State</span><span class="tt-val" style="color:${a.state === 'frozen' ? 'var(--cyan)' : 'var(--text-bright)'}">${a.state.toUpperCase()}</span></div>`;
+
+    const flagStr = a.flags.length > 0 ? `<div class="tt-flags">${a.flags.join(' · ')}</div>` : '';
+    const thesisStr = a.thesis ? `<div style="margin-top:4px;font-size:10px;color:var(--text-mid);border-top:1px solid var(--border);padding-top:4px">${a.thesis}</div>` : '';
+
+    tip.innerHTML = `
+      <div style="margin-bottom:6px"><span class="tt-ticker">${a.ticker}</span>${zoneBadge}</div>
+      ${rows}${flagStr}${thesisStr}
+    `;
+    tip.classList.add('visible');
+
+    // Position tooltip
+    const wrap = document.getElementById('warRoomWrap');
+    const wrapRect = wrap.getBoundingClientRect();
+    let tx = e.clientX - wrapRect.left + 16;
+    let ty = e.clientY - wrapRect.top - 10;
+    if (tx + 300 > wrapRect.width) tx = e.clientX - wrapRect.left - 280;
+    if (ty + 200 > wrapRect.height) ty = Math.max(0, ty - 120);
+    tip.style.left = tx + 'px';
+    tip.style.top = ty + 'px';
+  }
+
+  function hideTooltip() {
+    const tip = document.getElementById('wrTooltip');
+    if (tip) tip.classList.remove('visible');
+  }
+
+  // ── Public API ──
+  return {
+    init: init,
+    start: start,
+    stop: stop,
+    resize: resize,
+    syncPrices: syncPrices,
+    updateFromPriceData: updateFromPriceData,
+    get agents() { return agents; },
+    get regime() { return regime; },
+  };
+})();
+
+// ─── SINGLE LOAD HANDLER ───
 window.addEventListener('load', () => {
+  // Render initial Watchtower tables with cached roster data
+  renderWatchtowerTable(WT_CORE_ROSTER, 'wtCoreTable', null, null);
+  renderWatchtowerTable(WT_SAT_ROSTER,  'wtSatTable',  null, null);
+  // Render initial backtester alloc table
+  renderBtAllocTable(100000, 5000, 'matrix');
+  // Initialize War Room canvas
+  WarRoom.init();
+  // Fetch live data
   setTimeout(fetchPrices, 300);
   setTimeout(fetchPrivate, 300);
   updateWtCountdown();
@@ -1556,6 +3088,7 @@ window.addEventListener('load', () => {
 
 // ─── TAB SWITCHING ───
 let vaultChartReady = false;
+let warRoomReady = false;
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1564,6 +3097,23 @@ function switchTab(name, btn) {
   if (name === 'vault' && !vaultChartReady && typeof Chart !== 'undefined') {
     initYtdChart();
     vaultChartReady = true;
+  }
+  if (name === 'backtester') {
+    renderBtAllocTable(
+      parseFloat(document.getElementById('btCapital').value) || 100000,
+      parseFloat(document.getElementById('btDca').value) || 5000,
+      document.getElementById('btMode').value
+    );
+  }
+  // War Room: start game loop when visible, stop when hidden
+  if (name === 'warroom') {
+    if (!warRoomReady) {
+      WarRoom.resize();
+      warRoomReady = true;
+    }
+    WarRoom.start();
+  } else {
+    WarRoom.stop();
   }
 }
 
