@@ -1,113 +1,115 @@
 {
-  "updated": "2026-04-01T04:38:45Z",
-  "updated_bkk": "2026-04-01 11:38 GMT+7",
+  "updated": "2026-04-02T04:18:39Z",
+  "updated_bkk": "2026-04-02 11:18 GMT+7",
   "prices": {
     "VRT": {
-      "price": 250.58,
-      "prev_close": 234.22,
-      "change_pct": 6.98
+      "price": 259.37,
+      "prev_close": 250.58,
+      "change_pct": 3.51
     },
     "ASTS": {
-      "price": 82.87,
-      "prev_close": 73.82,
-      "change_pct": 12.26
+      "price": 83.99,
+      "prev_close": 82.87,
+      "change_pct": 1.35
     },
     "VST": {
-      "price": 150.33,
-      "prev_close": 147.54,
-      "change_pct": 1.89
+      "price": 153.96,
+      "prev_close": 150.33,
+      "change_pct": 2.41
     },
     "MU": {
-      "price": 337.84,
-      "prev_close": 321.8,
-      "change_pct": 4.98
+      "price": 367.85,
+      "prev_close": 337.84,
+      "change_pct": 8.88
     },
     "APH": {
-      "price": 126.35,
-      "prev_close": 119.15,
-      "change_pct": 6.04
+      "price": 127.7,
+      "prev_close": 126.35,
+      "change_pct": 1.07
     },
     "ANET": {
-      "price": 122.78,
-      "prev_close": 116.13,
-      "change_pct": 5.73
+      "price": 124.85,
+      "prev_close": 122.78,
+      "change_pct": 1.69
     },
     "TSM": {
-      "price": 337.95,
-      "prev_close": 316.5,
-      "change_pct": 6.78
+      "price": 341.49,
+      "prev_close": 337.95,
+      "change_pct": 1.05
     },
     "ONDS": {
-      "price": 9.04,
-      "prev_close": 8.15,
-      "change_pct": 10.92
+      "price": 8.81,
+      "prev_close": 9.04,
+      "change_pct": -2.54
     },
     "FN": {
-      "price": 521.52,
-      "prev_close": 491.88,
-      "change_pct": 6.03
+      "price": 534.98,
+      "prev_close": 521.52,
+      "change_pct": 2.58
     },
     "PLTR": {
-      "price": 146.28,
-      "prev_close": 137.55,
-      "change_pct": 6.35
+      "price": 146.49,
+      "prev_close": 146.28,
+      "change_pct": 0.14
     },
     "TSEM": {
-      "price": 175.48,
-      "prev_close": 158.58,
-      "change_pct": 10.66
+      "price": 187.07,
+      "prev_close": 175.48,
+      "change_pct": 6.6
     },
     "NBIS": {
-      "price": 103.76,
-      "prev_close": 92.26,
-      "change_pct": 12.46
+      "price": 101.95,
+      "prev_close": 103.76,
+      "change_pct": -1.74
     },
     "BWXT": {
-      "price": 204.49,
-      "prev_close": 191.59,
-      "change_pct": 6.73
+      "price": 212.81,
+      "prev_close": 204.49,
+      "change_pct": 4.07
     },
     "KTOS": {
-      "price": 70.51,
-      "prev_close": 65.28,
-      "change_pct": 8.01
+      "price": 67.7,
+      "prev_close": 70.51,
+      "change_pct": -3.99
     },
     "SOXX": {
-      "price": 328.66,
-      "prev_close": 309.79,
-      "change_pct": 6.09,
-      "ytd_pct": 4.77
+      "price": 338.54,
+      "prev_close": 328.66,
+      "change_pct": 3.01,
+      "ytd_pct": 7.92
     },
     "VOO": {
-      "price": 597.55,
-      "prev_close": 580.93,
-      "change_pct": 2.86,
-      "ytd_pct": -4.89
+      "price": 602.3,
+      "prev_close": 597.55,
+      "change_pct": 0.79,
+      "ytd_pct": -4.14
     },
     "QQQ": {
-      "price": 577.18,
-      "prev_close": 558.28,
-      "change_pct": 3.39,
-      "ytd_pct": -5.86
+      "price": 584.31,
+      "prev_close": 577.18,
+      "change_pct": 1.24,
+      "ytd_pct": -4.7
     },
     "EWY": {
-      "price": 123.01,
-      "prev_close": 116.43,
-      "change_pct": 5.65,
-      "ytd_pct": 20.34
+      "price": 126.22,
+      "prev_close": 123.01,
+      "change_pct": 2.61,
+      "ytd_pct": 23.48
     },
     "GLD": {
-      "price": 430.29,
-      "prev_close": 414.58,
-      "change_pct": 3.79
+      "price": 437.82,
+      "prev_close": 430.29,
+      "change_pct": 1.75
     },
     "^VIX": {
-      "price": 25.25,
-      "prev_close": 30.61,
-      "change_pct": -17.51
+      "price": 24.54,
+      "prev_close": 25.25,
+      "change_pct": -2.81
     },
     "THB=X": {
-      "price": 32.85
+      "price": 32.72,
+      "prev_close": 32.51,
+      "change_pct": 0.65
     }
   },
   "ytd_ref": {
@@ -117,62 +119,62 @@
     "EWY": 102.22
   },
   "gate": {
-    "vix_freeze": true,
-    "vix": 25.25,
+    "vix_freeze": false,
+    "vix": 24.54,
     "thb_zone": "B",
-    "thb": 32.85
+    "thb": 32.72
   },
   "adv": {
     "PLTR": {
-      "adv_20d": 46827750,
-      "today_vol": 45413300,
-      "adv_ratio": 0.97,
+      "adv_20d": 45732670,
+      "today_vol": 34087400,
+      "adv_ratio": 0.75,
       "gate_met": false
     },
     "TSEM": {
-      "adv_20d": 3723785,
-      "today_vol": 3395600,
-      "adv_ratio": 0.91,
+      "adv_20d": 3748710,
+      "today_vol": 3349800,
+      "adv_ratio": 0.89,
       "gate_met": false
     },
     "NBIS": {
-      "adv_20d": 17958580,
-      "today_vol": 21421100,
-      "adv_ratio": 1.19,
+      "adv_20d": 18528015,
+      "today_vol": 14888100,
+      "adv_ratio": 0.8,
       "gate_met": false
     },
     "BWXT": {
-      "adv_20d": 1077890,
-      "today_vol": 1010900,
-      "adv_ratio": 0.94,
+      "adv_20d": 1073735,
+      "today_vol": 1124800,
+      "adv_ratio": 1.05,
       "gate_met": false
     },
     "KTOS": {
-      "adv_20d": 4003475,
-      "today_vol": 6099000,
-      "adv_ratio": 1.52,
-      "gate_met": true
+      "adv_20d": 3892965,
+      "today_vol": 4416500,
+      "adv_ratio": 1.13,
+      "gate_met": false
     },
     "FN": {
-      "adv_20d": 654835,
-      "today_vol": 957000,
-      "adv_ratio": 1.46,
+      "adv_20d": 672110,
+      "today_vol": 597800,
+      "adv_ratio": 0.89,
       "gate_met": false
     }
   },
   "news": {
     "PLTR": {
-      "headline": "Why Is Palantir Technologies (PLTR) Stock Rocketing Higher Today",
-      "publisher": "StockStory",
-      "date": "2026-04-01"
+      "headline": "Palantir Technologies (PLTR) Is Down 5.5% After Stellantis, Pentagon Deepen AI Ties Has The Bull Case Changed?",
+      "publisher": "Simply Wall St.",
+      "date": "2026-04-02"
     },
     "TSEM": {
-      "headline": "GlobalFoundries sues Tower Semiconductor for patent infringement",
-      "publisher": "Manufacturing Dive",
-      "date": "2026-03-30"
+      "headline": "Does Coherent\u2019s (COHR) Silicon Photonics Breakthrough Hint At A Deeper Datacenter Optics Advantage?",
+      "publisher": "Simply Wall St.",
+      "date": "2026-04-01"
     },
     "NBIS": {
-      "headline": "Nebius Ramps Up AI Capacity With Finland Build And Mega Partnerships",
+      "headline": "How The Nebius Group (NBIS) Investment Story Is Shifting With New AI Deals And Valuation Adjustments",
       "publisher": "Simply Wall St.",
       "date": "2026-04-01"
     },
@@ -182,9 +184,9 @@
       "date": "2026-04-01"
     },
     "KTOS": {
-      "headline": "This Drone Stock Is Down. It Isn\u2019t Iran.",
-      "publisher": "Barrons.com",
-      "date": "2026-03-31"
+      "headline": "Kratos (KTOS) Is Down 11.8% After New Navy Rocket Deal And 5G Space Partnership - What's Changed",
+      "publisher": "Simply Wall St.",
+      "date": "2026-04-01"
     }
   }
 }
