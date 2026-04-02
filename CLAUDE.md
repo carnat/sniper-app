@@ -16,6 +16,9 @@ python scripts/fetch_prices.py          # generate data/prices.json
 pytest tests/                           # run test suite
 python scripts/secret_scan.py          # check for secrets before commit
 python scripts/encrypt_private.py      # encrypt private.json → private.enc.json
+python scripts/import_portfolio.py --template    # generate blank portfolio config
+python scripts/import_portfolio.py               # import portfolio from config
+python scripts/import_portfolio.py --encrypt     # import + encrypt
 ```
 
 ## Architecture decisions
@@ -24,7 +27,8 @@ python scripts/encrypt_private.py      # encrypt private.json → private.enc.js
 - Private data: `command_center/private.json` (gitignored, local dev) or `command_center/private.enc.json` (AES-GCM encrypted, safe to commit) — decrypted client-side via PIN
 - Streamlit: server-required, deep analytics, transaction entry, tax lots
 - Command Center HTML: offline-capable, no server, daily gate check
-- Doctrine rules: live in `.sniper-plugin/skills/` — do NOT duplicate in this file
+- Doctrine rules: authoritative full text in `docs/doctrine/`, compressed summaries in `.sniper-plugin/skills/`
+- Portfolio import: `scripts/import_portfolio.py` reads `data/portfolio_config.json` (gitignored) → `data/portfolio.json` (gitignored)
 - Subfolder `CLAUDE.md` files narrow context per domain — respect them
 
 ## Critical constraint — COMMANDER-IN-LOOP
@@ -37,7 +41,7 @@ Commander from the decision chain, do not build it.
 - Never add broker API integration of any kind
 - Never use `/gsd auto` mode — step mode only
 - Never touch transaction/lot database logic without explicit Commander instruction
-- Never duplicate doctrine rules outside `.sniper-plugin/skills/`
+- Never duplicate doctrine rules outside `.sniper-plugin/skills/` and `docs/doctrine/`
 - Never add `node_modules`, `package.json`, `webpack`, or build tooling to `command_center/`
 
 ## Session order
@@ -52,6 +56,7 @@ Commander from the decision chain, do not build it.
 | 4b | CMD-4 War Room — Agent-Based Pixel Art | 5th tab in `index.html` — Canvas 2D game engine, 28 pixel agents, regime effects, speech bubbles | ✅ Complete |
 | 5 | CMD-5 Triad Council — Doctrine Audit Overlay | 3 council agents (DOCTRINE/GATE/WATCHER) in War Room canvas; audit engine with rotating findings, consensus detection, click tooltips | ✅ Complete |
 | 6+ | P7 alert pipeline | Post-Level 1 (฿800K trigger) | 🔜 Not started |
+| 7 | Doctrine integration + portfolio import | `docs/doctrine/`, `scripts/import_portfolio.py`, portfolio config schema | ✅ Complete |
 
 ## Reference
 Full session handoff: `docs/sniper_claude_code_handoff.md`

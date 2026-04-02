@@ -205,3 +205,7 @@ cython_debug/
 #.idea/
 # Private local data — never commit
 command_center/private.json
+
+# Portfolio sensitive data (never commit plaintext)
+data/portfolio_config.json
+data/portfolio.json

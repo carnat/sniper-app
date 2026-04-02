@@ -30,7 +30,9 @@ Claude uses these files as context when assisting with investment decisions.
 - **NEVER** include execution logic, broker instructions, or trade orders
 - **NEVER** include secrets, API keys, or personal financial data
 - Skill files should be summaries + references, not primary sources
-- Per root CLAUDE.md: "Doctrine rules: live in `.sniper-plugin/skills/` — do NOT duplicate in this file"
+- Per root CLAUDE.md: "Doctrine rules: authoritative full text in `docs/doctrine/`, compressed summaries in `.sniper-plugin/skills/`"
+
+POINTER: Full doctrine text → `docs/doctrine/` (committed, version-controlled)
 
 ## Current Doctrine Versions
 - project_instructions v1.3.24
