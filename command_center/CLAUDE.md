@@ -22,5 +22,5 @@ Static HTML only. No Python. No server. No build step.
 ## Tab structure
 1. ARSENAL + STATUS (default)
 2. VAULT HEALTH
-3. WATCHTOWER (CMD-2 — Session 3)
-4. BACKTESTER (CMD-3 — Session 4, future)
+3. WATCHTOWER (CMD-2 — ✅ Session 3 complete)
+4. BACKTESTER (CMD-3 — ✅ Session 4 complete)

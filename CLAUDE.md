@@ -41,15 +41,15 @@ Commander from the decision chain, do not build it.
 - Never add `node_modules`, `package.json`, `webpack`, or build tooling to `command_center/`
 
 ## Session order
-| Session | Task | Key output |
-|---------|------|------------|
-| 0 | CLAUDE.md hierarchy + hooks + guardrail + plugin scaffold | Root + subfolders CLAUDE.md, `.claude/settings.json`, `claude_guardrail.py`, `.sniper-plugin/` skeleton |
-| 1 | Price pipeline + wire Command Center | `fetch_prices.py`, `update_prices.yml`, `index.html` reads `data/prices.json` |
-| 1b | Privacy layer + PIN encryption | `private.enc.json`, `encrypt_private.py`, PIN modal in `index.html` |
-| 2 | Streamlit restyle + plugin skills population | CSS block replaced, `skills/` files populated |
-| 3 | CMD-2 Watchtower panel + ADV/news pipeline | 3rd tab in `index.html`; `fetch_prices.py` adds `adv` + `news` keys |
-| 4 | CMD-3 Live Backtester panel | 4th tab |
-| 5+ | P7 alert pipeline | Post-Level 1 (฿800K trigger) |
+| Session | Task | Key output | Status |
+|---------|------|------------|--------|
+| 0 | CLAUDE.md hierarchy + hooks + guardrail + plugin scaffold | Root + subfolders CLAUDE.md, `.claude/settings.json`, `claude_guardrail.py`, `.sniper-plugin/` skeleton | ✅ Complete |
+| 1 | Price pipeline + wire Command Center | `fetch_prices.py`, `update_prices.yml`, `index.html` reads `data/prices.json` | ✅ Complete |
+| 1b | Privacy layer + PIN encryption | `private.enc.json`, `encrypt_private.py`, PIN modal in `index.html` | ✅ Complete |
+| 2 | Streamlit restyle + plugin skills population | CSS block replaced, `skills/` files populated | ✅ Complete |
+| 3 | CMD-2 Watchtower panel + ADV/news pipeline + price pipeline upgrade | 3rd tab in `index.html`; `fetch_prices.py` doctrine v1.15.1 tickers + enriched data (SMA, 52w, regime) | ✅ Complete |
+| 4 | CMD-3 Live Backtester panel | 4th tab in `index.html` — DCA simulation, Matrix allocation vs equal-weight | ✅ Complete |
+| 5+ | P7 alert pipeline | Post-Level 1 (฿800K trigger) | 🔜 Not started |
 
 ## Reference
 Full session handoff: `docs/sniper_claude_code_handoff.md`
