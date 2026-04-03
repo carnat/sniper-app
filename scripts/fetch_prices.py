@@ -197,9 +197,15 @@ def build_prices_from_history(raw, raw_macro) -> dict:
                 last_vol  = round(float(vol.iloc[-1]))
 
             # Market time — last trade date from OHLCV index
+            # yfinance returns timezone-aware timestamps; convert to UTC ISO format
             market_time = None
-            if hasattr(close.index[-1], 'strftime'):
-                market_time = close.index[-1].strftime('%Y-%m-%dT%H:%M:%SZ')
+            ts = close.index[-1]
+            if hasattr(ts, 'strftime'):
+                if hasattr(ts, 'tz') and ts.tz is not None:
+                    market_time = ts.tz_convert('UTC').strftime('%Y-%m-%dT%H:%M:%SZ')
+                else:
+                    # No timezone info — format without Z suffix
+                    market_time = ts.strftime('%Y-%m-%dT%H:%M:%S')
 
             entry = {
                 'price':      round(price, 4),

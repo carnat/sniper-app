@@ -1696,8 +1696,9 @@ async function fetchPrices() {
     renderNewsTab();
     WarRoom.updateFromPriceData(d);
 
-    // Price timestamp — show market_time from first arsenal ticker if available
-    const firstEntry = d.prices['VRT'] || d.prices[Object.keys(d.prices)[0]];
+    // Price timestamp — use first available arsenal ticker's market_time
+    const firstSym = ARSENAL_CORE[0]?.ticker || Object.keys(d.prices)[0];
+    const firstEntry = d.prices[firstSym];
     const mktTime = firstEntry?.market_time;
     const tsEl = document.getElementById('arsenalPriceTimestamp');
     if (tsEl && mktTime) {
@@ -1884,7 +1885,10 @@ function renderNewsTab() {
   const allItems = [];
   tickers.forEach(sym => {
     const entry = priceMap[sym];
-    // Prefer per-ticker news array (new format), fallback to compat dict
+    // Prefer per-ticker news array in prices[sym].news (v1.15.1+).
+    // Fallback: top-level d.news[sym] compat dict (single headline per ticker).
+    // Both formats are written by fetch_prices.py; compat dict can be removed
+    // once all consumers use the per-ticker array format.
     const newsArr = entry?.news || (newsCompat[sym] ? [newsCompat[sym]] : []);
     newsArr.forEach(n => {
       allItems.push({ sym, ...n });
