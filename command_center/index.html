@@ -3602,16 +3602,16 @@ const WarRoom = (function() {
       ctx.fillRect(armX1, bodyTop + 1 + leftArmOff, 2, bs.armLen);
       ctx.fillRect(armX2, bodyTop + 1 + rightArmOff, 2, bs.armLen);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(armX1, bodyTop + bs.armLen + leftArmOff, 2, 2);
-      ctx.fillRect(armX2, bodyTop + bs.armLen + rightArmOff, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 1 + bs.armLen + leftArmOff, 2, 2);
+      ctx.fillRect(armX2, bodyTop + 1 + bs.armLen + rightArmOff, 2, 2);
     } else if (isWatching) {
       // Watching: one hand up to eyes (binocular gesture)
       ctx.fillStyle = p.body;
       ctx.fillRect(armX1, bodyTop + 1, 2, bs.armLen);
       ctx.fillRect(armX2, bodyTop - 1, 2, 4);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(armX1, bodyTop + bs.armLen, 2, 2);
-      ctx.fillRect(armX2, bodyTop - 1, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 1 + bs.armLen, 2, 2);
+      ctx.fillRect(armX2, bodyTop + 3, 2, 2);
       // Small scope/binocular near eyes
       ctx.fillStyle = '#2a3a4a';
       ctx.fillRect(x + halfW, bodyTop - 5, 2, 2);
@@ -3621,8 +3621,8 @@ const WarRoom = (function() {
       ctx.fillRect(armX1, bodyTop + 1, 2, bs.armLen);
       ctx.fillRect(armX2, bodyTop + 1, 2, bs.armLen);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(armX1, bodyTop + bs.armLen, 2, 2);
-      ctx.fillRect(armX2, bodyTop + bs.armLen, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 1 + bs.armLen, 2, 2);
+      ctx.fillRect(armX2, bodyTop + 1 + bs.armLen, 2, 2);
     }
 
     // ── Head ──
@@ -3829,10 +3829,10 @@ const WarRoom = (function() {
     if (isWaiting) {
       ctx.fillStyle = speechColor;
       ctx.textAlign = 'center';
-      const dotPhase = Math.floor(a.t * 3) % 4;
+      const dotPhase = Math.floor(a.t * 3) % 3;
       let dots = '';
       for (let i = 0; i < 3; i++) {
-        dots += (dotPhase > i) ? '·' : ' ';
+        dots += (dotPhase >= i) ? '·' : ' ';
       }
       ctx.fillText(text, x, by + 7);
       // Pulsing dots after text
