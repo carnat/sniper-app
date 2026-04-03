@@ -491,6 +491,7 @@
   <button class="tab-btn active" onclick="switchTab('arsenal', this)">ARSENAL + STATUS</button>
   <button class="tab-btn" onclick="switchTab('vault', this)">VAULT HEALTH</button>
   <button class="tab-btn" onclick="switchTab('watchtower', this)">WATCHTOWER</button>
+  <button class="tab-btn" onclick="switchTab('news', this)">NEWS</button>
   <button class="tab-btn" onclick="switchTab('backtester', this)">BACKTESTER</button>
   <button class="tab-btn" onclick="switchTab('warroom', this)">WAR ROOM</button>
 </nav>
@@ -516,7 +517,7 @@
         <span id="level1Remaining">—</span>
       </div>
     </div>
-    <div class="section-label">ARSENAL — CORE (8)</div>
+    <div class="section-label">ARSENAL — CORE (8) <span id="arsenalPriceTimestamp" style="font-size:9px;color:var(--text-dim);font-weight:400;margin-left:8px;font-family:'JetBrains Mono',monospace"></span></div>
     <table>
       <thead>
         <tr>
@@ -1088,6 +1089,30 @@
   </div>
 </div>
 </div><!-- end tab-watchtower -->
+<!-- TAB: NEWS -->
+<div class="tab-pane" id="tab-news">
+<div class="vault-tab-grid">
+  <div class="panel" style="grid-column:1/-1">
+    <div class="panel-header">
+      <div class="panel-title">NEWS <span>FEED</span></div>
+      <div style="font-size:10px;color:var(--text-dim)">Latest headlines via yfinance · All Arsenal + Watchtower tickers</div>
+    </div>
+    <!-- Filter controls -->
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <select id="newsFilter" onchange="renderNewsTab()" style="background:var(--bg-2);color:var(--text-base);border:1px solid var(--border);border-radius:3px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:11px">
+        <option value="all">ALL TICKERS</option>
+        <option value="arsenal">ARSENAL</option>
+        <option value="watchtower">WATCHTOWER</option>
+      </select>
+      <span id="newsTimestamp" style="font-size:10px;color:var(--text-dim);margin-left:auto">—</span>
+    </div>
+    <!-- News list -->
+    <div id="newsTabContent" style="display:grid;gap:6px">
+      <div style="font-size:10px;color:var(--text-dim);padding:8px 0">Loading — click Refresh to populate</div>
+    </div>
+  </div>
+</div>
+</div><!-- end tab-news -->
 <!-- TAB: BACKTESTER (CMD-3) -->
 <div class="tab-pane" id="tab-backtester">
 <div class="vault-tab-grid">
@@ -1292,6 +1317,7 @@ let prices = {
 };
 let pricesStale = true;
 let privateUnlocked = false;
+let lastPriceData = null;  // full prices.json data for news tab
 
 // ─── CLOCK ───
 function updateClock() {
@@ -1663,10 +1689,24 @@ async function fetchPrices() {
     };
 
     pricesStale = false;
+    lastPriceData = d;
     renderArsenal(ARSENAL_CORE, 'arsenalCore');
     renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
     updateWatchtowerLive(d);
+    renderNewsTab();
     WarRoom.updateFromPriceData(d);
+
+    // Price timestamp — show market_time from first arsenal ticker if available
+    const firstEntry = d.prices['VRT'] || d.prices[Object.keys(d.prices)[0]];
+    const mktTime = firstEntry?.market_time;
+    const tsEl = document.getElementById('arsenalPriceTimestamp');
+    if (tsEl && mktTime) {
+      const dt = new Date(mktTime);
+      tsEl.textContent = '· Market close: ' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } else if (tsEl && d.updated_bkk) {
+      tsEl.textContent = '· Data as of: ' + d.updated_bkk;
+    }
+
     document.getElementById('lastRefresh').textContent = 'Last refresh: ' + d.updated_bkk;
     barDone(true);
 
@@ -1807,6 +1847,83 @@ function updateWatchtowerLive(d) {
   container.innerHTML = newsRows.length
     ? newsRows.join('')
     : '<div style="font-size:10px;color:var(--text-dim);padding:4px 0">No headlines — prices.json may be stale</div>';
+}
+
+// ─── NEWS TAB — FULL NEWS FEED ───
+function renderNewsTab() {
+  const container = document.getElementById('newsTabContent');
+  const tsEl = document.getElementById('newsTimestamp');
+  if (!container) return;
+
+  const d = lastPriceData;
+  if (!d) {
+    container.innerHTML = '<div style="font-size:10px;color:var(--text-dim);padding:8px 0">No data loaded — click Refresh</div>';
+    return;
+  }
+
+  // Update timestamp
+  if (tsEl) {
+    tsEl.textContent = d.updated_bkk ? 'Updated: ' + d.updated_bkk : '';
+  }
+
+  // Determine filter
+  const filter = document.getElementById('newsFilter')?.value || 'all';
+  const arsenalTickers = ARSENAL_CORE.map(p => p.ticker).concat(ARSENAL_SAT.map(p => p.ticker));
+  const wtTickers = [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker);
+
+  let tickers;
+  if (filter === 'arsenal') tickers = arsenalTickers;
+  else if (filter === 'watchtower') tickers = wtTickers;
+  else tickers = [...arsenalTickers, ...wtTickers];
+
+  const priceMap = d.prices || {};
+  const newsCompat = d.news || {};
+  const cutoff = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
+
+  // Collect all news items with ticker label
+  const allItems = [];
+  tickers.forEach(sym => {
+    const entry = priceMap[sym];
+    // Prefer per-ticker news array (new format), fallback to compat dict
+    const newsArr = entry?.news || (newsCompat[sym] ? [newsCompat[sym]] : []);
+    newsArr.forEach(n => {
+      allItems.push({ sym, ...n });
+    });
+  });
+
+  // Sort by date descending
+  allItems.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  if (allItems.length === 0) {
+    container.innerHTML = '<div style="font-size:10px;color:var(--text-dim);padding:8px 0">No headlines available — prices.json may be stale</div>';
+    return;
+  }
+
+  // Determine which group each ticker belongs to
+  const arsenalSet = new Set(arsenalTickers);
+
+  const rows = allItems.map(n => {
+    const fresh = n.date >= cutoff;
+    const headline = n.title || n.headline || '';
+    const url = n.url || '#';
+    const linkAttr = url !== '#' ? `href="${url}" target="_blank" rel="noopener"` : '';
+    const groupColor = arsenalSet.has(n.sym) ? 'var(--green)' : 'var(--blue)';
+    const groupLabel = arsenalSet.has(n.sym) ? 'ARSENAL' : 'WATCH';
+    return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:3px solid ${fresh ? groupColor : 'var(--border)'};border-radius:3px;padding:8px 10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-weight:700;color:var(--text-white);font-size:12px">${n.sym}</span>
+          <span style="font-size:8px;color:${groupColor};font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px">${groupLabel}</span>
+        </div>
+        <span style="font-size:9px;color:var(--text-dim)">${n.date || '—'} · ${n.publisher || ''}</span>
+      </div>
+      <div style="font-size:11px;color:${fresh ? 'var(--text-base)' : 'var(--text-dim)'};line-height:1.5">
+        ${linkAttr ? `<a ${linkAttr} style="color:inherit;text-decoration:${fresh ? 'underline' : 'none'};text-decoration-color:var(--border)">${headline}</a>` : headline}
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = rows.join('');
 }
 
 // ─── WATCHTOWER SCORECARD COUNTDOWN ───

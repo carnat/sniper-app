@@ -196,6 +196,11 @@ def build_prices_from_history(raw, raw_macro) -> dict:
                 adv_20d   = round(float(prior_vol.iloc[-20:].mean())) if len(prior_vol) >= 1 else None
                 last_vol  = round(float(vol.iloc[-1]))
 
+            # Market time — last trade date from OHLCV index
+            market_time = None
+            if hasattr(close.index[-1], 'strftime'):
+                market_time = close.index[-1].strftime('%Y-%m-%dT%H:%M:%SZ')
+
             entry = {
                 'price':      round(price, 4),
                 'prev_close': round(prev,  4),
@@ -208,6 +213,7 @@ def build_prices_from_history(raw, raw_macro) -> dict:
                 'low52w':     low52w,
                 'sma50':      sma50,
                 'sma200':     sma200,
+                'market_time': market_time,
             }
 
             if sym in YTD_REF and YTD_REF[sym] != 0:
