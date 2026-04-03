@@ -36,6 +36,27 @@
     --cyan: #00c8e0;
     --freeze-color: var(--amber);
     --clear-color: var(--green);
+    /* ── Semantic tokens ── */
+    --panel-radius: 4px;
+    --panel-padding: 14px 16px;
+    --panel-gap: 1px;
+    --card-radius: 3px;
+    --card-padding: 8px 10px;
+    /* Font sizes */
+    --font-xs: 9px;
+    --font-sm: 11px;
+    --font-md: 12px;
+    --font-lg: 14px;
+    --font-xl: 18px;
+    /* Shadows & elevation */
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-elevated: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-glow-green: 0 0 8px var(--green-glow);
+    --shadow-glow-red: 0 0 8px var(--red-glow);
+    --shadow-glow-amber: 0 0 8px var(--amber-glow);
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -425,6 +446,138 @@
   }
   .warroom-legend .leg-item { display: flex; align-items: center; gap: 4px; }
   .warroom-legend .leg-dot { width: 6px; height: 6px; border-radius: 1px; }
+
+  /* ─── COLLAPSIBLE PANELS (A1) ─── */
+  .cpanel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--panel-radius); margin-bottom: 8px; box-shadow: var(--shadow-card); transition: box-shadow var(--transition-normal); }
+  .cpanel:hover { box-shadow: var(--shadow-elevated); }
+  .cpanel-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); background: var(--bg-2); border-radius: var(--panel-radius) var(--panel-radius) 0 0; }
+  .cpanel-header:hover { background: var(--bg-3); }
+  .cpanel-title { font-family: 'Rajdhani', sans-serif; font-size: var(--font-sm); font-weight: 700; letter-spacing: 2px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+  .cpanel-title span { color: var(--text-mid); }
+  .cpanel-badge { font-size: var(--font-xs); padding: 1px 6px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; }
+  .cpanel-toggle { color: var(--text-dim); font-size: 10px; transition: transform var(--transition-fast); flex-shrink: 0; }
+  .cpanel.collapsed .cpanel-toggle { transform: rotate(-90deg); }
+  .cpanel-body { padding: var(--panel-padding); overflow: hidden; transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.3s ease; max-height: 2000px; opacity: 1; }
+  .cpanel.collapsed .cpanel-body { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+  .cpanel.collapsed .cpanel-header { border-bottom-color: transparent; border-radius: var(--panel-radius); }
+
+  /* ─── TICKER TAPE (A4) ─── */
+  .ticker-tape-wrap { background: var(--bg-1); border-bottom: 1px solid var(--border); overflow: hidden; height: 26px; position: relative; }
+  .ticker-tape { display: flex; gap: 28px; animation: tape-scroll 45s linear infinite; white-space: nowrap; padding: 5px 0; align-items: center; }
+  .ticker-tape:hover { animation-play-state: paused; }
+  .ticker-tape-item { display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-sm); font-variant-numeric: tabular-nums; }
+  .ticker-tape-sym { font-weight: 700; color: var(--text-white); letter-spacing: 0.5px; }
+  .ticker-tape-price { color: var(--text-base); }
+  .ticker-tape-chg { font-size: var(--font-xs); font-weight: 600; }
+  .ticker-tape-chg.pos { color: var(--green); }
+  .ticker-tape-chg.neg { color: var(--red); }
+  @keyframes tape-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  /* ─── TAB TRANSITIONS (A7) ─── */
+  .tab-pane { display: none; opacity: 0; transition: opacity 0.2s ease; }
+  .tab-pane.active { display: block; opacity: 1; }
+
+  /* ─── SKELETON LOADING (A7) ─── */
+  .skeleton { background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%); background-size: 200% 100%; animation: skeleton-pulse 1.5s ease-in-out infinite; border-radius: 2px; }
+  @keyframes skeleton-pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton-row { height: 22px; margin-bottom: 4px; }
+  .skeleton-block { height: 60px; margin-bottom: 8px; }
+
+  /* ─── STALE DATA WARNING (B8) ─── */
+  .stale-badge { font-size: var(--font-xs); padding: 2px 6px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; margin-left: 8px; }
+  .stale-badge.warn { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+  .stale-badge.crit { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); animation: blink 1s step-end infinite; }
+
+  /* ─── PRI GAUGE (B1) ─── */
+  .pri-wrap { text-align: center; padding: 12px; }
+  .pri-gauge { position: relative; width: 120px; height: 120px; margin: 0 auto 8px; }
+  .pri-gauge svg { width: 120px; height: 120px; transform: rotate(-90deg); }
+  .pri-gauge-bg { fill: none; stroke: var(--bg-3); stroke-width: 8; }
+  .pri-gauge-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s ease, stroke 0.5s ease; }
+  .pri-score { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .pri-number { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+  .pri-label { font-family: 'Rajdhani', sans-serif; font-size: var(--font-xs); font-weight: 700; letter-spacing: 2px; color: var(--text-dim); margin-top: 2px; }
+  .pri-breakdown { text-align: left; margin-top: 8px; }
+  .pri-row { display: flex; justify-content: space-between; font-size: 10px; padding: 2px 0; border-bottom: 1px solid rgba(30,42,58,0.3); }
+  .pri-row-key { color: var(--text-dim); }
+  .pri-row-val { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  /* ─── SIGNAL CONVERGENCE (B2) ─── */
+  .signal-list { display: flex; flex-direction: column; gap: 6px; }
+  .signal-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--card-radius); font-size: 10px; line-height: 1.5; }
+  .signal-icon { flex-shrink: 0; font-size: var(--font-lg); line-height: 1; }
+  .signal-body { flex: 1; }
+  .signal-title { font-weight: 700; color: var(--text-bright); margin-bottom: 2px; }
+  .signal-desc { color: var(--text-mid); }
+  .signal-sev { font-size: var(--font-xs); font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; padding: 1px 6px; border-radius: 2px; flex-shrink: 0; align-self: center; }
+  .signal-sev.crit { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .signal-sev.warn { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+  .signal-sev.info { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .signal-sev.ok { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+
+  /* ─── SPARKLINES (A2) ─── */
+  .sparkline { display: inline-block; vertical-align: middle; margin-left: 6px; }
+  .sparkline polyline { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ─── KEYBOARD SHORTCUTS OVERLAY (B7) ─── */
+  .kbd-overlay { position: fixed; inset: 0; background: rgba(7,8,9,0.88); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9500; }
+  .kbd-overlay.hidden { display: none; }
+  .kbd-box { background: var(--bg-2); border: 1px solid var(--border-bright); border-radius: 6px; padding: 24px 28px; width: 360px; }
+  .kbd-title { font-family: 'Rajdhani', sans-serif; font-size: var(--font-lg); font-weight: 700; letter-spacing: 2px; color: var(--text-white); text-align: center; margin-bottom: 16px; }
+  .kbd-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(30,42,58,0.5); font-size: var(--font-sm); }
+  .kbd-key { background: var(--bg-3); border: 1px solid var(--border-bright); color: var(--text-bright); padding: 2px 8px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 10px; min-width: 28px; text-align: center; }
+  .kbd-desc { color: var(--text-mid); }
+  .kbd-close { margin-top: 14px; text-align: center; font-size: 10px; color: var(--text-dim); cursor: pointer; }
+  .kbd-close:hover { color: var(--text-base); }
+
+  /* ─── NEWS ENHANCEMENTS (B4) ─── */
+  .news-sentiment { font-size: 8px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; padding: 1px 5px; border-radius: 2px; margin-left: 6px; }
+  .news-sentiment.bullish { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,208,132,0.3); }
+  .news-sentiment.bearish { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,64,85,0.3); }
+  .news-sentiment.neutral { background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); }
+  .news-cat { font-size: 8px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; padding: 1px 5px; border-radius: 2px; background: var(--bg-3); color: var(--text-dim); border: 1px solid var(--border); margin-left: 4px; }
+  .news-cat.doctrine { background: rgba(255,140,0,0.08); color: var(--orange); border-color: rgba(255,140,0,0.3); }
+
+  /* ─── GLOW EFFECTS (A5) ─── */
+  .glow-green { box-shadow: var(--shadow-glow-green); }
+  .glow-red { box-shadow: var(--shadow-glow-red); }
+  .glow-amber { box-shadow: var(--shadow-glow-amber); }
+
+  /* ─── MOBILE IMPROVEMENTS (A6) ─── */
+  @media (max-width: 600px) {
+    .header { padding: 6px 10px; }
+    .header-center { flex-wrap: wrap; gap: 8px; }
+    .header-meta { gap: 8px; }
+    .tab-nav { display: none; }
+    .mobile-tab-bar { display: flex !important; }
+    .main-grid, .vault-tab-grid { grid-template-columns: 1fr !important; }
+    .bt-controls { grid-template-columns: 1fr 1fr !important; }
+    .vault-summary-grid { grid-template-columns: 1fr 1fr !important; }
+    .vtrigger-grid { grid-template-columns: 1fr !important; }
+    .thai-grid { grid-template-columns: 1fr !important; }
+    .ticker-tape { animation-duration: 30s; }
+  }
+  .mobile-tab-bar {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: var(--bg-1); border-top: 1px solid var(--border-bright);
+    justify-content: space-around; align-items: center; padding: 4px 0;
+    padding-bottom: env(safe-area-inset-bottom, 4px);
+  }
+  .mobile-tab-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; color: var(--text-dim); font-size: 16px;
+    padding: 4px 8px; cursor: pointer; transition: color var(--transition-fast);
+  }
+  .mobile-tab-btn span { font-size: 8px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px; }
+  .mobile-tab-btn.active { color: var(--blue); }
+
+  /* ─── AUTO-REFRESH TOGGLE (B8) ─── */
+  .auto-refresh-toggle { display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; }
+  .auto-refresh-toggle input[type="checkbox"] { appearance: none; width: 28px; height: 14px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 7px; position: relative; cursor: pointer; transition: background var(--transition-fast); }
+  .auto-refresh-toggle input[type="checkbox"]::after { content: ''; position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--text-dim); top: 1px; left: 1px; transition: transform var(--transition-fast), background var(--transition-fast); }
+  .auto-refresh-toggle input[type="checkbox"]:checked { background: var(--blue-dim); border-color: var(--blue); }
+  .auto-refresh-toggle input[type="checkbox"]:checked::after { transform: translateX(14px); background: var(--blue); }
+  .auto-refresh-toggle label { font-size: var(--font-xs); color: var(--text-dim); cursor: pointer; }
 </style>
 </head>
 <body class="locked">
@@ -481,6 +634,12 @@
     </button>
   </div>
 </header>
+<!-- TICKER TAPE (A4) -->
+<div class="ticker-tape-wrap" id="tickerTapeWrap">
+  <div class="ticker-tape" id="tickerTape">
+    <span style="font-size:10px;color:var(--text-dim)">Loading ticker data…</span>
+  </div>
+</div>
 <!-- BETA NOTICE BAR -->
 <div class="beta-notice" id="betaAlert">
   <span class="alert-label">BETA PENDING</span>
@@ -693,6 +852,39 @@
     <div class="status-section">
       <div class="panel-header">
         <div class="panel-title">SYSTEM <span>STATUS</span></div>
+      </div>
+      <!-- PRI GAUGE (B1) -->
+      <div class="status-block">
+        <div class="status-block-header">PORTFOLIO RISK INDEX</div>
+        <div class="pri-wrap">
+          <div class="pri-gauge">
+            <svg viewBox="0 0 120 120">
+              <circle class="pri-gauge-bg" cx="60" cy="60" r="50"/>
+              <circle class="pri-gauge-fill" id="priGaugeFill" cx="60" cy="60" r="50"
+                stroke-dasharray="314" stroke-dashoffset="314" stroke="var(--green)"/>
+            </svg>
+            <div class="pri-score">
+              <div class="pri-number" id="priScore">—</div>
+              <div class="pri-label">PRI</div>
+            </div>
+          </div>
+          <div class="pri-breakdown" id="priBreakdown">
+            <div class="pri-row"><span class="pri-row-key">VIX Regime</span><span class="pri-row-val" id="priVix">—</span></div>
+            <div class="pri-row"><span class="pri-row-key">Drawdown</span><span class="pri-row-val" id="priDd">—</span></div>
+            <div class="pri-row"><span class="pri-row-key">Concentration</span><span class="pri-row-val" id="priConc">—</span></div>
+            <div class="pri-row"><span class="pri-row-key">Blackouts</span><span class="pri-row-val" id="priBlack">—</span></div>
+            <div class="pri-row"><span class="pri-row-key">Neglect</span><span class="pri-row-val" id="priNeglect">—</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- SIGNAL CONVERGENCE (B2) -->
+      <div class="status-block">
+        <div class="status-block-header">SIGNAL CONVERGENCE</div>
+        <div style="padding:8px 10px">
+          <div class="signal-list" id="signalConvergence">
+            <div style="font-size:10px;color:var(--text-dim)">Loading signals…</div>
+          </div>
+        </div>
       </div>
       <div class="status-block">
         <div class="status-block-header">HEARTBEAT PROTOCOL</div>
@@ -1259,11 +1451,41 @@
     </div>
   </div>
 </div>
+<!-- KEYBOARD SHORTCUTS OVERLAY (B7) -->
+<div id="kbdOverlay" class="kbd-overlay hidden">
+  <div class="kbd-box">
+    <div class="kbd-title">KEYBOARD SHORTCUTS</div>
+    <div class="kbd-row"><span class="kbd-key">1</span><span class="kbd-desc">Arsenal + Status</span></div>
+    <div class="kbd-row"><span class="kbd-key">2</span><span class="kbd-desc">Vault Health</span></div>
+    <div class="kbd-row"><span class="kbd-key">3</span><span class="kbd-desc">Watchtower</span></div>
+    <div class="kbd-row"><span class="kbd-key">4</span><span class="kbd-desc">News</span></div>
+    <div class="kbd-row"><span class="kbd-key">5</span><span class="kbd-desc">Backtester</span></div>
+    <div class="kbd-row"><span class="kbd-key">6</span><span class="kbd-desc">War Room</span></div>
+    <div class="kbd-row"><span class="kbd-key">R</span><span class="kbd-desc">Refresh prices</span></div>
+    <div class="kbd-row"><span class="kbd-key">?</span><span class="kbd-desc">Toggle this overlay</span></div>
+    <div class="kbd-row"><span class="kbd-key">Esc</span><span class="kbd-desc">Close overlays</span></div>
+    <div class="kbd-close" onclick="document.getElementById('kbdOverlay').classList.add('hidden')">Press ? or Esc to close</div>
+  </div>
+</div>
+<!-- MOBILE TAB BAR (A6) -->
+<nav class="mobile-tab-bar" id="mobileTabBar">
+  <button class="mobile-tab-btn active" onclick="switchTab('arsenal', this)" data-tab="arsenal">⚔<span>ARSENAL</span></button>
+  <button class="mobile-tab-btn" onclick="switchTab('vault', this)" data-tab="vault">🏦<span>VAULT</span></button>
+  <button class="mobile-tab-btn" onclick="switchTab('watchtower', this)" data-tab="watchtower">🔭<span>WATCH</span></button>
+  <button class="mobile-tab-btn" onclick="switchTab('news', this)" data-tab="news">📰<span>NEWS</span></button>
+  <button class="mobile-tab-btn" onclick="switchTab('backtester', this)" data-tab="backtester">📊<span>BACKTEST</span></button>
+  <button class="mobile-tab-btn" onclick="switchTab('warroom', this)" data-tab="warroom">🎮<span>WAR</span></button>
+</nav>
 <footer class="footer">
   <div class="footer-note">SNIPER COMMAND CENTER v2 · READ ONLY · No buy/sell signals · Commander-in-loop required for all execution decisions</div>
   <div class="data-source">
     <span>data/prices.json · GitHub Actions daily 09:00 BKK</span>
     <span class="last-refresh" id="lastRefresh">Last refresh: —</span>
+    <span id="staleBadge"></span>
+    <div class="auto-refresh-toggle">
+      <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh(this.checked)">
+      <label for="autoRefreshToggle">AUTO</label>
+    </div>
   </div>
 </footer>
 <script>
@@ -1406,9 +1628,11 @@ function renderArsenal(positions, tbodyId) {
   tbody.innerHTML = '';
   positions.forEach(p => {
     const price = prices[p.ticker] || 0;
+    const entry = lastPriceData?.prices?.[p.ticker];
+    const sparkline = createSparkline(entry);
     const priceDisplay = pricesStale
       ? `<span class="price-cell loading">${price.toFixed(2)}*</span>`
-      : `<span class="price-cell">$${price.toFixed(2)}</span>`;
+      : `<span class="price-cell">$${price.toFixed(2)}${sparkline}</span>`;
     const costDisplay = (privateUnlocked && p.cost) ? `$${p.cost.toFixed(2)}` : '——';
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -1696,6 +1920,12 @@ async function fetchPrices() {
     renderNewsTab();
     WarRoom.updateFromPriceData(d);
 
+    // New enhancement renders
+    renderTickerTape(d);
+    renderPRI(d);
+    renderSignalConvergence(d);
+    updateStaleIndicator(d);
+
     // Price timestamp — use first available arsenal ticker's market_time
     const firstSym = ARSENAL_CORE[0]?.ticker || Object.keys(d.prices)[0];
     const firstEntry = d.prices[firstSym];
@@ -1749,9 +1979,10 @@ function renderWatchtowerTable(roster, tbodyId, pricesData, advData) {
     const p = pEntry.price || (prices[sym] || null);
     const change = pEntry.change ?? pEntry.change_pct;
 
-    // Price cell
+    // Price cell + sparkline
+    const sparkline = createSparkline(pEntry);
     const priceStr = p
-      ? `$${p.toFixed(2)}<span style="color:${change >= 0 ? 'var(--green)' : 'var(--red)'};font-size:9px;margin-left:4px">${change >= 0 ? '+' : ''}${(change ?? 0).toFixed(2)}%</span>`
+      ? `$${p.toFixed(2)}${sparkline}<span style="color:${change >= 0 ? 'var(--green)' : 'var(--red)'};font-size:9px;margin-left:4px">${change >= 0 ? '+' : ''}${(change ?? 0).toFixed(2)}%</span>`
       : '<span style="color:var(--text-dim)">—</span>';
 
     // ADV cell
@@ -1913,11 +2144,13 @@ function renderNewsTab() {
     const linkAttr = url !== '#' ? `href="${url}" target="_blank" rel="noopener"` : '';
     const groupColor = arsenalSet.has(n.sym) ? 'var(--green)' : 'var(--blue)';
     const groupLabel = arsenalSet.has(n.sym) ? 'ARSENAL' : 'WATCH';
+    const badges = newsBadges(headline);
     return `<div style="background:var(--bg-2);border:1px solid var(--border);border-left:3px solid ${fresh ? groupColor : 'var(--border)'};border-radius:3px;padding:8px 10px">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-        <div style="display:flex;align-items:baseline;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
           <span style="font-weight:700;color:var(--text-white);font-size:12px">${n.sym}</span>
           <span style="font-size:8px;color:${groupColor};font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px">${groupLabel}</span>
+          ${badges}
         </div>
         <span style="font-size:9px;color:var(--text-dim)">${n.date || '—'} · ${n.publisher || ''}</span>
       </div>
@@ -1939,6 +2172,396 @@ function updateWtCountdown() {
   const days = Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
   el.textContent = days;
 }
+
+// ─── TICKER TAPE (A4) ───
+function renderTickerTape(d) {
+  const tape = document.getElementById('tickerTape');
+  if (!tape || !d || !d.prices) return;
+  const tickers = [...ARSENAL_CORE, ...ARSENAL_SAT].map(p => p.ticker);
+  const items = tickers.map(sym => {
+    const entry = d.prices[sym];
+    if (!entry) return '';
+    const p = entry.price;
+    const ch = entry.change ?? entry.change_pct ?? 0;
+    const cls = ch >= 0 ? 'pos' : 'neg';
+    const sign = ch >= 0 ? '+' : '';
+    return `<span class="ticker-tape-item"><span class="ticker-tape-sym">${sym}</span><span class="ticker-tape-price">$${p.toFixed(2)}</span><span class="ticker-tape-chg ${cls}">${sign}${ch.toFixed(2)}%</span></span>`;
+  }).filter(Boolean);
+  // Duplicate for seamless scroll
+  tape.innerHTML = items.join('') + items.join('');
+}
+
+// ─── SPARKLINES (A2) ───
+function createSparkline(entry) {
+  if (!entry) return '';
+  const p = entry.price;
+  const ch5 = entry.change5d;
+  if (p == null || ch5 == null) return '';
+  // Estimate 5 data points: p at day 0, linear interpolation to current
+  const startPrice = p / (1 + ch5 / 100);
+  const pts = [];
+  for (let i = 0; i < 5; i++) {
+    const frac = i / 4;
+    // Add slight curve adjustment for visual interest
+    const curveOffset = Math.sin(frac * Math.PI) * (Math.abs(ch5) * 0.15);
+    pts.push(startPrice + (p - startPrice) * frac + curveOffset * (ch5 >= 0 ? 1 : -1));
+  }
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const range = max - min || 1;
+  const w = 36, h = 14;
+  const coords = pts.map((v, i) => `${(i / 4 * w).toFixed(1)},${(h - (v - min) / range * h).toFixed(1)}`).join(' ');
+  const color = ch5 >= 0 ? 'var(--green)' : 'var(--red)';
+  return `<svg class="sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${coords}" stroke="${color}"/></svg>`;
+}
+
+// ─── PRI GAUGE — Portfolio Risk Index (B1) ───
+// PRI constants
+const SOXX_CONCENTRATION_PCT = 35.7;
+const CONCENTRATION_THRESHOLD = 50;
+const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Shared helper: find tickers currently in blackout windows
+function getBlackoutTickers() {
+  const result = [];
+  [...WT_CORE_ROSTER, ...WT_SAT_ROSTER, ...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+    if (p.flag && (p.flag.includes('BLACKOUT') || p.flag.includes('Blackout'))) result.push(p.ticker);
+    if (p.note && p.note.includes('Blackout')) result.push(p.ticker);
+  });
+  return [...new Set(result)];
+}
+
+function calculatePRI(d) {
+  let vixScore = 0, ddScore = 0, concScore = 0, blackScore = 0, neglectScore = 0;
+
+  // VIX regime (0-30 pts)
+  if (d && d.gate) {
+    const vix = d.gate.vix || 0;
+    if (vix >= 30) vixScore = 30;
+    else if (vix >= 25) vixScore = 22;
+    else if (vix >= 22) vixScore = 12;
+    else vixScore = 0;
+  }
+
+  // Drawdown proximity (0-25 pts) — simplified, uses HWM if available
+  // Without private data, estimate from VIX correlation
+  if (d && d.gate) {
+    const vix = d.gate.vix || 0;
+    ddScore = Math.min(25, Math.round(vix > 22 ? (vix - 20) * 2.5 : 0));
+  }
+
+  // Concentration risk (0-15 pts)
+  concScore = Math.round(SOXX_CONCENTRATION_PCT / CONCENTRATION_THRESHOLD * 10);
+
+  // Earnings blackout count (0-15 pts)
+  blackScore = Math.min(15, getBlackoutTickers().length * 5);
+
+  // Thesis neglect (0-15 pts)
+  neglectScore = Math.min(15, NEGLECT_TICKERS.length * 5);
+
+  const total = vixScore + ddScore + concScore + blackScore + neglectScore;
+  return { total: Math.min(100, total), vix: vixScore, dd: ddScore, conc: concScore, black: blackScore, neglect: neglectScore };
+}
+
+function renderPRI(d) {
+  const pri = calculatePRI(d);
+  const scoreEl = document.getElementById('priScore');
+  const fillEl = document.getElementById('priGaugeFill');
+  if (!scoreEl || !fillEl) return;
+
+  scoreEl.textContent = pri.total;
+  // Color zones
+  let color;
+  if (pri.total < 30) color = 'var(--green)';
+  else if (pri.total < 60) color = 'var(--amber)';
+  else if (pri.total < 80) color = 'var(--orange)';
+  else color = 'var(--red)';
+  scoreEl.style.color = color;
+  fillEl.setAttribute('stroke', color);
+
+  // Gauge fill (circumference = 2*PI*50 ≈ 314)
+  const circumference = 314;
+  const offset = circumference - (pri.total / 100 * circumference);
+  fillEl.setAttribute('stroke-dashoffset', offset.toFixed(0));
+
+  // Breakdown
+  const setVal = (id, val, max) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = `${val}/${max}`;
+      el.style.color = val === 0 ? 'var(--green)' : val >= max * 0.7 ? 'var(--red)' : 'var(--amber)';
+    }
+  };
+  setVal('priVix', pri.vix, 30);
+  setVal('priDd', pri.dd, 25);
+  setVal('priConc', pri.conc, 15);
+  setVal('priBlack', pri.black, 15);
+  setVal('priNeglect', pri.neglect, 15);
+}
+
+// ─── SIGNAL CONVERGENCE (B2) ───
+function detectSignals(d) {
+  const signals = [];
+  if (!d) return signals;
+
+  const vix = d.gate?.vix || 0;
+  const regime = getRegime(vix);
+  const spyAbove200 = d.spy_above_200dma;
+
+  // Count positions below SMA200
+  let belowSma200 = 0;
+  const priceMap = d.prices || {};
+  ARSENAL_CORE.forEach(p => {
+    const entry = priceMap[p.ticker];
+    if (entry && entry.price && entry.sma200 && entry.price < entry.sma200) belowSma200++;
+  });
+
+  // Count blackout tickers (shared helper)
+  const blackouts = getBlackoutTickers();
+
+  // Count ADV gates met
+  let gatesMet = 0;
+  const advData = d.adv || {};
+  Object.values(advData).forEach(a => { if (a.gate_met) gatesMet++; });
+
+  // ELEVATED RISK: VIX rising + positions below SMA200 + blackouts
+  if (regime !== 'GREEN' && belowSma200 >= 2 && blackouts.length > 0) {
+    signals.push({
+      sev: 'crit', icon: '🔴',
+      title: 'ELEVATED RISK CONVERGENCE',
+      desc: `VIX ${regime} + ${belowSma200} positions below SMA200 + ${blackouts.length} blackout${blackouts.length > 1 ? 's' : ''} (${blackouts.join(', ')})`
+    });
+  }
+
+  // FREEZE ACTIVE
+  if (regime === 'ORANGE' || regime === 'RED') {
+    signals.push({
+      sev: 'crit', icon: '❄️',
+      title: regime === 'RED' ? 'HARD FREEZE ACTIVE' : 'FREEZE ACTIVE',
+      desc: `VIX ${vix.toFixed(1)} — all new deployments halted. Standing orders paused.`
+    });
+  }
+
+  // DEPLOYMENT WINDOW: VIX green + ADV gates met + no blackouts
+  if (regime === 'GREEN' && gatesMet > 0 && blackouts.length === 0) {
+    signals.push({
+      sev: 'ok', icon: '🟢',
+      title: 'DEPLOYMENT WINDOW OPEN',
+      desc: `VIX ${vix.toFixed(1)} GREEN + ${gatesMet} ADV gate${gatesMet > 1 ? 's' : ''} met. Execute standing orders.`
+    });
+  }
+
+  // SPY BELOW 200DMA WARNING
+  if (spyAbove200 === false) {
+    signals.push({
+      sev: 'warn', icon: '⚠️',
+      title: 'SPY BELOW 200-DAY MA',
+      desc: 'S&P 500 trading below 200-day moving average — risk-off environment.'
+    });
+  }
+
+  // THESIS NEGLECT WARNING
+  if (NEGLECT_TICKERS.length > 0) {
+    signals.push({
+      sev: 'warn', icon: '⏰',
+      title: 'THESIS NOT SET',
+      desc: `${NEGLECT_TICKERS.join(', ')} — missing thesis dates. DC-06 neglect clock running.`
+    });
+  }
+
+  // BLACKOUT PROXIMITY
+  if (blackouts.length > 0) {
+    signals.push({
+      sev: 'info', icon: '📅',
+      title: 'EARNINGS BLACKOUT ZONE',
+      desc: `${blackouts.join(', ')} — in pre-earnings blackout window. No new positions.`
+    });
+  }
+
+  // HIGH VOLUME SPIKE
+  if (gatesMet >= 3) {
+    signals.push({
+      sev: 'info', icon: '📊',
+      title: 'VOLUME SURGE DETECTED',
+      desc: `${gatesMet} tickers showing ≥1.5× ADV volume — unusual activity.`
+    });
+  }
+
+  // ALL CLEAR
+  if (signals.length === 0) {
+    signals.push({
+      sev: 'ok', icon: '✅',
+      title: 'NO ACTIVE SIGNALS',
+      desc: 'All systems nominal. No convergence alerts detected.'
+    });
+  }
+
+  return signals;
+}
+
+function renderSignalConvergence(d) {
+  const container = document.getElementById('signalConvergence');
+  if (!container) return;
+  const signals = detectSignals(d);
+  container.innerHTML = signals.map(s =>
+    `<div class="signal-item">
+      <span class="signal-icon">${s.icon}</span>
+      <div class="signal-body">
+        <div class="signal-title">${s.title}</div>
+        <div class="signal-desc">${s.desc}</div>
+      </div>
+      <span class="signal-sev ${s.sev}">${s.sev.toUpperCase()}</span>
+    </div>`
+  ).join('');
+}
+
+// ─── NEWS SENTIMENT & CATEGORIES (B4) ───
+const BULLISH_KEYWORDS = ['upgrade', 'beat', 'beats', 'outperform', 'raises', 'raised', 'surges', 'soars', 'rally', 'bullish', 'strong', 'record high', 'breakout', 'buy', 'overweight', 'positive'];
+const BEARISH_KEYWORDS = ['downgrade', 'miss', 'misses', 'underperform', 'cuts', 'lowered', 'plunges', 'tumbles', 'sell-off', 'bearish', 'weak', 'disappoints', 'warning', 'sell', 'underweight', 'negative'];
+const DOCTRINE_KEYWORDS = ['china', 'israel', 'taiwan', 'tariff', 'ban', 'restriction', 'sanction'];
+
+function classifyNewsSentiment(headline) {
+  if (!headline) return 'neutral';
+  const lower = headline.toLowerCase();
+  const bull = BULLISH_KEYWORDS.some(k => lower.includes(k));
+  const bear = BEARISH_KEYWORDS.some(k => lower.includes(k));
+  if (bull && !bear) return 'bullish';
+  if (bear && !bull) return 'bearish';
+  return 'neutral';
+}
+
+function classifyNewsCategory(headline) {
+  if (!headline) return null;
+  const lower = headline.toLowerCase();
+  if (lower.includes('earning') || lower.includes('revenue') || lower.includes('eps') || lower.includes('quarter')) return 'EARNINGS';
+  if (lower.includes('sector') || lower.includes('semiconductor') || lower.includes('chip') || lower.includes('defense')) return 'SECTOR';
+  if (lower.includes('fed') || lower.includes('inflation') || lower.includes('gdp') || lower.includes('rate') || lower.includes('economy')) return 'MACRO';
+  if (DOCTRINE_KEYWORDS.some(k => lower.includes(k))) return 'DOCTRINE';
+  return null;
+}
+
+function newsBadges(headline) {
+  const sentiment = classifyNewsSentiment(headline);
+  const category = classifyNewsCategory(headline);
+  const isDoctrine = DOCTRINE_KEYWORDS.some(k => headline?.toLowerCase().includes(k));
+  let html = '';
+  if (sentiment !== 'neutral') {
+    html += `<span class="news-sentiment ${sentiment}">${sentiment.toUpperCase()}</span>`;
+  }
+  if (category) {
+    html += `<span class="news-cat${isDoctrine ? ' doctrine' : ''}">${category}</span>`;
+  }
+  return html;
+}
+
+// ─── STALE DATA INDICATOR (B8) ───
+function updateStaleIndicator(d) {
+  const badge = document.getElementById('staleBadge');
+  if (!badge) return;
+  if (!d || !d.last_updated) { badge.innerHTML = ''; return; }
+  const updated = new Date(d.last_updated);
+  const ageMs = Date.now() - updated.getTime();
+  const ageHrs = ageMs / (1000 * 60 * 60);
+  if (ageHrs > 48) {
+    badge.innerHTML = '<span class="stale-badge crit">STALE 48h+</span>';
+  } else if (ageHrs > 24) {
+    badge.innerHTML = '<span class="stale-badge warn">STALE 24h+</span>';
+  } else {
+    badge.innerHTML = '';
+  }
+  // Update relative time
+  const refreshEl = document.getElementById('lastRefresh');
+  if (refreshEl && d.updated_bkk) {
+    const mins = Math.round(ageMs / 60000);
+    const relative = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`;
+    refreshEl.textContent = `Last refresh: ${d.updated_bkk} (${relative})`;
+  }
+}
+
+// ─── AUTO-REFRESH (B8) ───
+let autoRefreshInterval = null;
+function toggleAutoRefresh(enabled) {
+  if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
+  if (enabled) {
+    autoRefreshInterval = setInterval(() => {
+      if (!document.hidden) fetchPrices();
+    }, AUTO_REFRESH_INTERVAL_MS);
+  }
+  try { localStorage.setItem('sniper_auto_refresh', enabled ? '1' : '0'); } catch (_) {}
+}
+
+// ─── KEYBOARD SHORTCUTS (B7) ───
+const TAB_MAP = ['arsenal', 'vault', 'watchtower', 'news', 'backtester', 'warroom'];
+document.addEventListener('keydown', (e) => {
+  // Don't trigger when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+  const kbdOverlay = document.getElementById('kbdOverlay');
+  const pinOverlay = document.getElementById('pinOverlay');
+
+  // Escape: close overlays
+  if (e.key === 'Escape') {
+    if (kbdOverlay && !kbdOverlay.classList.contains('hidden')) { kbdOverlay.classList.add('hidden'); return; }
+    return;
+  }
+  // ?: toggle shortcuts
+  if (e.key === '?') {
+    if (kbdOverlay) kbdOverlay.classList.toggle('hidden');
+    return;
+  }
+  // Don't handle shortcuts if PIN modal is visible
+  if (pinOverlay && !pinOverlay.classList.contains('hidden')) return;
+
+  // 1-6: switch tabs
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= 6) {
+    const tabName = TAB_MAP[num - 1];
+    const btn = document.querySelectorAll('.tab-btn')[num - 1];
+    if (btn) switchTab(tabName, btn);
+    return;
+  }
+  // R: refresh
+  if (e.key === 'r' || e.key === 'R') {
+    fetchPrices();
+    return;
+  }
+});
+
+// ─── PANEL COLLAPSE MANAGER (A1) ───
+const PanelManager = (function() {
+  const STORAGE_KEY = 'sniper_panels';
+  let state = {};
+
+  function load() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) state = JSON.parse(saved);
+    } catch (_) {}
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+  }
+
+  function toggle(panelId) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const collapsed = panel.classList.toggle('collapsed');
+    state[panelId] = collapsed;
+    save();
+  }
+
+  function init() {
+    load();
+    // Apply saved state
+    Object.entries(state).forEach(([id, collapsed]) => {
+      const panel = document.getElementById(id);
+      if (panel && collapsed) panel.classList.add('collapsed');
+    });
+  }
+
+  return { init, toggle };
+})();
 
 // ─── BACKTESTER (CMD-3) ───
 // Matrix scores (Mar 16, 2026 final — override from private.json if available)
@@ -3226,6 +3849,15 @@ window.addEventListener('load', () => {
   renderBtAllocTable(100000, 5000, 'matrix');
   // Initialize War Room canvas
   WarRoom.init();
+  // Initialize panel collapse state
+  PanelManager.init();
+  // Restore auto-refresh preference
+  try {
+    if (localStorage.getItem('sniper_auto_refresh') === '1') {
+      document.getElementById('autoRefreshToggle').checked = true;
+      toggleAutoRefresh(true);
+    }
+  } catch (_) {}
   // Fetch live data
   setTimeout(fetchPrices, 300);
   setTimeout(fetchPrivate, 300);
@@ -3239,7 +3871,19 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
+  // Sync mobile tab bar
+  document.querySelectorAll('.mobile-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-tab') === name);
+  });
+  // Sync desktop tab bar (when triggered by keyboard shortcut)
+  if (!btn) {
+    const idx = TAB_MAP.indexOf(name);
+    if (idx >= 0) {
+      const desktopBtn = document.querySelectorAll('.tab-btn')[idx];
+      if (desktopBtn) desktopBtn.classList.add('active');
+    }
+  }
   if (name === 'vault' && !vaultChartReady && typeof Chart !== 'undefined') {
     initYtdChart();
     vaultChartReady = true;
