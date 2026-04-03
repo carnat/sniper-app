@@ -3486,22 +3486,24 @@ const WarRoom = (function() {
     }
   }
 
-  // ── Body style diversity per sector ──
+  // ── Body style diversity per sector (inspired by Pixel Agents' 6 diverse characters) ──
+  const BODY_STYLES = {
+    semi:     { hairStyle: 'flat',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
+    space:    { hairStyle: 'spiky', bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null },
+    network:  { hairStyle: 'side',  bodyW: 9, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
+    energy:   { hairStyle: 'buzz',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
+    defense:  { hairStyle: 'crew',  bodyW: 9, bodyH: 7, legLen: 3, armLen: 4, accessory: null },
+    vault:    { hairStyle: 'flat',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
+    sentinel: { hairStyle: 'flat',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
+    cmd:      { hairStyle: 'flat',  bodyW: 8, bodyH: 9, legLen: 5, armLen: 5, accessory: 'star' },
+    doctrine: { hairStyle: 'none',  bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
+    gate:     { hairStyle: 'none',  bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
+    watcher:  { hairStyle: 'none',  bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
+  };
+  const DEFAULT_BODY_STYLE = BODY_STYLES.semi;
+
   function getBodyStyle(sector) {
-    switch (sector) {
-      case 'semi':     return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
-      case 'space':    return { hairStyle: 'spiky',   bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null };
-      case 'network':  return { hairStyle: 'side',    bodyW: 9, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
-      case 'energy':   return { hairStyle: 'buzz',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
-      case 'defense':  return { hairStyle: 'crew',    bodyW: 9, bodyH: 7, legLen: 3, armLen: 4, accessory: null };
-      case 'vault':    return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' };
-      case 'sentinel': return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' };
-      case 'cmd':      return { hairStyle: 'flat',    bodyW: 8, bodyH: 9, legLen: 5, armLen: 5, accessory: 'star' };
-      case 'doctrine': return { hairStyle: 'none',    bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' };
-      case 'gate':     return { hairStyle: 'none',    bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' };
-      case 'watcher':  return { hairStyle: 'none',    bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' };
-      default:         return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
-    }
+    return BODY_STYLES[sector] || DEFAULT_BODY_STYLE;
   }
 
   function drawAgent(a) {
@@ -3825,7 +3827,8 @@ const WarRoom = (function() {
     }
 
     // Animated "..." waiting dots for waiting messages
-    const isWaiting = text.includes('...') || text.includes('scanning') || text.includes('monitoring');
+    const WAITING_KEYWORDS = ['...', 'scanning', 'monitoring'];
+    const isWaiting = WAITING_KEYWORDS.some(kw => text.includes(kw));
     if (isWaiting) {
       ctx.fillStyle = speechColor;
       ctx.textAlign = 'center';
@@ -3916,7 +3919,6 @@ const WarRoom = (function() {
   function render() {
     ctx.save();
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, ROOM_W, ROOM_H);
 
     drawFloor();
