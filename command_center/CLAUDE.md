@@ -71,3 +71,17 @@ Three static agents at the bottom of the room (zone `council`) that continuously
 - **Consensus**: when 2-of-3 members flag the same ticker, `⚡ CONSENSUS` label appears at table center
 - Click/hover on any Triad agent shows tooltip with full findings list + severity counts
 - Room expanded from 26→30 rows to accommodate council zone
+
+## Doctrine implementation status
+- ✅ VIX regime bands (GREEN/YELLOW/ORANGE/RED)
+- ✅ PRI gauge (5-factor composite)
+- ✅ Thesis age clock (NEGLECT/STALE tracking)
+- ✅ Blackout window detection
+- ✅ Triad Council audit engine
+- ⚠️ DCA Matrix scores are hardcoded — F1-F4 not computed live
+- ⚠️ Drawdown Freeze displayed but not enforced (no DCA blocking)
+- ⚠️ Victory Protocol targets shown but 2x/3x automation missing
+- ❌ Alpha Filter validation not automated
+- ❌ Bear Restructure logic not implemented
+- ❌ Dead Hand Clause not implemented
+- ❌ Concentration limit enforcement missing

@@ -43,6 +43,24 @@ Commander from the decision chain, do not build it.
 - Never touch transaction/lot database logic without explicit Commander instruction
 - Never duplicate doctrine rules outside `.sniper-plugin/skills/` and `docs/doctrine/`
 - Never add `node_modules`, `package.json`, `webpack`, or build tooling to `command_center/`
+- Never hardcode actual portfolio values (shares, cost basis, ammo) in committed files — use gitignored data files
+- Never create phantom/estimated portfolio positions — 0 shares = 0 shares (CA-3)
+- Never confuse cost-basis P&L for thesis health — they are separate concerns
+
+## Doctrine versions (authoritative source: `docs/doctrine/`)
+| File | Version | Status |
+|------|---------|--------|
+| `doctrine_core.md` | v1.12.1 | Current |
+| `doctrine_ops.md` | v1.15.1 | Current |
+| `doctrine_council.md` | v1.11.0 | Current |
+| `doctrine_pe.md` | v1.6.0 | Current |
+| `doctrine_core_matrix.md` | v1.0.0-BETA.1 | Current |
+| `doctrine_core_tripwires.md` | v1.0.0-BETA.1 | Current |
+
+## Ticker map (doctrine_ops v1.15.1 §0.4)
+- **Arsenal (10):** VRT, ASTS, VST, MU, APH, ANET, TSM, ONDS, FN, COHR
+- **Watchtower Core (12):** TSEM, BWXT, MOD, NBIS, FORM, ENTG, ONTO, LITE, QRVO, PLTR, KTOS, SKYT
+- **Watchtower Satellite (3):** RKLB, SATL, PL
 
 ## Session order
 | Session | Task | Key output | Status |
@@ -59,7 +77,18 @@ Commander from the decision chain, do not build it.
 | 7 | Doctrine integration + portfolio import | `docs/doctrine/`, `scripts/import_portfolio.py`, portfolio config schema | ✅ Complete |
 | 8 | sniper/ package extraction | Business logic → 11 modules, `streamlit_app.py` 5681→3827 lines | ✅ Complete |
 | 9 | CMD-6→11 UI/UX enhancements | PRI gauge, signal convergence, sparklines, ticker tape, news badges, keyboard shortcuts, auto-refresh, mobile tab bar, panel manager | ✅ Complete |
-| 10 | Handoff doc + CLAUDE.md overhaul | Docs aligned to current state, stale data removed | ✅ Complete |
+| 10 | Handoff doc + CLAUDE.md overhaul | Docs aligned to current state, stale data removed, doctrine gap analysis | ✅ Complete |
+
+## Next priorities (doctrine gap alignment)
+- DCA Matrix live scoring engine (F1-F4 computed, not hardcoded)
+- Drawdown Freeze enforcement (HWM -20% blocks DCA, Amber Zone)
+- Victory Protocol tracking (2x/3x triggers, Trailing Shield)
+- Concentration limit enforcement (25% single, 15% satellite, 40% sector)
+- Alpha Filter validation panel (China 20/20, ADV gate)
+- Enhanced Triad Council audits (full gate decision tree)
+- Bear Restructure logic (RED >10 sessions)
+- Dead Hand Clause (120-day /review trigger)
 
 ## Reference
-Full session handoff: `docs/sniper_claude_code_handoff.md`
+Authoritative doctrine: `docs/doctrine/` (version-controlled, 6 files)
+Handoff doc: `docs/sniper_claude_code_handoff.md` (⚠️ deprecated — superseded by doctrine folder + CLAUDE.md hierarchy)

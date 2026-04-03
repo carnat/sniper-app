@@ -1,3 +1,7 @@
+> ⚠️ **DEPRECATED** — This file is superseded by `docs/doctrine/` and the CLAUDE.md hierarchy.
+> Do not use for new sessions. Retained for historical reference only.
+> Authoritative doctrine: `docs/doctrine/` | Context: root `CLAUDE.md` + subfolder `CLAUDE.md` files.
+
 # SNIPER TOOLS — CLAUDE CODE HANDOFF
 
 **Date:** Apr 3, 2026 (overhauled from Mar 16, 2026 original)
