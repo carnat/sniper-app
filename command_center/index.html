@@ -2015,10 +2015,10 @@ const WarRoom = (function() {
   const FLOOR_B = '#0e1220';
   const WALL_COLOR = '#161e2c';
   const WALL_TOP = '#1e2a3c';
-  const ZONE_ARSENAL = 'rgba(58,159,255,0.04)';
-  const ZONE_WT = 'rgba(0,200,224,0.03)';
-  const ZONE_VAULT = 'rgba(128,128,128,0.03)';
-  const ZONE_COUNCIL = 'rgba(80,40,120,0.05)';
+  const ZONE_ARSENAL = 'rgba(58,159,255,0.10)';
+  const ZONE_WT = 'rgba(0,200,224,0.08)';
+  const ZONE_VAULT = 'rgba(128,128,128,0.08)';
+  const ZONE_COUNCIL = 'rgba(80,40,120,0.12)';
   const DESK_COLOR = '#1a2438';
   const DESK_TOP = '#243050';
 
@@ -2599,17 +2599,32 @@ const WarRoom = (function() {
     ctx.fillStyle = ZONE_COUNCIL;
     ctx.fillRect(2 * TILE, 24.5 * TILE, 36 * TILE, 4 * TILE);
 
+    // Zone border lines
+    ctx.save();
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = 'rgba(58,159,255,0.20)';
+    ctx.strokeRect(2 * TILE, 3.5 * TILE, 36 * TILE, 7.5 * TILE);
+    ctx.strokeStyle = 'rgba(0,200,224,0.18)';
+    ctx.strokeRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
+    ctx.strokeStyle = 'rgba(128,128,128,0.18)';
+    ctx.strokeRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
+    ctx.strokeStyle = 'rgba(120,80,200,0.22)';
+    ctx.strokeRect(2 * TILE, 24.5 * TILE, 36 * TILE, 4 * TILE);
+    ctx.setLineDash([]);
+    ctx.restore();
+
     // Zone labels
     ctx.save();
-    ctx.font = '5px monospace';
+    ctx.font = '7px monospace';
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#1a3050';
+    ctx.fillStyle = '#4a7aaa';
     ctx.fillText('ARSENAL', 2.5 * TILE, 4.2 * TILE);
-    ctx.fillStyle = '#0a3040';
+    ctx.fillStyle = '#3a8898';
     ctx.fillText('WATCHTOWER', 2.5 * TILE, 12.2 * TILE);
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#6a7a8a';
     ctx.fillText('VAULT / RESERVE', 2.5 * TILE, 20.6 * TILE);
-    ctx.fillStyle = '#1a1030';
+    ctx.fillStyle = '#6a5090';
     ctx.fillText('TRIAD COUNCIL', 2.5 * TILE, 25.1 * TILE);
     ctx.restore();
   }
@@ -2632,9 +2647,9 @@ const WarRoom = (function() {
     ctx.stroke();
     // Table center label
     ctx.save();
-    ctx.font = 'bold 5px monospace';
+    ctx.font = 'bold 6px monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#20224a';
+    ctx.fillStyle = '#4a4a8a';
     ctx.fillText('TRIAD', cx, cy + 2);
     ctx.restore();
     // Consensus glow when 2-of-3 agree on same ticker
@@ -2749,6 +2764,13 @@ const WarRoom = (function() {
       ctx.fillRect(x - 2, y - 5, 1, 1);
     }
 
+    // 1px dark outline around sprite bounding box (arms: x±6, head top: y-16, feet: y+4) for pop
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 5, y - 17, 11, 21);
+    ctx.restore();
+
     // Hovered highlight
     if (a === hoveredAgent) {
       ctx.strokeStyle = '#3a9fff';
@@ -2758,19 +2780,19 @@ const WarRoom = (function() {
 
     // Ticker label below
     ctx.save();
-    ctx.font = 'bold 4px monospace';
+    ctx.font = 'bold 5px monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = a === hoveredAgent ? '#ffffff' : (frozen ? '#6090c0' : '#607898');
-    ctx.fillText(a.ticker, x, y + 8);
+    ctx.fillStyle = a === hoveredAgent ? '#ffffff' : (frozen ? '#80b0e0' : '#8ab0d0');
+    ctx.fillText(a.ticker, x, y + 9);
     ctx.restore();
 
     // Score badge (if applicable)
     if (a.score) {
       ctx.save();
-      ctx.font = 'bold 3px monospace';
+      ctx.font = 'bold 4.5px monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#ffb800';
-      ctx.fillText(a.score + 'pts', x, y + 12);
+      ctx.fillText(a.score + 'pts', x, y + 14);
       ctx.restore();
     }
   }
@@ -2780,23 +2802,26 @@ const WarRoom = (function() {
     const x = Math.round(a.x);
     const y = Math.round(a.y + a.bob);
 
+    // Stagger bubble height by ticker's first character so overlapping agents don't stack identically
+    const stagger = (a.ticker.charCodeAt(0) % 3) * 4;
+
     ctx.save();
-    ctx.font = '3.5px monospace';
+    ctx.font = '5px monospace';
     const text = a.speech;
     const tw = ctx.measureText(text).width;
-    const bw = tw + 6;
-    const bh = 7;
+    const bw = tw + 8;
+    const bh = 9;
     const bx = x - bw / 2;
-    const by = y - 24 - bh;
+    const by = y - 28 - bh - stagger;
 
     // Bubble background
-    ctx.fillStyle = '#0d1420';
+    ctx.fillStyle = '#141e30';
     ctx.fillRect(bx, by, bw, bh);
-    ctx.strokeStyle = '#2a3a50';
+    ctx.strokeStyle = '#3a5070';
     ctx.lineWidth = 0.5;
     ctx.strokeRect(bx, by, bw, bh);
     // Pointer
-    ctx.fillStyle = '#0d1420';
+    ctx.fillStyle = '#141e30';
     ctx.fillRect(x - 1, by + bh, 2, 2);
 
     // Text
@@ -2813,12 +2838,12 @@ const WarRoom = (function() {
     // Council bubbles get a severity-tinted border
     if (a.zone === 'council' && a.speechSeverity) {
       const sevBorders = { critical: '#cc1028', warning: '#aa6600', info: '#006688', ok: '#006030' };
-      ctx.strokeStyle = sevBorders[a.speechSeverity] || '#2a3a50';
+      ctx.strokeStyle = sevBorders[a.speechSeverity] || '#3a5070';
       ctx.strokeRect(bx, by, bw, bh);
     }
     ctx.fillStyle = speechColor;
     ctx.textAlign = 'center';
-    ctx.fillText(text, x, by + 5);
+    ctx.fillText(text, x, by + 6.5);
     ctx.restore();
   }
 
@@ -2829,24 +2854,24 @@ const WarRoom = (function() {
     ctx.fillRect(TILE, barY, (ROOM_COLS - 2) * TILE, TILE);
 
     ctx.save();
-    ctx.font = '4px monospace';
+    ctx.font = '5px monospace';
     ctx.textAlign = 'left';
 
     // VIX
     const vixColor = regime === 'GREEN' ? '#00d084' : regime === 'YELLOW' ? '#ffb800' : regime === 'ORANGE' ? '#ff8c00' : '#ff4055';
-    ctx.fillStyle = '#5a7898';
+    ctx.fillStyle = '#8ab0c8';
     ctx.fillText('VIX', 2 * TILE, barY + 6);
     ctx.fillStyle = vixColor;
     ctx.fillText(vixVal.toFixed(2), 2 * TILE + 16, barY + 6);
 
     // Regime
-    ctx.fillStyle = '#5a7898';
+    ctx.fillStyle = '#8ab0c8';
     ctx.fillText('REGIME', 2 * TILE + 50, barY + 6);
     ctx.fillStyle = vixColor;
     ctx.fillText(regime, 2 * TILE + 78, barY + 6);
 
     // THB
-    ctx.fillStyle = '#5a7898';
+    ctx.fillStyle = '#8ab0c8';
     ctx.fillText('THB', 2 * TILE + 110, barY + 6);
     ctx.fillStyle = '#00d084';
     ctx.fillText(thbVal.toFixed(2), 2 * TILE + 126, barY + 6);
@@ -2854,7 +2879,7 @@ const WarRoom = (function() {
     // Agent count
     const arsenalCount = agents.filter(a => a.zone === 'arsenal').length;
     const wtCount = agents.filter(a => a.zone === 'watchtower').length;
-    ctx.fillStyle = '#5a7898';
+    ctx.fillStyle = '#8ab0c8';
     ctx.fillText('ARSENAL ' + arsenalCount + ' · WT ' + wtCount, 2 * TILE + 170, barY + 6);
 
     // Time
@@ -2862,7 +2887,7 @@ const WarRoom = (function() {
     const bkk = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
     const timeStr = String(bkk.getHours()).padStart(2, '0') + ':' + String(bkk.getMinutes()).padStart(2, '0');
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#5a7898';
+    ctx.fillStyle = '#8ab0c8';
     ctx.fillText(timeStr + ' BKK', (ROOM_COLS - 2) * TILE, barY + 6);
 
     // Frozen indicator
@@ -2876,13 +2901,13 @@ const WarRoom = (function() {
 
   function drawRoomTitle() {
     ctx.save();
-    ctx.font = 'bold 6px monospace';
+    ctx.font = 'bold 8px monospace';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#2a3a50';
+    ctx.fillStyle = '#6a8aaa';
     ctx.fillText('SNIPER WAR ROOM', ROOM_W / 2, 10);
-    ctx.font = '4px monospace';
-    ctx.fillStyle = '#1a2a40';
-    ctx.fillText('AGENT-BASED PORTFOLIO OS · INFORMATIONAL ONLY', ROOM_W / 2, 16);
+    ctx.font = '5px monospace';
+    ctx.fillStyle = '#4a6a8a';
+    ctx.fillText('AGENT-BASED PORTFOLIO OS · INFORMATIONAL ONLY', ROOM_W / 2, 18);
     ctx.restore();
   }
 
