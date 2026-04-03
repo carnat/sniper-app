@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
+import requests
 import yfinance as yf
 from ratelimit import limits, sleep_and_retry
 
@@ -116,9 +117,6 @@ def get_sec_api_keys(secrets_keys=None):
     return keys
 
 _get_sec_api_keys = get_sec_api_keys
-
-
-import requests  # noqa: E402 — grouped with network calls
 
 
 @sleep_and_retry
