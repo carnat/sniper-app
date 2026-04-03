@@ -166,7 +166,7 @@ Backward-compatible keys (`gate`, top-level `adv` dict, top-level `news` dict) s
 **VIX Gate (DC-15, doctrine_ops v1.15.1):**
 - VIX < 22 → GREEN → full deployment allowed
 - VIX 22–<25 → YELLOW → deploy with caution
-- VIX 25–30 → ORANGE (FREEZE) → all deployment blocked
+- VIX 25–≤30 → ORANGE (FREEZE) → all deployment blocked
 - VIX > 30 → RED (HARD FREEZE) → all deployment blocked + emergency protocols
 
 **THB/USD FX Zones:**
