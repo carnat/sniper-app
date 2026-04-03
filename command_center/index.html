@@ -2202,9 +2202,9 @@ function createSparkline(entry) {
   const pts = [];
   for (let i = 0; i < 5; i++) {
     const frac = i / 4;
-    // Add slight curve for visual interest
-    const noise = Math.sin(frac * Math.PI) * (Math.abs(ch5) * 0.15);
-    pts.push(startPrice + (p - startPrice) * frac + noise * (ch5 >= 0 ? 1 : -1));
+    // Add slight curve adjustment for visual interest
+    const curveOffset = Math.sin(frac * Math.PI) * (Math.abs(ch5) * 0.15);
+    pts.push(startPrice + (p - startPrice) * frac + curveOffset * (ch5 >= 0 ? 1 : -1));
   }
   const min = Math.min(...pts);
   const max = Math.max(...pts);
@@ -2216,6 +2216,21 @@ function createSparkline(entry) {
 }
 
 // ─── PRI GAUGE — Portfolio Risk Index (B1) ───
+// PRI constants
+const SOXX_CONCENTRATION_PCT = 35.7;
+const CONCENTRATION_THRESHOLD = 50;
+const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Shared helper: find tickers currently in blackout windows
+function getBlackoutTickers() {
+  const result = [];
+  [...WT_CORE_ROSTER, ...WT_SAT_ROSTER, ...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+    if (p.flag && (p.flag.includes('BLACKOUT') || p.flag.includes('Blackout'))) result.push(p.ticker);
+    if (p.note && p.note.includes('Blackout')) result.push(p.ticker);
+  });
+  return [...new Set(result)];
+}
+
 function calculatePRI(d) {
   let vixScore = 0, ddScore = 0, concScore = 0, blackScore = 0, neglectScore = 0;
 
@@ -2236,20 +2251,13 @@ function calculatePRI(d) {
   }
 
   // Concentration risk (0-15 pts)
-  // SOXX is 35.7% of vault — threshold is 50%
-  concScore = Math.round(35.7 / 50 * 10);
+  concScore = Math.round(SOXX_CONCENTRATION_PCT / CONCENTRATION_THRESHOLD * 10);
 
   // Earnings blackout count (0-15 pts)
-  const blackoutTickers = [];
-  [...WT_CORE_ROSTER, ...WT_SAT_ROSTER, ...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
-    if (p.flag && (p.flag.includes('BLACKOUT') || p.flag.includes('Blackout'))) blackoutTickers.push(p.ticker);
-    if (p.note && p.note.includes('Blackout')) blackoutTickers.push(p.ticker);
-  });
-  blackScore = Math.min(15, blackoutTickers.length * 5);
+  blackScore = Math.min(15, getBlackoutTickers().length * 5);
 
   // Thesis neglect (0-15 pts)
-  const neglectCount = NEGLECT_TICKERS.length;
-  neglectScore = Math.min(15, neglectCount * 5);
+  neglectScore = Math.min(15, NEGLECT_TICKERS.length * 5);
 
   const total = vixScore + ddScore + concScore + blackScore + neglectScore;
   return { total: Math.min(100, total), vix: vixScore, dd: ddScore, conc: concScore, black: blackScore, neglect: neglectScore };
@@ -2308,11 +2316,8 @@ function detectSignals(d) {
     if (entry && entry.price && entry.sma200 && entry.price < entry.sma200) belowSma200++;
   });
 
-  // Count blackout tickers
-  const blackouts = [];
-  [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].forEach(p => {
-    if (p.flag && (p.flag.includes('BLACKOUT') || p.flag.includes('Blackout'))) blackouts.push(p.ticker);
-  });
+  // Count blackout tickers (shared helper)
+  const blackouts = getBlackoutTickers();
 
   // Count ADV gates met
   let gatesMet = 0;
@@ -2480,7 +2485,7 @@ function toggleAutoRefresh(enabled) {
   if (enabled) {
     autoRefreshInterval = setInterval(() => {
       if (!document.hidden) fetchPrices();
-    }, 5 * 60 * 1000); // 5 minutes
+    }, AUTO_REFRESH_INTERVAL_MS);
   }
   try { localStorage.setItem('sniper_auto_refresh', enabled ? '1' : '0'); } catch (_) {}
 }
@@ -2500,7 +2505,7 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   // ?: toggle shortcuts
-  if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+  if (e.key === '?') {
     if (kbdOverlay) kbdOverlay.classList.toggle('hidden');
     return;
   }
