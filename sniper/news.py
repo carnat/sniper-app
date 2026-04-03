@@ -188,7 +188,13 @@ def fetch_news_for_ticker(ticker, finnhub_api_key, allowed_sources=None, allowed
             article_url = str(article.get("url", "") or "").lower()
             article_domain = _extract_domain(article_url)
             is_allowed_source = bool(source_name_lc and source_name_lc in allowed_sources)
-            is_allowed_domain = bool(article_domain and (article_domain in allowed_domains or any(article_domain.endswith(f".{domain}") for domain in allowed_domains)))
+            is_allowed_domain = bool(
+                article_domain
+                and (
+                    article_domain in allowed_domains
+                    or any(article_domain.endswith(f".{d}") for d in allowed_domains)
+                )
+            )
             if (allowed_sources or allowed_domains) and not (is_allowed_source or is_allowed_domain):
                 return False
 
