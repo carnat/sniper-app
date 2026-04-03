@@ -14,17 +14,18 @@ from statistics import NormalDist
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ratelimit import limits, sleep_and_retry
 
-def get_app_version():
-    """Read app version from VERSION file using SemVer format."""
-    try:
-        version_file = Path(__file__).with_name("VERSION")
-        if version_file.exists():
-            version_value = version_file.read_text(encoding="utf-8").strip()
-            if version_value:
-                return version_value
-    except Exception:
-        pass
-    return "0.0.0"
+# --- Sniper Package Imports ---
+from sniper.version import get_app_version
+import sniper.persistence as _persist
+import sniper.options as _opts
+import sniper.tax_lots as _lots
+import sniper.csv_import as _csv
+import sniper.market as _mkt
+import sniper.funds as _funds
+import sniper.news as _news
+import sniper.alerts as _alerts
+
+# get_app_version imported from sniper.version
 
 APP_VERSION = get_app_version()
 
@@ -336,992 +337,101 @@ def load_portfolio_from_secrets():
             []
         )
 
-def get_transactions_file_path():
-    """Local file path for persistent transaction history."""
-    return Path(".streamlit") / "transactions.json"
-
-def load_transaction_history():
-    """Load transaction history from local file with safe fallback."""
-    try:
-        file_path = get_transactions_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-    except Exception:
-        pass
-    return []
+# --- Persistence: delegated to sniper.persistence ---
+get_transactions_file_path = _persist.get_transactions_file_path
+load_transaction_history = _persist.load_transaction_history
+get_alert_state_file_path = _persist.get_alert_state_file_path
+load_alert_state = _persist.load_alert_state
+get_analytics_snapshots_file_path = _persist.get_analytics_snapshots_file_path
+load_analytics_snapshots = _persist.load_analytics_snapshots
+get_scenario_library_file_path = _persist.get_scenario_library_file_path
+load_saved_scenarios = _persist.load_saved_scenarios
+get_watchlists_file_path = _persist.get_watchlists_file_path
+load_watchlists = _persist.load_watchlists
+get_options_iv_history_file_path = _persist.get_options_iv_history_file_path
+load_options_iv_history = _persist.load_options_iv_history
+get_calendar_events_file_path = _persist.get_calendar_events_file_path
+load_calendar_events = _persist.load_calendar_events
 
 def save_transaction_history():
     """Persist transaction history to local file."""
-    try:
-        file_path = get_transactions_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.transaction_history, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_alert_state_file_path():
-    """Local file path for persistent alert trigger state."""
-    return Path(".streamlit") / "alert_state.json"
-
-def load_alert_state():
-    """Load alert trigger state from local file."""
-    try:
-        file_path = get_alert_state_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, dict):
-                    return data
-    except Exception:
-        pass
-    return {}
+    _persist.save_transaction_history(st.session_state.transaction_history)
 
 def save_alert_state():
     """Persist alert trigger state to local file."""
-    try:
-        file_path = get_alert_state_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.alert_state, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_analytics_snapshots_file_path():
-    """Local file path for analytics snapshot history."""
-    return Path(".streamlit") / "analytics_snapshots.json"
-
-def load_analytics_snapshots():
-    """Load analytics snapshots from local file."""
-    try:
-        file_path = get_analytics_snapshots_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-    except Exception:
-        pass
-    return []
+    _persist.save_alert_state(st.session_state.alert_state)
 
 def save_analytics_snapshots():
     """Persist analytics snapshots to local file."""
-    try:
-        file_path = get_analytics_snapshots_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.analytics_snapshots, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_scenario_library_file_path():
-    """Local file path for saved backtesting scenarios."""
-    return Path(".streamlit") / "scenario_library.json"
-
-def load_saved_scenarios():
-    """Load saved scenario definitions from local file."""
-    try:
-        file_path = get_scenario_library_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    return data
-    except Exception:
-        pass
-    return []
+    _persist.save_analytics_snapshots(st.session_state.analytics_snapshots)
 
 def save_saved_scenarios():
     """Persist saved scenarios to local file."""
-    try:
-        file_path = get_scenario_library_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.saved_scenarios, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_watchlists_file_path():
-    """Local file path for persisted watchlists."""
-    return Path(".streamlit") / "watchlists.json"
-
-def load_watchlists():
-    """Load watchlists from local file."""
-    try:
-        file_path = get_watchlists_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, dict):
-                    clean = {}
-                    for name, symbols in data.items():
-                        if not isinstance(name, str):
-                            continue
-                        if not isinstance(symbols, list):
-                            continue
-                        clean[name] = [str(s).strip().upper() for s in symbols if str(s).strip()]
-                    return clean
-    except Exception:
-        pass
-    return {}
+    _persist.save_saved_scenarios(st.session_state.saved_scenarios)
 
 def save_watchlists():
     """Persist watchlists to local file."""
-    try:
-        file_path = get_watchlists_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.watchlists, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_options_iv_history_file_path():
-    """Local file path for observed ATM IV history used by IV rank/percentile."""
-    return Path(".streamlit") / "options_iv_history.json"
-
-def load_options_iv_history():
-    """Load ATM IV history from local file."""
-    try:
-        file_path = get_options_iv_history_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, dict):
-                    clean = {}
-                    for symbol, values in data.items():
-                        if not isinstance(symbol, str) or not isinstance(values, list):
-                            continue
-                        clean_values = []
-                        for row in values:
-                            if not isinstance(row, dict):
-                                continue
-                            day = str(row.get("date", "")).strip()
-                            iv_val = row.get("atm_iv", None)
-                            try:
-                                iv_float = float(iv_val)
-                            except Exception:
-                                continue
-                            if day:
-                                clean_values.append({"date": day, "atm_iv": iv_float})
-                        clean[symbol] = clean_values[-400:]
-                    return clean
-    except Exception:
-        pass
-    return {}
+    _persist.save_watchlists(st.session_state.watchlists)
 
 def save_options_iv_history():
     """Persist ATM IV history to local file."""
-    try:
-        file_path = get_options_iv_history_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.options_iv_history, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-def get_calendar_events_file_path():
-    """Local file path for user-planned portfolio calendar events."""
-    return Path(".streamlit") / "calendar_events.json"
-
-def load_calendar_events():
-    """Load user-planned calendar events from local file."""
-    try:
-        file_path = get_calendar_events_file_path()
-        if file_path.exists():
-            with file_path.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-                if isinstance(data, list):
-                    clean_events = []
-                    for item in data:
-                        if not isinstance(item, dict):
-                            continue
-                        event_date = str(item.get("date", "")).strip()
-                        if not event_date:
-                            continue
-                        clean_events.append({
-                            "id": str(item.get("id", str(uuid.uuid4()))),
-                            "date": event_date,
-                            "event_type": str(item.get("event_type", "Reminder") or "Reminder"),
-                            "title": str(item.get("title", "") or "").strip(),
-                            "instrument": str(item.get("instrument", "") or "").strip().upper(),
-                            "details": str(item.get("details", "") or "").strip(),
-                            "status": str(item.get("status", "Planned") or "Planned"),
-                        })
-                    return clean_events[-1200:]
-    except Exception:
-        pass
-    return []
+    _persist.save_options_iv_history(st.session_state.options_iv_history)
 
 def save_calendar_events():
     """Persist user-planned calendar events to local file."""
-    try:
-        file_path = get_calendar_events_file_path()
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with file_path.open("w", encoding="utf-8") as file:
-            json.dump(st.session_state.calendar_events, file, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
+    _persist.save_calendar_events(st.session_state.calendar_events)
 
+# --- Options analytics: delegated to sniper.options ---
 def _record_atm_iv(symbol, atm_iv):
     """Record one ATM IV observation per local day for a symbol."""
-    if atm_iv is None:
-        return
-    clean_symbol = _normalize_market_symbol(symbol)
-    if not clean_symbol:
-        return
-    day_key = datetime.now().strftime("%Y-%m-%d")
-    history = st.session_state.options_iv_history.get(clean_symbol, [])
-    replaced = False
-    for row in history:
-        if str(row.get("date", "")) == day_key:
-            row["atm_iv"] = float(atm_iv)
-            replaced = True
-            break
-    if not replaced:
-        history.append({"date": day_key, "atm_iv": float(atm_iv)})
-    st.session_state.options_iv_history[clean_symbol] = history[-400:]
+    _opts.record_atm_iv(symbol, atm_iv, st.session_state.options_iv_history)
     save_options_iv_history()
 
 def _compute_iv_rank_percentile(symbol, current_atm_iv):
     """Compute IV rank and percentile from locally observed ATM IV history."""
-    if current_atm_iv is None:
-        return None, None, 0
-    clean_symbol = _normalize_market_symbol(symbol)
-    history = st.session_state.options_iv_history.get(clean_symbol, [])
-    values = [float(r.get("atm_iv")) for r in history if r.get("atm_iv") is not None]
-    if len(values) < 2:
-        return None, None, len(values)
+    return _opts.compute_iv_rank_percentile(symbol, current_atm_iv, st.session_state.options_iv_history)
 
-    min_iv = min(values)
-    max_iv = max(values)
-    iv_rank = None
-    if max_iv > min_iv:
-        iv_rank = (float(current_atm_iv) - min_iv) / (max_iv - min_iv) * 100.0
-        iv_rank = max(0.0, min(100.0, iv_rank))
-
-    less_equal = len([v for v in values if v <= float(current_atm_iv)])
-    iv_percentile = (less_equal / len(values)) * 100.0 if values else None
-    return iv_rank, iv_percentile, len(values)
-
-def _estimate_atm_iv(calls_df, puts_df, underlying_price):
-    """Estimate ATM IV by averaging nearest-strike call/put implied volatility."""
-    if underlying_price in [None, 0]:
-        return None
-    candidates = []
-    for chain_df in [calls_df, puts_df]:
-        if not isinstance(chain_df, pd.DataFrame) or len(chain_df) == 0:
-            continue
-        if "strike" not in chain_df.columns or "impliedVolatility" not in chain_df.columns:
-            continue
-        view = chain_df[["strike", "impliedVolatility"]].copy()
-        view["strike"] = pd.to_numeric(view["strike"], errors="coerce")
-        view["impliedVolatility"] = pd.to_numeric(view["impliedVolatility"], errors="coerce")
-        view = view.dropna(subset=["strike", "impliedVolatility"])
-        if len(view) == 0:
-            continue
-        view["dist"] = (view["strike"] - float(underlying_price)).abs()
-        nearest = view.sort_values("dist").head(1)
-        if len(nearest) > 0:
-            candidates.append(float(nearest.iloc[0]["impliedVolatility"]))
-
-    if not candidates:
-        return None
-    return float(sum(candidates) / len(candidates))
-
-def _annotate_black_scholes_greeks(chain_df, option_type, underlying_price, expiry_text, risk_free_rate=0.04):
-    """Annotate options rows with Black-Scholes greek estimates using implied volatility."""
-    if not isinstance(chain_df, pd.DataFrame) or len(chain_df) == 0:
-        return pd.DataFrame()
-    if underlying_price in [None, 0]:
-        return chain_df.copy()
-
-    try:
-        expiry_dt = datetime.strptime(str(expiry_text), "%Y-%m-%d")
-    except Exception:
-        return chain_df.copy()
-
-    days_to_expiry = max((expiry_dt - datetime.now()).days, 1)
-    time_years = max(days_to_expiry / 365.0, 1 / 365.0)
-    normal = NormalDist()
-
-    df = chain_df.copy()
-    if "strike" not in df.columns or "impliedVolatility" not in df.columns:
-        return df
-
-    df["strike"] = pd.to_numeric(df["strike"], errors="coerce")
-    df["impliedVolatility"] = pd.to_numeric(df["impliedVolatility"], errors="coerce")
-
-    deltas = []
-    gammas = []
-    thetas = []
-    vegas = []
-
-    for _, row in df.iterrows():
-        strike = row.get("strike", None)
-        sigma = row.get("impliedVolatility", None)
-        if strike in [None, 0] or sigma in [None, 0] or pd.isna(strike) or pd.isna(sigma):
-            deltas.append(None)
-            gammas.append(None)
-            thetas.append(None)
-            vegas.append(None)
-            continue
-
-        s = float(underlying_price)
-        k = float(strike)
-        vol = max(float(sigma), 0.0001)
-        t = time_years
-        r = float(risk_free_rate)
-
-        try:
-            d1 = (math.log(s / k) + (r + 0.5 * vol * vol) * t) / (vol * math.sqrt(t))
-            d2 = d1 - vol * math.sqrt(t)
-        except Exception:
-            deltas.append(None)
-            gammas.append(None)
-            thetas.append(None)
-            vegas.append(None)
-            continue
-
-        pdf_d1 = normal.pdf(d1)
-        cdf_d1 = normal.cdf(d1)
-        cdf_d2 = normal.cdf(d2)
-
-        gamma = pdf_d1 / (s * vol * math.sqrt(t))
-        vega = s * pdf_d1 * math.sqrt(t) / 100.0
-
-        if option_type.lower() == "call":
-            delta = cdf_d1
-            theta = (-(s * pdf_d1 * vol) / (2 * math.sqrt(t)) - r * k * math.exp(-r * t) * cdf_d2) / 365.0
-        else:
-            delta = cdf_d1 - 1
-            theta = (-(s * pdf_d1 * vol) / (2 * math.sqrt(t)) + r * k * math.exp(-r * t) * normal.cdf(-d2)) / 365.0
-
-        deltas.append(delta)
-        gammas.append(gamma)
-        thetas.append(theta)
-        vegas.append(vega)
-
-    df["Delta"] = deltas
-    df["Gamma"] = gammas
-    df["Theta/day"] = thetas
-    df["Vega"] = vegas
-    return df
-
-def _normalize_market_symbol(raw_text):
-    text = str(raw_text or "").strip().upper()
-    if not text:
-        return ""
-    return text
+_estimate_atm_iv = _opts.estimate_atm_iv
+_annotate_black_scholes_greeks = _opts.annotate_black_scholes_greeks
+_normalize_market_symbol = _opts.normalize_market_symbol
 
 def _get_base_symbol_universe():
-    symbols = set()
-    symbols.update([str(t).strip().upper() for t in us_portfolio.get("Ticker", []) if str(t).strip()])
-    symbols.update([str(t).strip().upper() for t in thai_stocks.get("Ticker", []) if str(t).strip()])
-    symbols.update([str(f.get("Master", "")).strip().upper() for f in vault_portfolio if str(f.get("Master", "")).strip() and str(f.get("Master", "")).strip().upper() != "N/A"])
-    for watch_symbols in st.session_state.get("watchlists", {}).values():
-        if isinstance(watch_symbols, list):
-            symbols.update([str(t).strip().upper() for t in watch_symbols if str(t).strip()])
-    return sorted(symbols)
+    return _mkt.get_base_symbol_universe(
+        us_portfolio, thai_stocks, vault_portfolio,
+        st.session_state.get("watchlists", {}),
+    )
 
+# --- Market data: delegated to sniper.market with caching ---
 @st.cache_data(ttl=300)
 def fetch_quote_snapshot(symbols):
-    """Fetch quote snapshot rows for a list of symbols."""
-    rows = []
-    for symbol in symbols:
-        clean_symbol = _normalize_market_symbol(symbol)
-        if not clean_symbol:
-            continue
-        try:
-            ticker = yf.Ticker(clean_symbol)
-            info = ticker.info if isinstance(ticker.info, dict) else {}
-            fast = getattr(ticker, "fast_info", {}) or {}
-
-            current_price = info.get("regularMarketPrice", None)
-            if current_price is None:
-                current_price = fast.get("lastPrice", None)
-
-            prev_close = info.get("regularMarketPreviousClose", None)
-            if prev_close is None:
-                prev_close = fast.get("previousClose", None)
-
-            change_pct = None
-            if current_price not in [None, 0] and prev_close not in [None, 0]:
-                change_pct = (float(current_price) - float(prev_close)) / float(prev_close) * 100.0
-
-            rows.append({
-                "Symbol": clean_symbol,
-                "Price": float(current_price) if current_price not in [None, ""] else None,
-                "Change %": float(change_pct) if change_pct is not None else None,
-                "Market Cap": info.get("marketCap", None),
-                "P/E": info.get("trailingPE", None),
-                "Forward P/E": info.get("forwardPE", None),
-                "Div Yield %": (float(info.get("dividendYield", 0.0)) * 100.0) if info.get("dividendYield", None) is not None else None,
-                "Beta": info.get("beta", None),
-                "52W High": info.get("fiftyTwoWeekHigh", None),
-                "52W Low": info.get("fiftyTwoWeekLow", None),
-                "Avg Vol": info.get("averageVolume", None),
-                "Sector": info.get("sector", None),
-            })
-        except Exception:
-            rows.append({"Symbol": clean_symbol})
-
-    return pd.DataFrame(rows)
+    return _mkt.fetch_quote_snapshot(symbols)
 
 @st.cache_data(ttl=900)
 def fetch_fundamental_snapshot(symbol):
-    """Fetch Phase 2 fundamentals package for a symbol."""
-    clean_symbol = _normalize_market_symbol(symbol)
-    if not clean_symbol:
-        return {
-            "metrics": {},
-            "trend_df": pd.DataFrame(),
-            "income_df": pd.DataFrame(),
-            "balance_df": pd.DataFrame(),
-            "cashflow_df": pd.DataFrame(),
-            "recommendations_df": pd.DataFrame(),
-            "earnings_dates_df": pd.DataFrame(),
-            "analyst_snapshot": {},
-            "factor_scores": {},
-        }
-
-    def _to_float(value):
-        try:
-            if value is None:
-                return None
-            return float(value)
-        except Exception:
-            return None
-
-    def _score_linear(value, min_val, max_val, invert=False):
-        if value is None:
-            return None
-        if max_val == min_val:
-            return None
-        clamped = max(min(value, max_val), min_val)
-        ratio = (clamped - min_val) / (max_val - min_val)
-        if invert:
-            ratio = 1.0 - ratio
-        return ratio * 100.0
-
-    try:
-        ticker = yf.Ticker(clean_symbol)
-        info = ticker.info if isinstance(ticker.info, dict) else {}
-
-        revenue = _to_float(info.get("totalRevenue", None))
-        net_income = _to_float(info.get("netIncomeToCommon", None))
-        trailing_eps = _to_float(info.get("trailingEps", None))
-        gross_margin_pct = _to_float(info.get("grossMargins", None))
-        operating_margin_pct = _to_float(info.get("operatingMargins", None))
-        roe_pct = _to_float(info.get("returnOnEquity", None))
-        debt_to_equity = _to_float(info.get("debtToEquity", None))
-        earnings_growth_pct = _to_float(info.get("earningsGrowth", None))
-        revenue_growth_pct = _to_float(info.get("revenueGrowth", None))
-        trailing_pe = _to_float(info.get("trailingPE", None))
-        forward_pe = _to_float(info.get("forwardPE", None))
-        price_to_book = _to_float(info.get("priceToBook", None))
-        market_price = _to_float(info.get("regularMarketPrice", None))
-        low_52w = _to_float(info.get("fiftyTwoWeekLow", None))
-        high_52w = _to_float(info.get("fiftyTwoWeekHigh", None))
-
-        metrics = {
-            "Revenue": revenue,
-            "Net Income": net_income,
-            "EPS": trailing_eps,
-            "Gross Margin %": (gross_margin_pct * 100.0) if gross_margin_pct is not None else None,
-            "Operating Margin %": (operating_margin_pct * 100.0) if operating_margin_pct is not None else None,
-            "ROE %": (roe_pct * 100.0) if roe_pct is not None else None,
-            "Debt/Equity": debt_to_equity,
-            "Earnings Growth %": (earnings_growth_pct * 100.0) if earnings_growth_pct is not None else None,
-        }
-
-        income_statement = ticker.financials
-        balance_sheet = ticker.balance_sheet
-        cashflow_statement = ticker.cashflow
-        recommendations = ticker.recommendations
-        earnings_dates = ticker.earnings_dates
-
-        trend_df = pd.DataFrame()
-        if isinstance(income_statement, pd.DataFrame) and not income_statement.empty:
-            working = income_statement.T.reset_index().rename(columns={"index": "Period"})
-            selected_cols = ["Period"]
-            if "Total Revenue" in working.columns:
-                selected_cols.append("Total Revenue")
-            if "Net Income" in working.columns:
-                selected_cols.append("Net Income")
-            if len(selected_cols) > 1:
-                trend_df = working[selected_cols].copy()
-
-        analyst_snapshot = {
-            "Recommendation": str(info.get("recommendationKey", "")).replace("_", " ").title() if info.get("recommendationKey", None) else None,
-            "Target Mean": _to_float(info.get("targetMeanPrice", None)),
-            "Target Low": _to_float(info.get("targetLowPrice", None)),
-            "Target High": _to_float(info.get("targetHighPrice", None)),
-            "Analyst Opinions": _to_float(info.get("numberOfAnalystOpinions", None)),
-        }
-
-        rec_df = recommendations.copy() if isinstance(recommendations, pd.DataFrame) and not recommendations.empty else pd.DataFrame()
-        if len(rec_df) > 0 and isinstance(rec_df.index, pd.DatetimeIndex):
-            rec_df = rec_df.reset_index().rename(columns={"index": "Date"})
-
-        earn_df = earnings_dates.copy() if isinstance(earnings_dates, pd.DataFrame) and not earnings_dates.empty else pd.DataFrame()
-        if len(earn_df) > 0 and isinstance(earn_df.index, pd.DatetimeIndex):
-            earn_df = earn_df.reset_index().rename(columns={"index": "Date"})
-
-        statement_to_frame = lambda df: (df.T.reset_index().rename(columns={"index": "Period"}) if isinstance(df, pd.DataFrame) and not df.empty else pd.DataFrame())
-        income_df = statement_to_frame(income_statement)
-        balance_df = statement_to_frame(balance_sheet)
-        cashflow_df = statement_to_frame(cashflow_statement)
-
-        quality_candidates = [
-            _score_linear((gross_margin_pct * 100.0) if gross_margin_pct is not None else None, 20, 60),
-            _score_linear((operating_margin_pct * 100.0) if operating_margin_pct is not None else None, 5, 35),
-            _score_linear((roe_pct * 100.0) if roe_pct is not None else None, 5, 30),
-            _score_linear(debt_to_equity, 0, 200, invert=True),
-        ]
-        growth_candidates = [
-            _score_linear((earnings_growth_pct * 100.0) if earnings_growth_pct is not None else None, -10, 35),
-            _score_linear((revenue_growth_pct * 100.0) if revenue_growth_pct is not None else None, -5, 25),
-        ]
-        value_candidates = [
-            _score_linear(trailing_pe, 8, 45, invert=True),
-            _score_linear(forward_pe, 8, 40, invert=True),
-            _score_linear(price_to_book, 0.5, 8, invert=True),
-        ]
-
-        momentum_score = None
-        if market_price is not None and low_52w is not None and high_52w is not None and high_52w > low_52w:
-            momentum_score = ((market_price - low_52w) / (high_52w - low_52w)) * 100.0
-            momentum_score = max(0.0, min(100.0, momentum_score))
-
-        def _avg(items):
-            valid = [v for v in items if v is not None]
-            if not valid:
-                return None
-            return sum(valid) / len(valid)
-
-        factor_scores = {
-            "Quality": _avg(quality_candidates),
-            "Growth": _avg(growth_candidates),
-            "Value": _avg(value_candidates),
-            "Momentum": momentum_score,
-        }
-
-        return {
-            "metrics": metrics,
-            "trend_df": trend_df,
-            "income_df": income_df,
-            "balance_df": balance_df,
-            "cashflow_df": cashflow_df,
-            "recommendations_df": rec_df,
-            "earnings_dates_df": earn_df,
-            "analyst_snapshot": analyst_snapshot,
-            "factor_scores": factor_scores,
-        }
-    except Exception:
-        return {
-            "metrics": {},
-            "trend_df": pd.DataFrame(),
-            "income_df": pd.DataFrame(),
-            "balance_df": pd.DataFrame(),
-            "cashflow_df": pd.DataFrame(),
-            "recommendations_df": pd.DataFrame(),
-            "earnings_dates_df": pd.DataFrame(),
-            "analyst_snapshot": {},
-            "factor_scores": {},
-        }
+    return _mkt.fetch_fundamental_snapshot(symbol)
 
 @st.cache_data(ttl=900)
 def fetch_options_snapshot(symbol, expiration=None):
-    """Fetch options chain scaffold data for a symbol (Phase 3 prep)."""
-    clean_symbol = _normalize_market_symbol(symbol)
-    if not clean_symbol:
-        return [], pd.DataFrame(), pd.DataFrame()
-    try:
-        ticker = yf.Ticker(clean_symbol)
-        expiries = list(getattr(ticker, "options", []) or [])
-        if not expiries:
-            return [], pd.DataFrame(), pd.DataFrame()
+    return _mkt.fetch_options_snapshot(symbol, expiration)
 
-        selected_exp = expiration if expiration in expiries else expiries[0]
-        chain = ticker.option_chain(selected_exp)
-        calls = chain.calls if hasattr(chain, "calls") else pd.DataFrame()
-        puts = chain.puts if hasattr(chain, "puts") else pd.DataFrame()
-        return expiries, calls, puts
-    except Exception:
-        return [], pd.DataFrame(), pd.DataFrame()
-
-def build_import_key(asset_class, action, symbol, fund_code, quantity, price, transaction_date):
-    """Build deterministic key for idempotent CSV imports."""
-    instrument = fund_code if fund_code else symbol
-    return "|".join([
-        str(asset_class).strip().upper(),
-        str(action).strip().upper(),
-        str(instrument).strip().upper(),
-        f"{float(quantity):.8f}",
-        f"{float(price):.8f}",
-        str(transaction_date).strip()
-    ])
+# --- Import keys & tax lots: delegated to sniper.csv_import and sniper.tax_lots ---
+build_import_key = _csv.build_import_key
 
 def import_key_exists(import_key):
-    """Check whether an imported transaction key already exists in history."""
-    if not import_key:
-        return False
-    for txn in st.session_state.transaction_history:
-        if txn.get("import_key") == import_key:
-            return True
-    return False
+    return _csv.import_key_exists(import_key, st.session_state.transaction_history)
 
-def get_lot_db_path():
-    """Local SQLite file path for lot tracking."""
-    return Path(".streamlit") / "portfolio_lots.db"
-
-def init_lot_database():
-    """Initialize FIFO lot-tracking database tables."""
-    try:
-        db_path = get_lot_db_path()
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS tax_lots (
-                lot_id TEXT PRIMARY KEY,
-                symbol TEXT NOT NULL,
-                asset_type TEXT NOT NULL,
-                currency TEXT NOT NULL,
-                acquired_date TEXT NOT NULL,
-                quantity_original REAL NOT NULL,
-                quantity_remaining REAL NOT NULL,
-                cost_per_unit REAL NOT NULL,
-                source TEXT NOT NULL DEFAULT 'BUY'
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS realized_lots (
-                realized_id TEXT PRIMARY KEY,
-                symbol TEXT NOT NULL,
-                asset_type TEXT NOT NULL,
-                currency TEXT NOT NULL,
-                sale_date TEXT NOT NULL,
-                lot_id TEXT NOT NULL,
-                quantity_sold REAL NOT NULL,
-                cost_per_unit REAL NOT NULL,
-                sale_price REAL NOT NULL,
-                realized_pl REAL NOT NULL,
-                FOREIGN KEY (lot_id) REFERENCES tax_lots(lot_id)
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS lot_metadata (
-                meta_key TEXT PRIMARY KEY,
-                meta_value TEXT
-            )
-        ''')
-
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
-
-def lot_record_buy(symbol, asset_type, currency, quantity, price, acquired_date=None, source='BUY'):
-    """Insert a new buy lot for FIFO tracking."""
-    try:
-        if quantity <= 0:
-            return
-        if acquired_date is None:
-            acquired_date = datetime.now().strftime("%Y-%m-%d")
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-        cursor.execute(
-            '''
-            INSERT INTO tax_lots (
-                lot_id, symbol, asset_type, currency, acquired_date,
-                quantity_original, quantity_remaining, cost_per_unit, source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-            (
-                str(uuid.uuid4()), symbol, asset_type, currency, acquired_date,
-                float(quantity), float(quantity), float(price), source
-            )
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
-
-def lot_record_sell_fifo(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
-    """Consume open lots via FIFO and return realized P/L. Returns None if insufficient lots."""
-    try:
-        if quantity <= 0:
-            return 0.0
-        if sale_date is None:
-            sale_date = datetime.now().strftime("%Y-%m-%d")
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute(
-            '''
-            SELECT lot_id, quantity_remaining, cost_per_unit
-            FROM tax_lots
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ORDER BY acquired_date ASC, rowid ASC
-            ''',
-            (symbol, asset_type, currency)
-        )
-        lots = cursor.fetchall()
-
-        total_available = sum(lot[1] for lot in lots)
-        if total_available + 1e-9 < quantity:
-            conn.close()
-            return None
-
-        to_sell = float(quantity)
-        realized_total = 0.0
-        for lot_id, qty_remaining, cost_per_unit in lots:
-            if to_sell <= 0:
-                break
-
-            use_qty = min(qty_remaining, to_sell)
-            realized_piece = (float(sale_price) - float(cost_per_unit)) * float(use_qty)
-            realized_total += realized_piece
-
-            new_qty = float(qty_remaining) - float(use_qty)
-            cursor.execute(
-                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
-                (new_qty, lot_id)
-            )
-
-            cursor.execute(
-                '''
-                INSERT INTO realized_lots (
-                    realized_id, symbol, asset_type, currency, sale_date,
-                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                (
-                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
-                    lot_id, float(use_qty), float(cost_per_unit), float(sale_price), float(realized_piece)
-                )
-            )
-            to_sell -= float(use_qty)
-
-        conn.commit()
-        conn.close()
-        return realized_total
-    except Exception:
-        return None
-
-def lot_record_sell_lifo(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
-    """Consume open lots via LIFO and return realized P/L. Returns None if insufficient lots."""
-    try:
-        if quantity <= 0:
-            return 0.0
-        if sale_date is None:
-            sale_date = datetime.now().strftime("%Y-%m-%d")
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute(
-            '''
-            SELECT lot_id, quantity_remaining, cost_per_unit
-            FROM tax_lots
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ORDER BY acquired_date DESC, rowid DESC
-            ''',
-            (symbol, asset_type, currency)
-        )
-        lots = cursor.fetchall()
-
-        total_available = sum(lot[1] for lot in lots)
-        if total_available + 1e-9 < quantity:
-            conn.close()
-            return None
-
-        to_sell = float(quantity)
-        realized_total = 0.0
-        for lot_id, qty_remaining, cost_per_unit in lots:
-            if to_sell <= 0:
-                break
-
-            use_qty = min(qty_remaining, to_sell)
-            realized_piece = (float(sale_price) - float(cost_per_unit)) * float(use_qty)
-            realized_total += realized_piece
-
-            new_qty = float(qty_remaining) - float(use_qty)
-            cursor.execute(
-                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
-                (new_qty, lot_id)
-            )
-
-            cursor.execute(
-                '''
-                INSERT INTO realized_lots (
-                    realized_id, symbol, asset_type, currency, sale_date,
-                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                (
-                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
-                    lot_id, float(use_qty), float(cost_per_unit), float(sale_price), float(realized_piece)
-                )
-            )
-            to_sell -= float(use_qty)
-
-        conn.commit()
-        conn.close()
-        return realized_total
-    except Exception:
-        return None
-
-def lot_record_sell_average(symbol, asset_type, currency, quantity, sale_price, sale_date=None):
-    """Consume open lots using average-cost method and return realized P/L."""
-    try:
-        if quantity <= 0:
-            return 0.0
-        if sale_date is None:
-            sale_date = datetime.now().strftime("%Y-%m-%d")
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute(
-            '''
-            SELECT lot_id, quantity_remaining, cost_per_unit
-            FROM tax_lots
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ORDER BY acquired_date ASC, rowid ASC
-            ''',
-            (symbol, asset_type, currency)
-        )
-        lots = cursor.fetchall()
-
-        total_available = sum(float(lot[1]) for lot in lots)
-        if total_available + 1e-9 < quantity:
-            conn.close()
-            return None
-
-        if total_available <= 0:
-            conn.close()
-            return 0.0
-
-        weighted_cost_sum = sum(float(lot[1]) * float(lot[2]) for lot in lots)
-        avg_cost = weighted_cost_sum / total_available
-        realized_total = (float(sale_price) - float(avg_cost)) * float(quantity)
-
-        to_sell = float(quantity)
-        for lot_id, qty_remaining, _ in lots:
-            if to_sell <= 0:
-                break
-
-            use_qty = min(float(qty_remaining), to_sell)
-            new_qty = float(qty_remaining) - use_qty
-            cursor.execute(
-                'UPDATE tax_lots SET quantity_remaining = ? WHERE lot_id = ?',
-                (new_qty, lot_id)
-            )
-
-            realized_piece = (float(sale_price) - float(avg_cost)) * float(use_qty)
-            cursor.execute(
-                '''
-                INSERT INTO realized_lots (
-                    realized_id, symbol, asset_type, currency, sale_date,
-                    lot_id, quantity_sold, cost_per_unit, sale_price, realized_pl
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''',
-                (
-                    str(uuid.uuid4()), symbol, asset_type, currency, sale_date,
-                    lot_id, float(use_qty), float(avg_cost), float(sale_price), float(realized_piece)
-                )
-            )
-            to_sell -= float(use_qty)
-
-        conn.commit()
-        conn.close()
-        return realized_total
-    except Exception:
-        return None
+get_lot_db_path = _lots.get_lot_db_path
+init_lot_database = _lots.init_lot_database
+lot_record_buy = _lots.lot_record_buy
+lot_record_sell_fifo = _lots.lot_record_sell_fifo
+lot_record_sell_lifo = _lots.lot_record_sell_lifo
+lot_record_sell_average = _lots.lot_record_sell_average
 
 def get_lot_method_for_asset(asset_type):
-    """Resolve selected lot method policy by asset type."""
-    policies = st.session_state.get("lot_method_policies", {})
-    default_map = {
-        "US Stock": "FIFO",
-        "Thai Stock": "FIFO",
-        "Mutual Fund": "AVERAGE",
-    }
-    return str(policies.get(asset_type, default_map.get(asset_type, "FIFO"))).upper()
+    return _lots.get_lot_method_for_asset(asset_type, st.session_state.get("lot_method_policies", {}))
 
-def lot_apply_split(symbol, asset_type, currency, split_ratio):
-    """Apply stock split ratio to open lots for a symbol."""
-    try:
-        ratio = float(split_ratio)
-        if ratio <= 0:
-            return False
-
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-        cursor.execute(
-            '''
-            UPDATE tax_lots
-            SET
-                quantity_original = quantity_original * ?,
-                quantity_remaining = quantity_remaining * ?,
-                cost_per_unit = cost_per_unit / ?
-            WHERE symbol = ? AND asset_type = ? AND currency = ? AND quantity_remaining > 0
-            ''',
-            (ratio, ratio, ratio, symbol, asset_type, currency)
-        )
-        conn.commit()
-        conn.close()
-        return True
-    except Exception:
-        return False
-
-def seed_opening_lots_from_portfolios(us_portfolio, thai_stocks, vault_portfolio):
-    """Seed lot DB once from current starting positions (if DB is empty)."""
-    try:
-        conn = sqlite3.connect(get_lot_db_path())
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT COUNT(1) FROM tax_lots")
-        lot_count = cursor.fetchone()[0]
-        if lot_count > 0:
-            conn.close()
-            return
-
-        today = datetime.now().strftime("%Y-%m-%d")
-
-        for ticker, shares, avg_cost in zip(us_portfolio.get('Ticker', []), us_portfolio.get('Shares', []), us_portfolio.get('Avg_Cost', [])):
-            if float(shares) > 0:
-                lot_record_buy(ticker, "US Stock", "USD", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
-
-        for ticker, shares, avg_cost in zip(thai_stocks.get('Ticker', []), thai_stocks.get('Shares', []), thai_stocks.get('Avg_Cost', [])):
-            if float(shares) > 0:
-                lot_record_buy(ticker, "Thai Stock", "THB", float(shares), float(avg_cost), acquired_date=today, source='OPENING')
-
-        for fund in vault_portfolio:
-            units = float(fund.get('Units', 0))
-            cost = float(fund.get('Cost', 0))
-            code = fund.get('Code', '')
-            if units > 0 and code:
-                lot_record_buy(code, "Mutual Fund", "THB", units, cost, acquired_date=today, source='OPENING')
-
-        cursor.execute(
-            "INSERT OR REPLACE INTO lot_metadata (meta_key, meta_value) VALUES (?, ?)",
-            ("opening_seeded_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
+lot_apply_split = _lots.lot_apply_split
+seed_opening_lots_from_portfolios = _lots.seed_opening_lots_from_portfolios
 
 def log_transaction(
     ticker,
@@ -1645,92 +755,16 @@ us_portfolio = st.session_state.us_portfolio
 thai_stocks = st.session_state.thai_stocks
 vault_portfolio = st.session_state.vault_portfolio
 
-# Mapping: Real fund names -> SEC API abbreviations (for cases where they differ)
-fund_api_mapping = {
-    "SCBS&P500FUND(SSFA)": "SCBS&P500FUND(SSFA)",
-    "SCBGOLDHE": "SCBGOLDHFUND",  # SCBGOLDHE is a class under SCBGOLDHFUND (M0856_2553)
-    "SCB70SSF(SSFX)": "SCB70SSF",
-    "SCBS&P500(E)": "SCBS&P500FUND(E)",
-    "SCBS&P500-SSF": "SCBS&P500FUND(SSF)",
-    "SCB70-SSFX": "SCB70SSF(SSFX)",
-}
+# --- Fund data: delegated to sniper.funds ---
+fund_api_mapping = _funds.FUND_API_MAPPING
+_normalize_fund_token = _funds.normalize_fund_token
+_resolve_fund_proj_id_and_class = _funds.resolve_fund_proj_id_and_class
+_FUND_REGISTRY_CACHE_PATH = _funds._FUND_REGISTRY_CACHE_PATH
+_load_disk_fund_registry = _funds.load_disk_fund_registry
+_save_disk_fund_registry = _funds.save_disk_fund_registry
 
-def _normalize_fund_token(text):
-    """Normalize fund labels for resilient matching across import formats."""
-    return (
-        str(text or "")
-        .upper()
-        .replace(" ", "")
-        .replace("-", "")
-        .replace("(", "")
-        .replace(")", "")
-        .replace(".", "")
-    )
-
-def _resolve_fund_proj_id_and_class(fund_code, registry):
-    """Resolve SEC proj_id + class suffix from imported fund code variants."""
-    code_raw = str(fund_code or "").strip().upper()
-    if not code_raw:
-        return None, None
-
-    api_code = fund_api_mapping.get(code_raw, code_raw)
-
-    class_suffix = None
-    base_candidate = api_code
-    if '(' in api_code and api_code.endswith(')'):
-        base_candidate = api_code[:api_code.index('(')]
-        class_suffix = api_code[api_code.index('('):]
-    elif '-' in api_code:
-        left, right = api_code.rsplit('-', 1)
-        right = right.strip().upper()
-        if right in {'E', 'A', 'SSF', 'SSFE', 'SSFA', 'SSFX'}:
-            base_candidate = left.strip()
-            class_suffix = f"({right})"
-
-    candidate_bases = [base_candidate]
-    if base_candidate and not base_candidate.endswith("FUND"):
-        candidate_bases.append(f"{base_candidate}FUND")
-    if base_candidate and class_suffix and class_suffix in {"(SSFE)", "(SSFA)", "(SSFX)"} and not base_candidate.endswith("SSF"):
-        candidate_bases.append(f"{base_candidate}SSF")
-
-    # 1) Direct exact lookup
-    for candidate in candidate_bases:
-        if candidate in registry:
-            return registry[candidate], class_suffix
-
-    # 2) Normalized exact lookup
-    registry_norm = {_normalize_fund_token(k): v for k, v in registry.items()}
-    for candidate in candidate_bases:
-        norm = _normalize_fund_token(candidate)
-        if norm in registry_norm:
-            return registry_norm[norm], class_suffix
-
-    # 3) Fuzzy contains lookup for aliases like SCBS&P500 -> SCBS&P500FUND
-    best_match = None
-    best_score = 10**9
-    for candidate in candidate_bases:
-        cand_norm = _normalize_fund_token(candidate)
-        if len(cand_norm) < 4:
-            continue
-        for reg_key, proj_id in registry.items():
-            reg_norm = _normalize_fund_token(reg_key)
-            if cand_norm in reg_norm or reg_norm in cand_norm:
-                score = abs(len(reg_norm) - len(cand_norm))
-                if score < best_score:
-                    best_score = score
-                    best_match = proj_id
-    if best_match:
-        return best_match, class_suffix
-
-    return None, class_suffix
-
-# --- INTELLIGENCE ENGINES ---
-
-# Rate Limiter: 5 calls per 1 second (SEC API limit)
 def get_sec_api_keys():
-    """Load SEC API keys from Streamlit secrets (preferred) or environment variables."""
     keys = []
-
     try:
         sec_cfg = st.secrets.get("sec_api", {})
         primary = str(sec_cfg.get("primary_key", "")).strip()
@@ -1741,284 +775,41 @@ def get_sec_api_keys():
             keys.append(secondary)
     except Exception:
         pass
+    return _funds.get_sec_api_keys(secrets_keys=keys)
 
-    env_primary = str(os.getenv("SEC_API_PRIMARY_KEY", "")).strip()
-    env_secondary = str(os.getenv("SEC_API_SECONDARY_KEY", "")).strip()
-    if env_primary and env_primary not in keys:
-        keys.append(env_primary)
-    if env_secondary and env_secondary not in keys:
-        keys.append(env_secondary)
-
-    return keys
-
-@sleep_and_retry
-@limits(calls=5, period=1)
-def call_sec_api(url):
-    """Rate-limited API call to SEC endpoints"""
-    api_keys = get_sec_api_keys()
-    if not api_keys:
-        return None
-
-    for api_key in api_keys:
-        try:
-            headers = {
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0',
-                'Ocp-Apim-Subscription-Key': api_key,
-            }
-            response = requests.get(url, headers=headers, timeout=5)
-            if response.status_code == 200:
-                return response
-        except Exception:
-            pass
-    return None
-
-_FUND_REGISTRY_CACHE_PATH = Path(".streamlit/fund_registry_cache.json")
-_FUND_REGISTRY_CACHE_MAX_AGE = 86400  # 24 hours
-
-def _load_disk_fund_registry():
-    """Load fund registry from disk cache if fresh enough."""
-    try:
-        if _FUND_REGISTRY_CACHE_PATH.exists():
-            data = json.loads(_FUND_REGISTRY_CACHE_PATH.read_text())
-            saved_ts = data.get("ts", 0)
-            if time.time() - saved_ts < _FUND_REGISTRY_CACHE_MAX_AGE:
-                registry = data.get("registry", {})
-                if registry:
-                    return registry
-    except Exception:
-        pass
-    return None
-
-def _save_disk_fund_registry(registry):
-    """Persist fund registry to disk for fast cold starts."""
-    try:
-        _FUND_REGISTRY_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        _FUND_REGISTRY_CACHE_PATH.write_text(json.dumps({"ts": time.time(), "registry": registry}))
-    except Exception:
-        pass
+call_sec_api = _funds.call_sec_api
 
 @st.cache_data(ttl=3600)
 def build_fund_registry():
-    """
-    Build complete fund registry by querying all AMCs.
-    Uses a 24-hour disk cache so cold starts are instant.
-    Returns: {"SCBNDQ(E)": "M0000_2553", ...}
-    """
-    # Fast path: disk cache
-    cached = _load_disk_fund_registry()
-    if cached:
-        return cached
-
-    fund_registry = {}
-    
-    try:
-        # STEP 1: Get AMC list
-        amc_url = "https://api.sec.or.th/FundFactsheet/fund/amc"
-        r_amc = call_sec_api(amc_url)
-        
-        if r_amc is None:
-            return fund_registry
-        
-        amc_list = json.loads(r_amc.content)
-        
-        # STEP 2: For each AMC, get all funds
-        for amc in amc_list:
-            unique_id = amc.get('unique_id')
-            if not unique_id:
-                continue
-                
-            fund_url = f"https://api.sec.or.th/FundFactsheet/fund/amc/{unique_id}"
-            r_funds = call_sec_api(fund_url)
-            
-            if r_funds is not None:
-                try:
-                    funds_list = json.loads(r_funds.content)
-                    for fund in funds_list:
-                        abbr = fund.get('proj_abbr_name')
-                        proj_id = fund.get('proj_id')
-                        if abbr and proj_id:
-                            fund_registry[abbr] = proj_id
-                except Exception:
-                    pass
-    except Exception:
-        pass
-    
-    # Persist to disk for next cold start
-    if fund_registry:
-        _save_disk_fund_registry(fund_registry)
-
-    return fund_registry
+    return _funds.build_fund_registry(api_keys=get_sec_api_keys())
 
 @st.cache_data(ttl=3600)
 def fetch_fund_nav_with_previous(proj_id, fund_class=None):
-    """
-    Fetch latest NAV and previous day NAV for a fund by proj_id using FundDailyInfo endpoint.
-    Skips weekends to reduce unnecessary API calls.
-    Returns tuple: (last_val, previous_val) for day gain calculation.
-    """
-    try:
-        def extract_nav(nav_data, fund_class):
-            """Helper to extract NAV from response data"""
-            if isinstance(nav_data, list) and len(nav_data) > 0:
-                if fund_class:
-                    class_suffix = fund_class.strip('()')
-                    for item in nav_data:
-                        class_name = item.get('class_abbr_name', '')
-                        if class_name.endswith(fund_class) or class_name.endswith(class_suffix):
-                            last_val = item.get('last_val')
-                            previous_val = item.get('previous_val')
-                            if last_val:
-                                return (last_val, previous_val)
-                
-                latest = nav_data[0]
-                return (latest.get('last_val'), latest.get('previous_val'))
-            elif isinstance(nav_data, dict):
-                return (nav_data.get('last_val'), nav_data.get('previous_val'))
-            return (None, None)
-        
-        # Build list of candidate dates, skipping weekends (Sat=5, Sun=6)
-        candidate_dates = []
-        now = datetime.now()
-        days_back = 0
-        while len(candidate_dates) < 7 and days_back < 14:
-            d = now - timedelta(days=days_back)
-            if d.weekday() < 5:  # Mon-Fri only
-                candidate_dates.append(d.strftime("%Y-%m-%d"))
-            days_back += 1
-
-        found_dates = []
-        
-        for nav_date in candidate_dates:
-            nav_url = f"https://api.sec.or.th/FundDailyInfo/{proj_id}/dailynav/{nav_date}"
-            r = call_sec_api(nav_url)
-            
-            if r is not None and r.status_code == 200:
-                nav_data = json.loads(r.content)
-                last_val, previous_val = extract_nav(nav_data, fund_class)
-                
-                if last_val:
-                    try:
-                        last_price = float(last_val)
-                        
-                        if previous_val and str(previous_val).strip() and previous_val not in ['0', 0, '0.0', 0.0, '']:
-                            prev_price = float(previous_val)
-                            return (last_price, prev_price)
-                        
-                        found_dates.append((nav_date, last_price))
-                        
-                        if len(found_dates) >= 2:
-                            return (found_dates[0][1], found_dates[1][1])
-                        
-                    except Exception:
-                        pass
-        
-        if len(found_dates) == 1:
-            return (found_dates[0][1], 0.0)
-            
-    except Exception:
-        pass
-    
-    return (0.0, 0.0)
+    return _funds.fetch_fund_nav_with_previous(proj_id, fund_class, api_keys=get_sec_api_keys())
 
 @st.cache_data(ttl=3600)
 def fetch_fund_nav(proj_id, fund_class=None):
-    """
-    Fetch latest NAV for a fund by proj_id using FundDailyInfo endpoint.
-    Format: /FundDailyInfo/{proj_id}/dailynav/{nav_date}
-    NAV price is in the 'last_val' field.
-    
-    Args:
-        proj_id: Fund project ID (e.g., "M0311_2564")
-        fund_class: Optional fund class suffix (e.g., "(E)", "(SSF)", "(SSFE)")
-    """
-    last_val, _ = fetch_fund_nav_with_previous(proj_id, fund_class)
-    return last_val
+    return _funds.fetch_fund_nav(proj_id, fund_class, api_keys=get_sec_api_keys())
 
-
-# --- MASTER CORRELATION ENGINE ---
 @st.cache_data(ttl=300)
 def _fetch_master_trends_cached(masters):
-    symbols = tuple(sorted({str(m).strip().upper() for m in masters if str(m).strip() and str(m).strip().upper() != "N/A"}))
-    if not symbols:
-        return {}
-
-    result = {symbol: 0.0 for symbol in symbols}
-    try:
-        history = yf.download(list(symbols), period="2d", progress=False)
-        if isinstance(history, pd.DataFrame) and not history.empty:
-            close_frame = history.get("Close")
-            if isinstance(close_frame, pd.Series):
-                if len(symbols) == 1:
-                    closes = close_frame.dropna()
-                    if len(closes) >= 2 and float(closes.iloc[-2]) != 0.0:
-                        result[symbols[0]] = float(((closes.iloc[-1] - closes.iloc[-2]) / closes.iloc[-2]) * 100.0)
-            elif isinstance(close_frame, pd.DataFrame):
-                for symbol in symbols:
-                    series = close_frame.get(symbol)
-                    if series is None:
-                        continue
-                    closes = pd.Series(series).dropna()
-                    if len(closes) >= 2 and float(closes.iloc[-2]) != 0.0:
-                        result[symbol] = float(((closes.iloc[-1] - closes.iloc[-2]) / closes.iloc[-2]) * 100.0)
-    except Exception:
-        pass
-
-    return result
-
+    return _funds.fetch_master_trends(masters)
 
 def get_master_data(fund_list):
-    """
-    Fetches live percent-change for master ETFs/indices from yfinance.
-    Uses Ticker info for real-time up/down percentage from market.
-    Handles US tickers (VOO, QQQ) and Thai indices (^SET.BK).
-    Returns dict: {"VOO": 0.24, "^SET.BK": -0.12}
-    """
     masters = [f.get('Master') for f in fund_list if f.get('Master') and f.get('Master') != 'N/A']
     if not masters:
         return {}
-
     with st.spinner('🔮 Tracking Master ETFs...'):
         return _fetch_master_trends_cached(tuple(masters))
 
-
 @st.cache_data(ttl=120)
 def _fetch_latest_close_prices(tickers):
-    if not tickers:
-        return {}
-    try:
-        downloaded = yf.download(list(tickers), period="1d", progress=False)
-        if downloaded is None or downloaded.empty:
-            return {ticker: 0.0 for ticker in tickers}
-
-        close_frame = downloaded.get("Close") if isinstance(downloaded, pd.DataFrame) else None
-        if close_frame is None:
-            return {ticker: 0.0 for ticker in tickers}
-
-        if isinstance(close_frame, pd.Series):
-            if len(tickers) == 1 and not close_frame.empty:
-                return {tickers[0]: float(close_frame.iloc[-1])}
-            return {ticker: 0.0 for ticker in tickers}
-
-        latest = close_frame.iloc[-1] if not close_frame.empty else pd.Series(dtype=float)
-        prices = {}
-        for ticker in tickers:
-            value = latest.get(ticker, 0.0)
-            try:
-                prices[ticker] = float(value)
-            except Exception:
-                prices[ticker] = 0.0
-        return prices
-    except Exception:
-        return {ticker: 0.0 for ticker in tickers}
+    return _mkt.fetch_latest_close_prices(tickers)
 
 def get_stock_data(portfolio_dict):
     df = pd.DataFrame(portfolio_dict)
-    
-    # Handle empty portfolio - return empty dataframe with correct columns
     if len(df) == 0:
         return pd.DataFrame(columns=['Ticker', 'Shares', 'Avg_Cost', 'Live Price', 'Value', 'Cost Basis', 'P/L', 'P/L %'])
-    
     tickers = df['Ticker'].tolist()
     with st.spinner('Scanning US/Thai Stocks...'):
         price_map = _fetch_latest_close_prices(tuple(tickers))
@@ -2030,57 +821,23 @@ def get_stock_data(portfolio_dict):
     df['P/L %'] = (df['P/L'] / df['Cost Basis']) * 100
     return df
 
-# --- FUND DATA FETCHER (Using Registry + NAV Lookup) ---
-def get_fund_nav_by_code(fund_code, registry):
-    """
-    Get NAV for a fund using the pre-built registry.
-    fund_code format: "SCBNDQ(E)", "SCBS&P500(SSFA)", etc.
-    Uses fund_api_mapping for real names that differ from SEC API abbreviations.
-    Includes fallback mechanisms for funds with navigation issues.
-    """
-    proj_id, class_suffix = _resolve_fund_proj_id_and_class(fund_code, registry)
-    if proj_id:
-        nav = fetch_fund_nav(proj_id, class_suffix)
-        if nav > 0:
-            return nav
-
-        nav = fetch_fund_nav(proj_id, None)
-        if nav > 0:
-            return nav
-
-        for alt_class in ['(E)', '(SSF)', '(SSFE)', '(SSFA)', '(SSFX)', '(A)']:
-            nav = fetch_fund_nav(proj_id, alt_class)
-            if nav > 0:
-                return nav
-    
-    return 0.0
+get_fund_nav_by_code = _funds.get_fund_nav_by_code
 
 def get_fund_data(fund_list):
     data = []
     bar = st.progress(0, text="Building Fund Registry & Fetching NAVs...")
-
-    # Build registry once (cached / disk-cached)
     registry = build_fund_registry()
-
-    # Fetch master ETF trends (batch yfinance call)
     master_trends = get_master_data(fund_list)
-
-    # Pre-resolve all proj_ids before parallel fetch
     resolved = []
     for fund in fund_list:
         proj_id, class_suffix = _resolve_fund_proj_id_and_class(fund.get('Code', ''), registry)
         resolved.append((fund, proj_id, class_suffix))
-
     bar.progress(0.15, text="Fetching fund NAVs in parallel...")
-
-    # Parallel NAV fetch for all funds at once
-    nav_results = {}  # index -> (current_nav, prev_nav)
-
+    nav_results = {}
     def _fetch_nav(idx, proj_id, class_suffix):
         if proj_id:
             return idx, fetch_fund_nav_with_previous(proj_id, class_suffix)
         return idx, (0.0, 0.0)
-
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {
             executor.submit(_fetch_nav, i, proj_id, class_suffix): i
@@ -2093,27 +850,20 @@ def get_fund_data(fund_list):
             nav_results[idx] = nav_pair
             done_count += 1
             bar.progress(0.15 + 0.75 * done_count / max(total, 1), text=f"Fetched NAV {done_count}/{total}")
-
-    # Assemble rows
     for i, (fund, proj_id, class_suffix) in enumerate(resolved):
         current_nav, prev_nav = nav_results.get(i, (0.0, 0.0))
-
         fund_day_gain = 0.0
         nav = current_nav
         if current_nav > 0 and prev_nav > 0:
             fund_day_gain = ((current_nav - prev_nav) / prev_nav) * 100
-
-        # Fallback with class suffix variations if not found
         if nav == 0:
             nav = get_fund_nav_by_code(fund['Code'], registry)
         if nav == 0:
             nav = fund['Cost']
-
         row = fund.copy()
         row['Last Price'] = nav
         row['Previous Price'] = prev_nav if (prev_nav > 0 and prev_nav != nav) else None
         row['Fund Day Gain %'] = fund_day_gain
-
         master_ticker = fund.get('Master')
         if master_ticker and master_ticker != 'N/A':
             row['Master'] = master_ticker
@@ -2121,685 +871,81 @@ def get_fund_data(fund_list):
         else:
             row['Master'] = 'N/A'
             row['Master Day Gain %'] = 0.0
-
         data.append(row)
-
     bar.progress(1.0)
     bar.empty()
     df = pd.DataFrame(data)
-    
     if len(df) == 0:
         return pd.DataFrame(columns=['Code', 'Units', 'Cost', 'Last Price', 'Previous Price', 'Fund Day Gain %', 'Master', 'Master Day Gain %', 'Master vs Fund %', 'Cost Basis', 'Value', 'P/L', 'P/L %'])
-    
     df['Value'] = df['Units'] * df['Last Price']
     df['Cost Basis'] = df['Units'] * df['Cost']
     df['P/L'] = df['Value'] - df['Cost Basis']
     df['P/L %'] = (df['P/L'] / df['Cost Basis']) * 100
     df['Master vs Fund %'] = df['Fund Day Gain %'] - df['Master Day Gain %']
     df = df[['Code', 'Units', 'Cost', 'Last Price', 'Previous Price', 'Fund Day Gain %', 'Master', 'Master Day Gain %', 'Master vs Fund %', 'Cost Basis', 'Value', 'P/L', 'P/L %']]
-    
     return df
 
-# --- NEWS & ALERTS ENGINE ---
-
-
-
+# --- News & Alerts: delegated to sniper.news and sniper.alerts ---
 def get_finnhub_api_key():
-    """Resolve Finnhub API key from secrets or environment with placeholder filtering."""
     candidates = []
     try:
         candidates.append(str(st.secrets.get("news_alerts", {}).get("finnhub_api_key", "")).strip())
     except Exception:
         pass
-    candidates.append(str(os.getenv("FINNHUB_API_KEY", "")).strip())
-
-    for candidate in candidates:
-        if not candidate:
-            continue
-        low = candidate.lower()
-        if "your_" in low or "placeholder" in low or "finnhub_api_key_here" in low:
-            continue
-        return candidate
-    return ""
+    key = _news.get_finnhub_api_key(secrets_key=candidates[0] if candidates else None)
+    return key
 
 @st.cache_data(ttl=86400)
 def resolve_symbol_with_search(ticker):
-    """Resolve ticker to a best-match Yahoo symbol + names using yfinance Search."""
-    raw = str(ticker or "").strip().upper()
-    if not raw:
-        return {"input": "", "symbol": "", "shortname": "", "longname": "", "exchange": ""}
-
-    stripped = raw.replace(".BK", "")
-    fallback = {
-        "input": raw,
-        "symbol": raw,
-        "shortname": "",
-        "longname": "",
-        "exchange": "",
-    }
-
-    try:
-        search = yf.Search(raw, max_results=10, news_count=0)
-        quotes = getattr(search, "quotes", []) or []
-        if not quotes:
-            if raw.endswith(".BK"):
-                return {**fallback, "symbol": raw}
-            return fallback
-
-        def score_quote(q):
-            symbol = str(q.get("symbol", "") or "").upper()
-            exch = str(q.get("exchange", "") or q.get("exchDisp", "") or "").upper()
-            score = 0
-            if symbol == raw:
-                score += 100
-            if symbol == stripped:
-                score += 90
-            if symbol.replace(".BK", "") == stripped:
-                score += 80
-            if raw.endswith(".BK") and symbol.endswith(".BK"):
-                score += 60
-            if raw.endswith(".BK") and ("BKK" in exch or "TH" in exch or "SET" in exch):
-                score += 40
-            return score
-
-        best = max(quotes, key=score_quote)
-        best_symbol = str(best.get("symbol", "") or "").strip().upper() or raw
-        return {
-            "input": raw,
-            "symbol": best_symbol,
-            "shortname": str(best.get("shortname", "") or "").strip(),
-            "longname": str(best.get("longname", "") or "").strip(),
-            "exchange": str(best.get("exchange", "") or best.get("exchDisp", "") or "").strip(),
-        }
-    except Exception:
-        return fallback
+    return _news.resolve_symbol_with_search(ticker)
 
 @st.cache_data(ttl=300)
 def get_watchtower_market_snapshot():
-    """Get compact market context strip for Watchtower."""
-    snapshot = {
-        "us_status": "Unknown",
-        "us_message": "",
-        "indices": {},
-    }
-
-    try:
-        market_us = yf.Market("US")
-        status = market_us.status if isinstance(market_us.status, dict) else {}
-        snapshot["us_status"] = str(status.get("status", "Unknown") or "Unknown")
-        snapshot["us_message"] = str(status.get("message", "") or "")
-    except Exception:
-        pass
-
-    try:
-        index_symbols = ["^GSPC", "^IXIC", "^DJI", "^SET.BK"]
-        hist = yf.download(index_symbols, period="2d", progress=False)
-        close_frame = hist.get("Close") if isinstance(hist, pd.DataFrame) else None
-        if isinstance(close_frame, pd.DataFrame):
-            for sym in index_symbols:
-                series = close_frame.get(sym)
-                if series is None:
-                    continue
-                vals = pd.Series(series).dropna()
-                if len(vals) >= 2:
-                    prev_val = float(vals.iloc[-2])
-                    last_val = float(vals.iloc[-1])
-                    pct = ((last_val - prev_val) / prev_val * 100.0) if prev_val != 0 else 0.0
-                    snapshot["indices"][sym] = {"last": last_val, "pct": pct}
-        elif isinstance(close_frame, pd.Series):
-            vals = close_frame.dropna()
-            if len(vals) >= 2:
-                prev_val = float(vals.iloc[-2])
-                last_val = float(vals.iloc[-1])
-                pct = ((last_val - prev_val) / prev_val * 100.0) if prev_val != 0 else 0.0
-                snapshot["indices"]["^GSPC"] = {"last": last_val, "pct": pct}
-    except Exception:
-        pass
-
-    return snapshot
+    return _news.get_watchtower_market_snapshot()
 
 @st.cache_data(ttl=3600)
 def fetch_news_for_ticker(ticker):
-    """Fetch latest news for a ticker using Finnhub company-news with relevance filtering."""
+    finnhub_api_key = get_finnhub_api_key()
+    allowed_sources = set()
+    allowed_domains = set()
     try:
-        raw_ticker = str(ticker or "").strip().upper()
-        resolved_meta = resolve_symbol_with_search(raw_ticker)
-        raw_ticker = str(resolved_meta.get("symbol", raw_ticker) or raw_ticker).strip().upper()
-        # Remove .BK extension for ticker-token matching
-        search_ticker = raw_ticker.replace(".BK", "")
-        if not search_ticker:
-            return []
-
-        def _extract_domain(url):
-            try:
-                if not url:
-                    return ""
-                domain = str(url).split("//", 1)[-1].split("/", 1)[0].lower().strip()
-                if domain.startswith("www."):
-                    domain = domain[4:]
-                return domain
-            except Exception:
-                return ""
-
-        company_name = str(resolved_meta.get("longname", "") or "").strip()
-        company_alias = str(resolved_meta.get("shortname", "") or "").strip()
-        try:
-            yf_symbol = raw_ticker if raw_ticker else search_ticker
-            yf_obj = yf.Ticker(yf_symbol)
-            info = yf_obj.info
-            if isinstance(info, dict):
-                if not company_name:
-                    company_name = str(info.get("longName", "") or "").strip()
-                if not company_alias:
-                    company_alias = str(info.get("shortName", "") or "").strip()
-        except Exception:
-            pass
-
-        allowed_sources = set()
-        allowed_domains = set()
-        try:
-            allow_cfg = st.secrets.get("news_alerts", {}).get("allowed_news_sources", [])
-            if isinstance(allow_cfg, list) and allow_cfg:
-                allowed_sources = set()
-                allowed_domains = set()
-                for item in allow_cfg:
-                    token = str(item or "").strip().lower()
-                    if not token:
-                        continue
-                    if "." in token:
-                        allowed_domains.add(token)
-                    else:
-                        allowed_sources.add(token)
-        except Exception:
-            pass
-
-        def is_relevant_article(article):
-            title = str(article.get("title", "") or "")
-            description = str(article.get("description", "") or "")
-            content = str(article.get("content", "") or "")
-            source = str((article.get("source") or {}).get("name", "") or "")
-            combined = f"{title} {description} {content} {source}".upper()
-
-            source_name_lc = source.strip().lower()
-            article_url = str(article.get("url", "") or "").lower()
-            article_domain = _extract_domain(article_url)
-            is_allowed_source = bool(source_name_lc and source_name_lc in allowed_sources)
-            is_allowed_domain = bool(article_domain and (article_domain in allowed_domains or any(article_domain.endswith(f".{domain}") for domain in allowed_domains)))
-            if (allowed_sources or allowed_domains) and not (is_allowed_source or is_allowed_domain):
-                return False
-
-            ticker_upper = search_ticker.upper()
-            ticker_variants = [
-                ticker_upper,
-                f"${ticker_upper}",
-                f"{ticker_upper}.BK",
-                f"({ticker_upper})",
-            ]
-
-            has_ticker = False
-            for token in ticker_variants:
-                if token and token in combined:
-                    has_ticker = True
-                    break
-
-            company_variants = []
-            if company_name:
-                company_variants.append(company_name.upper())
-            if company_alias:
-                company_variants.append(company_alias.upper())
-            has_company = any(token and token in combined for token in company_variants)
-
-            if not (has_ticker or has_company):
-                return False
-
-            finance_keywords = [
-                "STOCK", "SHARE", "EARNINGS", "REVENUE", "PROFIT", "LOSS", "GUIDANCE",
-                "MARKET", "INVESTOR", "TRADING", "DIVIDEND", "ANALYST", "QUARTER", "FINANC"
-            ]
-            has_finance_context = any(keyword in combined for keyword in finance_keywords)
-            return has_finance_context
-
-        # Finnhub company-news
-        finnhub_api_key = get_finnhub_api_key()
-        if finnhub_api_key:
-            from_date = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
-            to_date = datetime.utcnow().strftime("%Y-%m-%d")
-
-            symbol_candidates = []
-            for candidate in [raw_ticker, search_ticker, str(resolved_meta.get("input", "") or "").strip().upper()]:
-                clean = str(candidate or "").strip().upper()
-                if clean and clean not in symbol_candidates:
-                    symbol_candidates.append(clean)
-
-            for candidate_symbol in symbol_candidates:
-                try:
-                    response = requests.get(
-                        "https://finnhub.io/api/v1/company-news",
-                        params={
-                            "symbol": candidate_symbol,
-                            "from": from_date,
-                            "to": to_date,
-                            "token": finnhub_api_key,
-                        },
-                        timeout=8,
-                    )
-                    if response.status_code != 200:
-                        continue
-                    payload = response.json() if response.content else []
-                    if not isinstance(payload, list) or not payload:
-                        continue
-
-                    normalized_finnhub = []
-                    for item in payload:
-                        if not isinstance(item, dict):
-                            continue
-                        url = str(item.get("url", "") or "").strip()
-                        headline = str(item.get("headline", "") or "").strip()
-                        summary = str(item.get("summary", "") or "").strip()
-                        source_name = str(item.get("source", "Finnhub") or "Finnhub").strip()
-                        published_at = None
-                        try:
-                            ts = item.get("datetime")
-                            if ts:
-                                published_at = datetime.utcfromtimestamp(int(ts)).isoformat() + "Z"
-                        except Exception:
-                            published_at = None
-
-                        article = {
-                            "title": headline,
-                            "description": summary,
-                            "content": summary,
-                            "url": url,
-                            "publishedAt": published_at,
-                            "source": {"name": source_name},
-                        }
-                        if article["title"] and article["url"] and is_relevant_article(article):
-                            normalized_finnhub.append(article)
-
-                    if normalized_finnhub:
-                        return normalized_finnhub[:8]
-                except Exception:
+        allow_cfg = st.secrets.get("news_alerts", {}).get("allowed_news_sources", [])
+        if isinstance(allow_cfg, list) and allow_cfg:
+            for item in allow_cfg:
+                token = str(item or "").strip().lower()
+                if not token:
                     continue
+                if "." in token:
+                    allowed_domains.add(token)
+                else:
+                    allowed_sources.add(token)
     except Exception:
         pass
-    
-    return []
+    return _news.fetch_news_for_ticker(ticker, finnhub_api_key, allowed_sources, allowed_domains)
 
-def format_news_timestamp(published_at):
-    """Format published timestamp into relative time and exact local time."""
-    try:
-        parsed = pd.to_datetime(published_at, utc=True, errors='coerce')
-        if pd.isna(parsed):
-            return ("Unknown", "Unknown")
-
-        local_tz = datetime.now().astimezone().tzinfo
-        parsed_local = parsed.tz_convert(local_tz)
-        now_local = pd.Timestamp.now(tz=local_tz)
-        delta_seconds = int((now_local - parsed_local).total_seconds())
-        if delta_seconds < 0:
-            delta_seconds = 0
-
-        if delta_seconds < 60:
-            relative = "just now"
-        elif delta_seconds < 3600:
-            relative = f"{delta_seconds // 60}m ago"
-        elif delta_seconds < 172800:
-            relative = f"{delta_seconds // 3600}h ago"
-        else:
-            relative = f"{delta_seconds // 86400}d ago"
-
-        exact = parsed_local.strftime("%Y-%m-%d %H:%M %Z")
-        return (relative, exact)
-    except Exception:
-        return ("Unknown", "Unknown")
-
-def get_earnings_dates(tickers):
-    """Fetch upcoming earnings dates for tickers using yfinance"""
-    earnings = {}
-    for ticker in tickers:
-        try:
-            stock = yf.Ticker(ticker)
-            if hasattr(stock, 'info') and 'earningsDate' in stock.info:
-                earnings[ticker] = stock.info['earningsDate']
-        except:
-            pass
-    return earnings
+format_news_timestamp = _news.format_news_timestamp
+get_earnings_dates = _news.get_earnings_dates
 
 def check_price_alerts(portfolio_dict, current_prices, asset_type):
-    """Check holdings against threshold with dedupe + cooldown state."""
-    alerts = []
     threshold = st.secrets.get("news_alerts", {}).get("price_alert_threshold", 5)
     cooldown_minutes = st.secrets.get("news_alerts", {}).get("alerts_cooldown_minutes", 60)
-    now = datetime.now()
-    
-    tickers = portfolio_dict.get("Ticker", [])
-    avg_costs = portfolio_dict.get("Avg_Cost", [])
-    currency_symbol = "$" if asset_type == "US Stock" else "฿"
-    
-    for ticker, avg_cost, current_price in zip(tickers, avg_costs, current_prices):
-        if avg_cost is None or avg_cost == 0:
-            continue
-
-        pct_change = ((current_price - avg_cost) / avg_cost) * 100
-        direction = "up" if pct_change > 0 else "down"
-        state_key = f"{asset_type}|{ticker}"
-        previous_state = st.session_state.alert_state.get(state_key, {})
-        previously_triggered = previous_state.get("triggered", False)
-        previous_direction = previous_state.get("direction")
-        last_alert_at = previous_state.get("last_alert_at")
-
-        cooldown_ok = True
-        if last_alert_at:
-            last_alert_dt = pd.to_datetime(last_alert_at, errors='coerce')
-            if not pd.isna(last_alert_dt):
-                elapsed_seconds = (now - last_alert_dt.to_pydatetime()).total_seconds()
-                cooldown_ok = elapsed_seconds >= (cooldown_minutes * 60)
-
-        in_threshold = abs(pct_change) >= threshold
-        is_new = False
-
-        if in_threshold:
-            crossed_threshold = (not previously_triggered) or (previous_direction != direction)
-            is_new = crossed_threshold and cooldown_ok
-
-            st.session_state.alert_state[state_key] = {
-                "triggered": True,
-                "direction": direction,
-                "last_alert_at": now.isoformat() if is_new else last_alert_at,
-                "last_pct": pct_change
-            }
-        
-            alerts.append({
-                "ticker": ticker,
-                "change_pct": pct_change,
-                "change_type": "📈 UP" if pct_change > 0 else "📉 DOWN",
-                "current_price": current_price,
-                "price_at_cost": avg_cost,
-                "asset_type": asset_type,
-                "currency_symbol": currency_symbol,
-                "is_new": is_new
-            })
-        else:
-            st.session_state.alert_state[state_key] = {
-                "triggered": False,
-                "direction": None,
-                "last_alert_at": last_alert_at,
-                "last_pct": pct_change
-            }
-
+    alerts, updated_state = _alerts.check_price_alerts(
+        portfolio_dict, current_prices, asset_type,
+        st.session_state.alert_state, threshold, cooldown_minutes,
+    )
+    st.session_state.alert_state = updated_state
     save_alert_state()
-    
     return alerts
 
-def _normalize_column_name(name):
-    return str(name).strip().lower().replace(" ", "").replace("_", "")
-
-def _get_first_matching_column(df, aliases):
-    normalized_map = {_normalize_column_name(col): col for col in df.columns}
-    for alias in aliases:
-        key = _normalize_column_name(alias)
-        if key in normalized_map:
-            return normalized_map[key]
-    return None
-
-def _normalize_asset_class(value):
-    text = str(value).strip().lower()
-    if text in ["us stock", "us", "stock", "equity", "us_equity"]:
-        return "US Stock"
-    if text in ["thai stock", "th stock", "thai", "thai_equity", "th_equity"]:
-        return "Thai Stock"
-    if text in ["mutual fund", "fund", "thai fund", "th fund", "thai_mutual_fund"]:
-        return "Mutual Fund"
-    return None
-
-def _looks_thai_market_hint(currency_value, market_value):
-    currency_text = str(currency_value).strip().upper() if currency_value is not None else ""
-    market_text = str(market_value).strip().upper() if market_value is not None else ""
-    return (
-        currency_text == "THB"
-        or "SET" in market_text
-        or "BANGKOK" in market_text
-        or "THAILAND" in market_text
-        or "BK" in market_text
-    )
-
-def _parse_numeric_value(value):
-    """Parse numeric values from Yahoo-style CSV fields (commas, currency symbols, parentheses)."""
-    if value is None or (isinstance(value, float) and pd.isna(value)):
-        return None
-    text = str(value).strip()
-    if text == "":
-        return None
-
-    negative = text.startswith("(") and text.endswith(")")
-    cleaned = (
-        text.replace("(", "")
-        .replace(")", "")
-        .replace(",", "")
-        .replace("$", "")
-        .replace("฿", "")
-        .replace("THB", "")
-        .replace("USD", "")
-        .strip()
-    )
-    try:
-        number = float(cleaned)
-        return -number if negative else number
-    except Exception:
-        return None
-
-def _parse_date_value(value):
-    """Parse dates from Yahoo exports (supports YYYYMMDD, YYYYMMDD.0, and normal date strings)."""
-    if value is None or (isinstance(value, float) and pd.isna(value)):
-        return None
-
-    text = str(value).strip()
-    if text == "":
-        return None
-
-    # Handle numeric-like Yahoo dates such as 20260108 or 20260108.0
-    compact = text.replace(".0", "") if text.endswith(".0") else text
-    if compact.isdigit() and len(compact) == 8:
-        try:
-            parsed = pd.to_datetime(compact, format="%Y%m%d", errors="coerce")
-            if not pd.isna(parsed):
-                return parsed.strftime("%Y-%m-%d")
-        except Exception:
-            pass
-
-    parsed = pd.to_datetime(text, errors='coerce')
-    if pd.isna(parsed):
-        return None
-    return parsed.strftime("%Y-%m-%d")
-
-def parse_transactions_csv(uploaded_file, default_asset_class):
-    """Parse Yahoo-style CSV into canonical transaction rows.
-
-    Supports:
-    - transaction export: action + quantity + price + date
-    - holdings export: symbol + shares + avg cost/cost basis
-    """
-    try:
-        df = pd.read_csv(uploaded_file)
-    except Exception as exc:
-        return None, [f"Unable to read CSV: {exc}"]
-
-    symbol_col = _get_first_matching_column(df, ["symbol", "ticker", "code", "holding", "security"])
-    fund_col = _get_first_matching_column(df, ["fund_code", "fundcode", "fund"])
-    action_col = _get_first_matching_column(df, ["action", "type", "transaction_type", "transaction type"])
-    yahoo_tx_type_col = _get_first_matching_column(df, ["transaction_type", "transaction type"])
-    quantity_col = _get_first_matching_column(df, ["quantity", "shares", "units", "qty", "shares_owned", "shares owned"])
-    price_col = _get_first_matching_column(df, ["price", "trade_price", "fill_price", "avg_price", "nav", "purchase_price", "purchase price", "average_cost", "avg_cost", "avg cost", "cost", "current_price", "current price"])
-    cost_basis_col = _get_first_matching_column(df, ["cost_basis", "book_cost", "book cost", "total_cost", "cost basis"])
-    date_col = _get_first_matching_column(df, ["trade_date", "date", "transaction_date"])
-    asset_col = _get_first_matching_column(df, ["asset_class", "asset_type", "class"])
-    currency_col = _get_first_matching_column(df, ["currency", "curr", "trading_currency", "trading currency"])
-    market_col = _get_first_matching_column(df, ["market", "exchange", "country", "region"])
-    master_col = _get_first_matching_column(df, ["master", "master_etf", "benchmark"])
-
-    # Default behavior: auto-detect per row with US fallback unless user forces a class.
-    fallback_asset_class = "US Stock" if default_asset_class == "Auto-detect" else default_asset_class
-
-    is_transaction_mode = action_col is not None
-    is_holdings_mode = (action_col is None and quantity_col is not None and (price_col is not None or cost_basis_col is not None))
-
-    errors = []
-    if not quantity_col:
-        errors.append("Missing quantity column (expected: quantity/shares/units)")
-    if not price_col and not cost_basis_col:
-        errors.append("Missing price or cost basis column (expected: price/nav/avg_cost or cost_basis)")
-    if not symbol_col and not fund_col:
-        errors.append("Missing instrument column (expected symbol/ticker/code or fund_code)")
-    if not is_transaction_mode and not is_holdings_mode:
-        errors.append("Could not detect CSV mode. Provide either action column (transactions) or holdings fields (shares + avg cost/cost basis).")
-    if errors:
-        return None, errors
-
-    canonical_rows = []
-    row_errors = []
-
-    for idx, row in df.iterrows():
-        row_num = idx + 2
-
-        # Skip Yahoo cash transactions (e.g., $$CASH_TX with DEPOSIT/WITHDRAWAL)
-        symbol_hint = ""
-        if symbol_col and pd.notna(row.get(symbol_col)):
-            symbol_hint = str(row[symbol_col]).strip().upper()
-        tx_type_hint = ""
-        if yahoo_tx_type_col and pd.notna(row.get(yahoo_tx_type_col)):
-            tx_type_hint = str(row[yahoo_tx_type_col]).strip().upper()
-        if symbol_hint.startswith("$$CASH") or tx_type_hint in {"DEPOSIT", "WITHDRAWAL", "CASH", "DIVIDEND CASH"}:
-            continue
-
-        if is_transaction_mode:
-            action_raw = str(row[action_col]).strip().upper()
-            action_inferred = False
-            if action_raw in ["BUY", "B"]:
-                action = "Buy"
-            elif action_raw in ["SELL", "S"]:
-                action = "Sell"
-            else:
-                # Yahoo holdings rows can appear with empty Transaction Type.
-                if action_raw in ["", "NAN", "NONE"]:
-                    action = "Buy"
-                    action_inferred = True
-                else:
-                    row_errors.append(f"Row {row_num}: Unsupported action '{action_raw}'")
-                    continue
-        else:
-            # Holdings snapshot import: treat each row as opening BUY.
-            action = "Buy"
-            action_inferred = True
-
-        quantity = _parse_numeric_value(row[quantity_col])
-        if quantity is None or quantity <= 0:
-            # Yahoo portfolio exports include many quote-only rows with no position data.
-            # Skip inferred holding rows quietly; keep strict validation for explicit transactions.
-            if action_inferred:
-                continue
-            row_errors.append(f"Row {row_num}: Invalid quantity")
-            continue
-
-        price = _parse_numeric_value(row[price_col]) if price_col else None
-        if (price is None or price <= 0) and cost_basis_col:
-            cost_basis = _parse_numeric_value(row[cost_basis_col])
-            if cost_basis is not None and cost_basis > 0:
-                price = cost_basis / quantity
-
-        if price is None or price <= 0:
-            if action_inferred:
-                continue
-            row_errors.append(f"Row {row_num}: Invalid price/cost basis")
-            continue
-
-        asset_class = fallback_asset_class
-        if asset_col and pd.notna(row.get(asset_col)):
-            mapped_asset = _normalize_asset_class(row[asset_col])
-            if mapped_asset:
-                asset_class = mapped_asset
-
-        symbol = ""
-        fund_code = ""
-        if fund_col and pd.notna(row.get(fund_col)) and str(row[fund_col]).strip():
-            fund_code = str(row[fund_col]).strip().upper()
-            asset_class = "Mutual Fund"
-        elif symbol_col and pd.notna(row.get(symbol_col)):
-            symbol = str(row[symbol_col]).strip().upper()
-        else:
-            row_errors.append(f"Row {row_num}: Missing symbol/fund code")
-            continue
-
-        # Per-row inference for Yahoo exports (when asset class column is absent/ambiguous)
-        currency_hint = row.get(currency_col) if currency_col else None
-        market_hint = row.get(market_col) if market_col else None
-        if not fund_code and asset_col is None:
-            if symbol.endswith(".BK") or _looks_thai_market_hint(currency_hint, market_hint):
-                asset_class = "Thai Stock"
-            elif fallback_asset_class == "Mutual Fund":
-                # Keep explicit user default for files that are all-fund and provided as symbol-like codes
-                asset_class = "Mutual Fund"
-            else:
-                asset_class = fallback_asset_class
-
-        if asset_class == "Thai Stock" and symbol and not symbol.endswith(".BK"):
-            symbol = f"{symbol}.BK"
-
-        date_value = datetime.now().strftime("%Y-%m-%d")
-        if date_col and pd.notna(row.get(date_col)) and str(row[date_col]).strip():
-            parsed_date = _parse_date_value(row[date_col])
-            if parsed_date is None:
-                row_errors.append(f"Row {row_num}: Invalid date '{row[date_col]}'")
-                continue
-            date_value = parsed_date
-
-        master = "N/A"
-        if master_col and pd.notna(row.get(master_col)) and str(row[master_col]).strip():
-            master = str(row[master_col]).strip().upper()
-
-        canonical_rows.append({
-            "row_num": row_num,
-            "asset_class": asset_class,
-            "action": action,
-            "symbol": symbol,
-            "fund_code": fund_code,
-            "quantity": quantity,
-            "price": price,
-            "transaction_date": date_value,
-            "master": master,
-            "import_key": build_import_key(asset_class, action, symbol, fund_code, quantity, price, date_value)
-        })
-
-    return pd.DataFrame(canonical_rows), row_errors
-
-def get_csv_templates():
-    """Return downloadable CSV templates for US, Thai stocks, and Thai funds."""
-    us_template = pd.DataFrame([
-        {"symbol": "AAPL", "action": "BUY", "quantity": 10, "price": 190.50, "date": "2026-01-15"},
-        {"symbol": "AAPL", "action": "SELL", "quantity": 2, "price": 201.20, "date": "2026-02-01"}
-    ]).to_csv(index=False)
-
-    thai_stock_template = pd.DataFrame([
-        {"symbol": "ADVANC.BK", "action": "BUY", "quantity": 50, "price": 220.00, "date": "2026-01-10"},
-        {"symbol": "TISCO.BK", "action": "BUY", "quantity": 100, "price": 98.50, "date": "2026-01-11"}
-    ]).to_csv(index=False)
-
-    thai_fund_template = pd.DataFrame([
-        {"fund_code": "SCBNDQ(E)", "action": "BUY", "quantity": 1000, "price": 13.50, "date": "2026-01-05", "master": "QQQ"},
-        {"fund_code": "SCBNDQ(E)", "action": "SELL", "quantity": 100, "price": 13.95, "date": "2026-02-12", "master": "QQQ"}
-    ]).to_csv(index=False)
-
-    mixed_template = pd.DataFrame([
-        {"asset_class": "US Stock", "symbol": "MSFT", "action": "BUY", "quantity": 3, "price": 420.00, "date": "2026-01-07"},
-        {"asset_class": "Thai Stock", "symbol": "ADVANC", "action": "BUY", "quantity": 20, "price": 221.00, "date": "2026-01-12"},
-        {"asset_class": "Mutual Fund", "fund_code": "SCBS&P500FUND(E)", "action": "BUY", "quantity": 200, "price": 38.20, "date": "2026-01-18", "master": "VOO"}
-    ]).to_csv(index=False)
-
-    return {
-        "us": us_template,
-        "thai_stock": thai_stock_template,
-        "thai_fund": thai_fund_template,
-        "mixed": mixed_template
-    }
+# --- CSV Import: delegated to sniper.csv_import ---
+_normalize_column_name = _csv.normalize_column_name
+_get_first_matching_column = _csv.get_first_matching_column
+_normalize_asset_class = _csv.normalize_asset_class
+_looks_thai_market_hint = _csv.looks_thai_market_hint
+_parse_numeric_value = _csv.parse_numeric_value
+_parse_date_value = _csv.parse_date_value
+parse_transactions_csv = _csv.parse_transactions_csv
+get_csv_templates = _csv.get_csv_templates
 
 def simulate_import_preview(parsed_df):
     """Dry-run import simulation to preview import/skip/fail outcomes."""
