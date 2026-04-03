@@ -163,7 +163,11 @@ def load_watchlists() -> dict:
                             continue
                         if not isinstance(symbols, list):
                             continue
-                        clean[name] = [str(s).strip().upper() for s in symbols if str(s).strip()]
+                        clean[name] = [
+                            stripped.upper()
+                            for s in symbols
+                            if (stripped := str(s).strip())
+                        ]
                     return clean
     except Exception:
         pass
@@ -212,7 +216,7 @@ def load_options_iv_history() -> dict:
                                 continue
                             if day:
                                 clean_values.append({"date": day, "atm_iv": iv_float})
-                        clean[symbol] = clean_values[-400:]
+                        clean[symbol] = clean_values[-400:]  # rolling 400-day window
                     return clean
     except Exception:
         pass
@@ -261,7 +265,7 @@ def load_calendar_events() -> list:
                             "details": str(item.get("details", "") or "").strip(),
                             "status": str(item.get("status", "Planned") or "Planned"),
                         })
-                    return clean_events[-1200:]
+                    return clean_events[-1200:]  # cap at ~3 years of daily events
     except Exception:
         pass
     return []
