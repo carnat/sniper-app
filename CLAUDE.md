@@ -57,6 +57,9 @@ Commander from the decision chain, do not build it.
 | 5 | CMD-5 Triad Council — Doctrine Audit Overlay | 3 council agents (DOCTRINE/GATE/WATCHER) in War Room canvas; audit engine with rotating findings, consensus detection, click tooltips | ✅ Complete |
 | 6+ | P7 alert pipeline | Post-Level 1 (฿800K trigger) | 🔜 Not started |
 | 7 | Doctrine integration + portfolio import | `docs/doctrine/`, `scripts/import_portfolio.py`, portfolio config schema | ✅ Complete |
+| 8 | sniper/ package extraction | Business logic → 11 modules, `streamlit_app.py` 5681→3827 lines | ✅ Complete |
+| 9 | CMD-6→11 UI/UX enhancements | PRI gauge, signal convergence, sparklines, ticker tape, news badges, keyboard shortcuts, auto-refresh, mobile tab bar, panel manager | ✅ Complete |
+| 10 | Handoff doc + CLAUDE.md overhaul | Docs aligned to current state, stale data removed | ✅ Complete |
 
 ## Reference
 Full session handoff: `docs/sniper_claude_code_handoff.md`
