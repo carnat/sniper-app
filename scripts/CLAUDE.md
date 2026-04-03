@@ -35,5 +35,5 @@ Use `ratelimit` library for news fetch calls. Batch OHLCV download via `yf.downl
 ## Constraints
 Do not add any file here that:
 - Modifies `.streamlit/` or any file listed in `.gitignore`
-- Triggers external APIs beyond yfinance and the `cryptography` stdlib
+- Triggers external APIs beyond yfinance and `cryptography`
 - Contains portfolio execution logic of any kind

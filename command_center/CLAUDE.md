@@ -20,11 +20,28 @@ Static HTML only. No Python. No server. No build step.
 - `private.enc.json` is safe to commit — regenerate with `python scripts/encrypt_private.py`
 
 ## Tab structure
-1. ARSENAL + STATUS (default)
-2. VAULT HEALTH
-3. WATCHTOWER (CMD-2 — ✅ Session 3 complete)
-4. BACKTESTER (CMD-3 — ✅ Session 4 complete)
-5. WAR ROOM (CMD-4 — ✅ Agent-based pixel art visualization)
+1. ARSENAL + STATUS (default) — tab ID: `arsenal`
+2. VAULT HEALTH — tab ID: `vault`
+3. WATCHTOWER — tab ID: `watchtower` (CMD-2 — ✅ Session 3)
+4. NEWS — tab ID: `news` (CMD-2 — ✅ Session 3, filterable feed: ALL/ARSENAL/WATCHTOWER)
+5. BACKTESTER — tab ID: `backtester` (CMD-3 — ✅ Session 4)
+6. WAR ROOM — tab ID: `warroom` (CMD-4/5 — ✅ Agent-based pixel art + Triad Council)
+
+Keyboard shortcuts: `1`–`6` switch tabs, `R` refresh, `?` help overlay, `Esc` close
+
+## Command Center v2 enhancements (CMD-6→11)
+Features added via PR #16, WorldMonitor-inspired:
+
+- **PRI Gauge (B1)** — SVG circular gauge, 0–100 composite from 5 factors: VIX regime (0-30), drawdown proximity (0-25), concentration risk (0-15), blackout count (0-15), thesis neglect (0-15). Color zones: GREEN <30, YELLOW 30-60, ORANGE 60-80, RED 80+. `calculatePRI()` + `renderPRI(d)`.
+- **Signal Convergence (B2)** — 7 cross-signal rules: ELEVATED RISK, FREEZE/HARD FREEZE, DEPLOYMENT WINDOW, SPY BELOW 200DMA, THESIS NOT SET, EARNINGS BLACKOUT, VOLUME SURGE. `detectSignals()`.
+- **Inline Sparklines (A2)** — `createSparkline(entry)` generates 28×12px SVG polylines from `change5d` data in Arsenal + Watchtower tables.
+- **Ticker Tape (A4)** — Auto-scrolling horizontal bar below header, CSS `tape-scroll 45s` animation, pauses on hover.
+- **News Sentiment Badges (B4)** — Keyword-based BULLISH/BEARISH classification + category tagging (EARNINGS/SECTOR/MACRO/DOCTRINE). `newsBadges()`.
+- **Auto-Refresh Toggle (B8)** — 5-min polling with localStorage persistence + stale data badges (24h amber, 48h red).
+- **Mobile Bottom Tab Bar (A6)** — Fixed bottom nav with emoji icons, `@media (max-width: 600px)`, `safe-area-inset-bottom`.
+- **PanelManager (A1)** — Collapse/expand panels with localStorage state persistence.
+- **CSS Semantic Tokens** — `--panel-radius`, `--font-xs`→`--font-xl`, `--shadow-card`, `--transition-fast/normal`.
+- **Shared Helper** — `getBlackoutTickers()` used by both PRI and Triad Council audit engine.
 
 ## War Room architecture (CMD-4 + CMD-5)
 - Canvas 2D rendering engine with `requestAnimationFrame` game loop
@@ -54,3 +71,17 @@ Three static agents at the bottom of the room (zone `council`) that continuously
 - **Consensus**: when 2-of-3 members flag the same ticker, `⚡ CONSENSUS` label appears at table center
 - Click/hover on any Triad agent shows tooltip with full findings list + severity counts
 - Room expanded from 26→30 rows to accommodate council zone
+
+## Doctrine implementation status
+- ✅ VIX regime bands (GREEN/YELLOW/ORANGE/RED)
+- ✅ PRI gauge (5-factor composite)
+- ✅ Thesis age clock (NEGLECT/STALE tracking)
+- ✅ Blackout window detection
+- ✅ Triad Council audit engine
+- ⚠️ DCA Matrix scores are hardcoded — F1-F4 not computed live
+- ⚠️ Drawdown Freeze displayed but not enforced (no DCA blocking)
+- ⚠️ Victory Protocol targets shown but 2x/3x automation missing
+- ❌ Alpha Filter validation not automated
+- ❌ Bear Restructure logic not implemented
+- ❌ Dead Hand Clause not implemented
+- ❌ Concentration limit enforcement missing

@@ -17,9 +17,9 @@ Claude uses these files as context when assisting with investment decisions.
 | `doctrine-core.md` | doctrine_core v1.12.1 | Full core doctrine summary |
 | `goal_architecture.md` | doctrine_core v1.12.1 §7 | DC-41 milestone ladder M-1 through M-4 |
 | `hwm_drawdown.md` | doctrine_core v1.12.1 §6.5 | HWM tracking, Freeze, DC-59 Amber Zone |
-| `matrix_scoring.md` | doctrine_core_matrix v1.0.0 | F1–F5 factor scoring |
+| `matrix_scoring.md` | doctrine_core_matrix v1.0.0-BETA.1 | F1–F5 factor scoring |
 | `portfolio-state.md` | portfolio_state v1.3.14 | Current positions, orders, matrix scores |
-| `tripwires.md` | doctrine_core_tripwires v1.0.0 | Thesis break definitions |
+| `tripwires.md` | doctrine_core_tripwires v1.0.0-BETA.1 | Thesis break definitions |
 | `vault-rules.md` | doctrine_pe v1.6.0 | Vault registry, fund positions |
 | `vault_protocol.md` | doctrine_pe v1.6.0 | Rebalancing, switch triggers, E-Class |
 | `victory_protocols.md` | doctrine_core v1.12.1 §6.6 | DC-49/50a/b/56/58 |
@@ -41,5 +41,5 @@ POINTER: Full doctrine text → `docs/doctrine/` (committed, version-controlled)
 - doctrine_council v1.11.0
 - doctrine_core v1.12.1
 - doctrine_pe v1.6.0
-- doctrine_core_matrix v1.0.0
-- doctrine_core_tripwires v1.0.0
+- doctrine_core_matrix v1.0.0-BETA.1
+- doctrine_core_tripwires v1.0.0-BETA.1
