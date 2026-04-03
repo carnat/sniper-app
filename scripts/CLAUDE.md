@@ -1,11 +1,11 @@
 # scripts/ — CLAUDE.md
 
-Price pipeline only. This directory fetches market data and writes to `data/prices.json`.
-Output is read-only JSON. No portfolio decisions. No execution logic.
+Price pipeline, encryption, and portfolio import. Outputs are read-only JSON. No portfolio decisions. No execution logic.
 
 ## Files
 - `fetch_prices.py` — reads tickers from config, calls yfinance, writes `data/prices.json`
 - `encrypt_private.py` — encrypts `command_center/private.json` → `command_center/private.enc.json` (AES-256-GCM, PBKDF2)
+- `import_portfolio.py` — imports `data/portfolio_config.json` (gitignored) → `data/portfolio.json` (gitignored). Validates against doctrine rules. Optional `--encrypt` flag.
 - `claude_guardrail.py` — pre-tool hook: blocks dangerous bash commands before execution
 - `secret_scan.py` — scans repo for accidentally committed secrets before push
 
