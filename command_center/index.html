@@ -2846,7 +2846,9 @@ const WarRoom = (function() {
 
     update(dt) {
       this.t += dt;
-      this.frame = Math.floor(this.t * 3) % 2;
+      this.frame = this.state === 'walking'
+        ? Math.floor(this.t * 4) % 4   // 4-frame walk cycle
+        : Math.floor(this.t * 3) % 2;
 
       // walking
       if (this.state === 'walking') {
@@ -2938,6 +2940,7 @@ const WarRoom = (function() {
     canvas.height = ROOM_H * scale;
     canvas.style.width = (ROOM_W * scale) + 'px';
     canvas.style.height = (ROOM_H * scale) + 'px';
+    ctx.imageSmoothingEnabled = false;
   }
 
   function createAgents() {
@@ -3312,6 +3315,28 @@ const WarRoom = (function() {
         ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
       }
     }
+    // Subtle grid lines on floor tiles
+    ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+    ctx.lineWidth = 0.5;
+    for (let r = 1; r < ROOM_ROWS; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * TILE);
+      ctx.lineTo(ROOM_COLS * TILE, r * TILE);
+      ctx.stroke();
+    }
+    for (let c = 1; c < ROOM_COLS; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * TILE, 0);
+      ctx.lineTo(c * TILE, ROOM_ROWS * TILE);
+      ctx.stroke();
+    }
+    // Floor decoration marks at some intersections
+    ctx.fillStyle = 'rgba(58,159,255,0.04)';
+    for (let r = 2; r < ROOM_ROWS - 1; r += 3) {
+      for (let c = 2; c < ROOM_COLS - 1; c += 4) {
+        ctx.fillRect(c * TILE - 0.5, r * TILE - 0.5, 1, 1);
+      }
+    }
     // Walls (top 2 rows, bottom row)
     for (let c = 0; c < ROOM_COLS; c++) {
       ctx.fillStyle = WALL_COLOR;
@@ -3407,20 +3432,76 @@ const WarRoom = (function() {
     }
   }
 
-  function drawDesk(x, y) {
+  function drawDesk(x, y, agent) {
     // Small desk behind agent
     ctx.fillStyle = DESK_COLOR;
     ctx.fillRect(x, y - 2, TILE * 3, TILE + 2);
     ctx.fillStyle = DESK_TOP;
     ctx.fillRect(x, y - 2, TILE * 3, 2);
-    // Monitor on desk
+    // Monitor frame
     ctx.fillStyle = '#0a1820';
     ctx.fillRect(x + 10, y - 6, 12, 6);
+    // Monitor screen
     ctx.fillStyle = '#1a3050';
     ctx.fillRect(x + 11, y - 5, 10, 4);
-    // Tiny screen glow
-    ctx.fillStyle = 'rgba(58,159,255,0.15)';
+    // Active monitor: scrolling code lines when agent is deployed
+    if (agent && agent.state === 'deployed') {
+      const t = agent.t;
+      ctx.fillStyle = 'rgba(58,159,255,0.25)';
+      for (let i = 0; i < 3; i++) {
+        const ly = y - 4.5 + i * 1.2;
+        const lw = 3 + ((Math.floor(t * 2 + i * 7)) % 5);
+        const lx = x + 12 + ((Math.floor(t + i * 3)) % 2);
+        ctx.fillRect(lx, ly, lw, 0.5);
+      }
+      // Cursor blink
+      if (Math.floor(t * 3) % 2 === 0) {
+        ctx.fillStyle = 'rgba(58,255,120,0.4)';
+        ctx.fillRect(x + 12, y - 2.5, 1, 1);
+      }
+    }
+    // Screen glow
+    ctx.fillStyle = 'rgba(58,159,255,0.10)';
     ctx.fillRect(x + 11, y - 5, 10, 4);
+    // Monitor stand
+    ctx.fillStyle = '#0a1820';
+    ctx.fillRect(x + 15, y, 2, 1);
+    // Keyboard (tiny dots in front of monitor)
+    ctx.fillStyle = '#1a2a3a';
+    ctx.fillRect(x + 10, y + 1, 12, 2);
+    ctx.fillStyle = '#2a3a4a';
+    for (let i = 0; i < 5; i++) {
+      ctx.fillRect(x + 11 + i * 2.2, y + 1.3, 1.5, 0.8);
+    }
+    // Coffee cup on desk
+    ctx.fillStyle = '#3a2818';
+    ctx.fillRect(x + 26, y - 1, 3, 3);
+    ctx.fillStyle = '#5a3820';
+    ctx.fillRect(x + 26, y - 1, 3, 1);
+    // Steam (animated)
+    if (agent) {
+      const st = Math.sin(agent.t * 2) * 0.5;
+      ctx.fillStyle = 'rgba(180,180,200,0.15)';
+      ctx.fillRect(x + 27, y - 2.5 + st, 1, 1);
+    }
+  }
+
+  // ── Body style diversity per sector ──
+  function getBodyStyle(sector) {
+    switch (sector) {
+      case 'semi':     return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
+      case 'space':    return { hairStyle: 'spiky',   bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null };
+      case 'network':  return { hairStyle: 'side',    bodyW: 9, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
+      case 'energy':   return { hairStyle: 'buzz',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
+      case 'defense':  return { hairStyle: 'crew',    bodyW: 9, bodyH: 7, legLen: 3, armLen: 4, accessory: null };
+      case 'vault':    return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' };
+      case 'sentinel': return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' };
+      case 'cmd':      return { hairStyle: 'flat',    bodyW: 8, bodyH: 9, legLen: 5, armLen: 5, accessory: 'star' };
+      case 'doctrine': return { hairStyle: 'none',    bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' };
+      case 'gate':     return { hairStyle: 'none',    bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' };
+      case 'watcher':  return { hairStyle: 'none',    bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' };
+      default:         return { hairStyle: 'flat',    bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null };
+    }
   }
 
   function drawAgent(a) {
@@ -3429,10 +3510,12 @@ const WarRoom = (function() {
     const p = a.pal;
     const frozen = a.state === 'frozen';
     const isTyping = a.state === 'deployed' && a.frame === 0;
+    const isWatching = a.state === 'watching';
+    const bs = getBodyStyle(a.sector);
 
     // Desk for arsenal agents
     if (a.zone === 'arsenal') {
-      drawDesk(a.deskX, a.deskY);
+      drawDesk(a.deskX, a.deskY, a);
     }
     // Council agents: small seat indicator
     if (a.zone === 'council') {
@@ -3450,76 +3533,188 @@ const WarRoom = (function() {
     ctx.fill();
 
     const f = a.facing;
+    const halfW = Math.floor(bs.bodyW / 2);
 
-    // Legs
-    const legSpread = a.state === 'walking' ? (a.frame === 0 ? 2 : -1) : 0;
+    // ── Legs with 4-frame walk cycle ──
+    let leftLegOff = 0, rightLegOff = 0;
+    if (a.state === 'walking') {
+      switch (a.frame) {
+        case 0: leftLegOff = -1; rightLegOff = 2; break;  // right forward
+        case 1: leftLegOff = 0;  rightLegOff = 0; break;  // neutral
+        case 2: leftLegOff = 2;  rightLegOff = -1; break; // left forward
+        case 3: leftLegOff = 0;  rightLegOff = 0; break;  // neutral
+      }
+    }
     ctx.fillStyle = '#1a1a2a';
-    ctx.fillRect(x - 3, y - 3, 2, 4 + legSpread);
-    ctx.fillRect(x + 1, y - 3, 2, 4 - legSpread);
+    ctx.fillRect(x - 3, y - 3, 2, bs.legLen + leftLegOff);
+    ctx.fillRect(x + 1, y - 3, 2, bs.legLen + rightLegOff);
 
-    // Body
-    ctx.fillStyle = p.body;
-    ctx.fillRect(x - 4, y - 10, 8, 8);
-    // Body highlight
-    ctx.fillStyle = p.hi;
-    ctx.fillRect(x - 4 + (f > 0 ? 0 : 6), y - 10, 2, 8);
-
-    // Arms
-    if (isTyping) {
-      // Typing pose - arms forward
+    // ── Body ──
+    const bodyTop = y - 3 - bs.bodyH;
+    if (bs.accessory === 'robe') {
+      // Robed council members: wider flowing garment
+      ctx.fillStyle = p.dk;
+      ctx.fillRect(x - halfW - 1, bodyTop, bs.bodyW + 2, bs.bodyH + 2);
       ctx.fillStyle = p.body;
-      ctx.fillRect(x - 6, y - 8, 2, 4);
-      ctx.fillRect(x + 4, y - 8, 2, 4);
+      ctx.fillRect(x - halfW, bodyTop, bs.bodyW, bs.bodyH);
+      // Robe trim
+      ctx.fillStyle = p.hi;
+      ctx.fillRect(x - halfW, bodyTop + bs.bodyH - 1, bs.bodyW, 1);
+      // Center seam
+      ctx.fillStyle = p.dk;
+      ctx.fillRect(x, bodyTop + 1, 1, bs.bodyH - 2);
+    } else {
+      ctx.fillStyle = p.body;
+      ctx.fillRect(x - halfW, bodyTop, bs.bodyW, bs.bodyH);
+      // Body highlight
+      ctx.fillStyle = p.hi;
+      ctx.fillRect(x - halfW + (f > 0 ? 0 : bs.bodyW - 2), bodyTop, 2, bs.bodyH);
+    }
+
+    // Star badge for Commander
+    if (bs.accessory === 'star') {
+      ctx.fillStyle = '#ffdd44';
+      ctx.fillRect(x - 1, bodyTop + 2, 2, 2);
+    }
+
+    // ── Arms (with walk-cycle swing and activity animations) ──
+    const armX1 = x - halfW - 2;
+    const armX2 = x + halfW;
+    if (isTyping) {
+      // Typing pose: hands bob up/down
+      const typeBob = a.frame === 0 ? 0 : 1;
+      ctx.fillStyle = p.body;
+      ctx.fillRect(armX1, bodyTop + 2, 2, 4);
+      ctx.fillRect(armX2, bodyTop + 2, 2, 4);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(x - 6, y - 5, 2, 2);
-      ctx.fillRect(x + 4, y - 5, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 5 + typeBob, 2, 2);
+      ctx.fillRect(armX2, bodyTop + 5 - typeBob, 2, 2);
+    } else if (a.state === 'walking') {
+      // Arms swing opposite to legs
+      let leftArmOff = 0, rightArmOff = 0;
+      switch (a.frame) {
+        case 0: leftArmOff = 1; rightArmOff = -1; break;
+        case 1: leftArmOff = 0; rightArmOff = 0;  break;
+        case 2: leftArmOff = -1; rightArmOff = 1;  break;
+        case 3: leftArmOff = 0; rightArmOff = 0;  break;
+      }
+      ctx.fillStyle = p.body;
+      ctx.fillRect(armX1, bodyTop + 1 + leftArmOff, 2, bs.armLen);
+      ctx.fillRect(armX2, bodyTop + 1 + rightArmOff, 2, bs.armLen);
+      ctx.fillStyle = p.skin;
+      ctx.fillRect(armX1, bodyTop + bs.armLen + leftArmOff, 2, 2);
+      ctx.fillRect(armX2, bodyTop + bs.armLen + rightArmOff, 2, 2);
+    } else if (isWatching) {
+      // Watching: one hand up to eyes (binocular gesture)
+      ctx.fillStyle = p.body;
+      ctx.fillRect(armX1, bodyTop + 1, 2, bs.armLen);
+      ctx.fillRect(armX2, bodyTop - 1, 2, 4);
+      ctx.fillStyle = p.skin;
+      ctx.fillRect(armX1, bodyTop + bs.armLen, 2, 2);
+      ctx.fillRect(armX2, bodyTop - 1, 2, 2);
+      // Small scope/binocular near eyes
+      ctx.fillStyle = '#2a3a4a';
+      ctx.fillRect(x + halfW, bodyTop - 5, 2, 2);
     } else {
       // Idle arms
       ctx.fillStyle = p.body;
-      ctx.fillRect(x - 6, y - 9, 2, 5);
-      ctx.fillRect(x + 4, y - 9, 2, 5);
+      ctx.fillRect(armX1, bodyTop + 1, 2, bs.armLen);
+      ctx.fillRect(armX2, bodyTop + 1, 2, bs.armLen);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(x - 6, y - 4, 2, 2);
-      ctx.fillRect(x + 4, y - 4, 2, 2);
+      ctx.fillRect(armX1, bodyTop + bs.armLen, 2, 2);
+      ctx.fillRect(armX2, bodyTop + bs.armLen, 2, 2);
     }
 
-    // Head
+    // ── Head ──
+    const headTop = bodyTop - 6;
     ctx.fillStyle = p.skin;
-    ctx.fillRect(x - 3, y - 16, 6, 6);
-    // Hair
+    ctx.fillRect(x - 3, headTop, 6, 6);
+
+    // Watching state: head turns left-right
+    let eyeOffset = f > 0 ? 0 : 2;
+    if (isWatching) {
+      const lookDir = Math.sin(a.t * 1.5);
+      eyeOffset = lookDir > 0.3 ? 0 : lookDir < -0.3 ? 2 : 1;
+    }
+
+    // ── Hair styles ──
     ctx.fillStyle = p.head;
-    ctx.fillRect(x - 3, y - 16, 6, 2);
-    ctx.fillRect(x - 3 + (f > 0 ? 0 : 4), y - 16, 2, 4);
+    switch (bs.hairStyle) {
+      case 'flat':
+        ctx.fillRect(x - 3, headTop, 6, 2);
+        ctx.fillRect(x - 3 + (f > 0 ? 0 : 4), headTop, 2, 4);
+        break;
+      case 'spiky':
+        ctx.fillRect(x - 3, headTop, 6, 2);
+        ctx.fillRect(x - 3, headTop - 1, 2, 1);
+        ctx.fillRect(x - 1, headTop - 2, 2, 1);
+        ctx.fillRect(x + 1, headTop - 1, 2, 1);
+        break;
+      case 'side':
+        ctx.fillRect(x - 3, headTop, 6, 2);
+        ctx.fillRect(x - 3, headTop, 2, 5);
+        break;
+      case 'buzz':
+        ctx.fillRect(x - 3, headTop, 6, 1);
+        ctx.fillRect(x - 3 + (f > 0 ? 0 : 5), headTop, 1, 2);
+        break;
+      case 'crew':
+        ctx.fillRect(x - 3, headTop, 6, 2);
+        ctx.fillRect(x - 3, headTop + 2, 1, 1);
+        ctx.fillRect(x + 2, headTop + 2, 1, 1);
+        break;
+      case 'none':
+        // Robed council: hood
+        ctx.fillStyle = p.dk;
+        ctx.fillRect(x - 4, headTop - 1, 8, 3);
+        ctx.fillRect(x - 4, headTop + 1, 1, 2);
+        ctx.fillRect(x + 3, headTop + 1, 1, 2);
+        break;
+    }
+
+    // Headset accessory (vault/sentinel)
+    if (bs.accessory === 'headset') {
+      ctx.fillStyle = '#3a3a4a';
+      ctx.fillRect(x - 4, headTop + 2, 1, 3);
+      ctx.fillRect(x + 3, headTop + 2, 1, 3);
+      ctx.fillRect(x - 4, headTop + 1, 8, 1);
+      // Mic
+      ctx.fillStyle = '#5a5a6a';
+      ctx.fillRect(x - 4, headTop + 5, 1, 1);
+    }
+
     // Eyes
     ctx.fillStyle = '#1a1a2a';
-    ctx.fillRect(x - 1 + (f > 0 ? 0 : 2), y - 13, 1, 1);
-    ctx.fillRect(x + 1 + (f > 0 ? 0 : -1), y - 13, 1, 1);
+    ctx.fillRect(x - 1 + eyeOffset, headTop + 3, 1, 1);
+    ctx.fillRect(x + 1 + eyeOffset - 1, headTop + 3, 1, 1);
 
     ctx.restore();
 
     // Frozen overlay
     if (frozen) {
       ctx.fillStyle = 'rgba(100,180,255,0.2)';
-      ctx.fillRect(x - 5, y - 17, 10, 20);
+      ctx.fillRect(x - 5, headTop - 1, 10, y + 4 - headTop + 1);
       // Ice crystals
       ctx.fillStyle = 'rgba(150,220,255,0.6)';
-      ctx.fillRect(x - 4, y - 15, 1, 1);
-      ctx.fillRect(x + 3, y - 11, 1, 1);
-      ctx.fillRect(x - 2, y - 5, 1, 1);
+      ctx.fillRect(x - 4, headTop + 1, 1, 1);
+      ctx.fillRect(x + 3, headTop + 7, 1, 1);
+      ctx.fillRect(x - 2, y - 1, 1, 1);
     }
 
-    // 1px dark outline around sprite bounding box (arms: x±6, head top: y-16, feet: y+4) for pop
+    // 1px dark outline
     ctx.save();
     ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x - 5, y - 17, 11, 21);
+    const spriteTop = bs.hairStyle === 'spiky' ? headTop - 2 : bs.hairStyle === 'none' ? headTop - 1 : headTop;
+    const spriteBot = y + bs.legLen;
+    ctx.strokeRect(x - halfW - 1, spriteTop, bs.bodyW + 4, spriteBot - spriteTop);
     ctx.restore();
 
     // Hovered highlight
     if (a === hoveredAgent) {
       ctx.strokeStyle = '#3a9fff';
       ctx.lineWidth = 1;
-      ctx.strokeRect(x - 7, y - 18, 14, 22);
+      ctx.strokeRect(x - halfW - 2, spriteTop - 1, bs.bodyW + 6, spriteBot - spriteTop + 2);
     }
 
     // Ticker label below
@@ -3549,26 +3744,57 @@ const WarRoom = (function() {
     // Stagger bubble height by ticker's first character so overlapping agents don't stack identically
     const stagger = (a.ticker.charCodeAt(0) % 3) * 4;
 
+    // Fade-in alpha (first 0.3s of speech life)
+    const maxLife = a.zone === 'council' ? 99999 : 6;
+    const age = maxLife - a.speechLife;
+    const fadeAlpha = Math.min(1, age / 0.3);
+
     ctx.save();
+    ctx.globalAlpha = fadeAlpha;
     ctx.font = '5px monospace';
     const text = a.speech;
     const tw = ctx.measureText(text).width;
-    const bw = tw + 8;
-    const bh = 9;
+    const bw = tw + 10;
+    const bh = 10;
     const bx = x - bw / 2;
     const by = y - 28 - bh - stagger;
+    const r = 2; // corner radius
 
-    // Bubble background
+    // Rounded bubble background
     ctx.fillStyle = '#141e30';
-    ctx.fillRect(bx, by, bw, bh);
+    ctx.beginPath();
+    ctx.moveTo(bx + r, by);
+    ctx.lineTo(bx + bw - r, by);
+    ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+    ctx.lineTo(bx + bw, by + bh - r);
+    ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+    ctx.lineTo(bx + r, by + bh);
+    ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+    ctx.lineTo(bx, by + r);
+    ctx.arcTo(bx, by, bx + r, by, r);
+    ctx.closePath();
+    ctx.fill();
     ctx.strokeStyle = '#3a5070';
     ctx.lineWidth = 0.5;
-    ctx.strokeRect(bx, by, bw, bh);
-    // Pointer
-    ctx.fillStyle = '#141e30';
-    ctx.fillRect(x - 1, by + bh, 2, 2);
+    ctx.stroke();
 
-    // Text
+    // Triangle tail/pointer
+    ctx.fillStyle = '#141e30';
+    ctx.beginPath();
+    ctx.moveTo(x - 2, by + bh);
+    ctx.lineTo(x, by + bh + 3);
+    ctx.lineTo(x + 2, by + bh);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#3a5070';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x - 2, by + bh);
+    ctx.lineTo(x, by + bh + 3);
+    ctx.lineTo(x + 2, by + bh);
+    ctx.stroke();
+
+    // Text color
     let speechColor;
     if (a.speechSeverity) {
       const sevCols = { critical: '#ff4055', warning: '#ffb800', info: '#00c8e0', ok: '#00d084' };
@@ -3583,11 +3809,42 @@ const WarRoom = (function() {
     if (a.zone === 'council' && a.speechSeverity) {
       const sevBorders = { critical: '#cc1028', warning: '#aa6600', info: '#006688', ok: '#006030' };
       ctx.strokeStyle = sevBorders[a.speechSeverity] || '#3a5070';
-      ctx.strokeRect(bx, by, bw, bh);
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(bx + r, by);
+      ctx.lineTo(bx + bw - r, by);
+      ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+      ctx.lineTo(bx + bw, by + bh - r);
+      ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+      ctx.lineTo(bx + r, by + bh);
+      ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+      ctx.lineTo(bx, by + r);
+      ctx.arcTo(bx, by, bx + r, by, r);
+      ctx.closePath();
+      ctx.stroke();
     }
-    ctx.fillStyle = speechColor;
-    ctx.textAlign = 'center';
-    ctx.fillText(text, x, by + 6.5);
+
+    // Animated "..." waiting dots for waiting messages
+    const isWaiting = text.includes('...') || text.includes('scanning') || text.includes('monitoring');
+    if (isWaiting) {
+      ctx.fillStyle = speechColor;
+      ctx.textAlign = 'center';
+      const dotPhase = Math.floor(a.t * 3) % 4;
+      let dots = '';
+      for (let i = 0; i < 3; i++) {
+        dots += (dotPhase > i) ? '·' : ' ';
+      }
+      ctx.fillText(text, x, by + 7);
+      // Pulsing dots after text
+      ctx.fillStyle = speechColor;
+      ctx.globalAlpha = fadeAlpha * 0.6;
+      ctx.fillText(dots, x + tw / 2 + 4, by + 7);
+      ctx.globalAlpha = fadeAlpha;
+    } else {
+      ctx.fillStyle = speechColor;
+      ctx.textAlign = 'center';
+      ctx.fillText(text, x, by + 7);
+    }
     ctx.restore();
   }
 
@@ -3659,6 +3916,7 @@ const WarRoom = (function() {
   function render() {
     ctx.save();
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, ROOM_W, ROOM_H);
 
     drawFloor();
@@ -3675,6 +3933,20 @@ const WarRoom = (function() {
     sorted.forEach(a => drawSpeechBubble(a));
 
     drawStatusBar();
+
+    // Scanline overlay (subtle CRT effect)
+    ctx.fillStyle = 'rgba(0,0,0,0.02)';
+    for (let sy = 0; sy < ROOM_H; sy += 2) {
+      ctx.fillRect(0, sy, ROOM_W, 1);
+    }
+
+    // Vignette on canvas edges
+    const vg = ctx.createRadialGradient(ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.35, ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.7);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,0.15)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, ROOM_W, ROOM_H);
+
     ctx.restore();
   }
 
