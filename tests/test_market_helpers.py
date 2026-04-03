@@ -1,52 +1,18 @@
-import ast
-import math
 import unittest
 from datetime import datetime, timedelta
-from pathlib import Path
-from statistics import NormalDist
-from types import SimpleNamespace
 
 import pandas as pd
 
-
-TARGET_FUNCTIONS = {
-    "_normalize_market_symbol",
-    "_compute_iv_rank_percentile",
-    "_estimate_atm_iv",
-    "_annotate_black_scholes_greeks",
-}
-
-
-def _load_market_helper_functions(options_iv_history):
-    source_path = Path(__file__).resolve().parents[1] / "streamlit_app.py"
-    source = source_path.read_text(encoding="utf-8")
-    tree = ast.parse(source)
-
-    selected_nodes = []
-    for node in tree.body:
-        if isinstance(node, ast.FunctionDef) and node.name in TARGET_FUNCTIONS:
-            selected_nodes.append(node)
-
-    module = ast.Module(body=selected_nodes, type_ignores=[])
-    compiled = compile(module, filename=str(source_path), mode="exec")
-
-    fake_st = SimpleNamespace(session_state=SimpleNamespace(options_iv_history=options_iv_history))
-    namespace = {
-        "pd": pd,
-        "math": math,
-        "datetime": datetime,
-        "NormalDist": NormalDist,
-        "st": fake_st,
-    }
-    exec(compiled, namespace)
-    return namespace
+from sniper.options import (
+    normalize_market_symbol as _normalize_market_symbol,
+    estimate_atm_iv as _estimate_atm_iv,
+    compute_iv_rank_percentile as _compute_iv_rank_percentile,
+    annotate_black_scholes_greeks as _annotate_black_scholes_greeks,
+)
 
 
 class TestMarketHelpers(unittest.TestCase):
     def test_estimate_atm_iv_averages_nearest_call_and_put(self):
-        helpers = _load_market_helper_functions(options_iv_history={})
-        estimate = helpers["_estimate_atm_iv"]
-
         calls = pd.DataFrame(
             {
                 "strike": [95, 100, 105],
@@ -60,7 +26,7 @@ class TestMarketHelpers(unittest.TestCase):
             }
         )
 
-        result = estimate(calls, puts, 101)
+        result = _estimate_atm_iv(calls, puts, 101)
         self.assertIsNotNone(result)
         self.assertAlmostEqual(result, (0.24 + 0.26) / 2, places=8)
 
@@ -72,29 +38,23 @@ class TestMarketHelpers(unittest.TestCase):
                 {"date": "2026-01-03", "atm_iv": 0.40},
             ]
         }
-        helpers = _load_market_helper_functions(options_iv_history=history)
-        compute = helpers["_compute_iv_rank_percentile"]
 
-        iv_rank, iv_percentile, sample_size = compute("aapl", 0.30)
+        iv_rank, iv_percentile, sample_size = _compute_iv_rank_percentile("aapl", 0.30, history)
 
         self.assertEqual(sample_size, 3)
         self.assertAlmostEqual(iv_rank, 50.0, places=6)
         self.assertAlmostEqual(iv_percentile, (2 / 3) * 100.0, places=6)
 
     def test_compute_iv_rank_percentile_requires_history(self):
-        helpers = _load_market_helper_functions(options_iv_history={"MSFT": [{"date": "2026-01-01", "atm_iv": 0.25}]})
-        compute = helpers["_compute_iv_rank_percentile"]
+        history = {"MSFT": [{"date": "2026-01-01", "atm_iv": 0.25}]}
 
-        iv_rank, iv_percentile, sample_size = compute("MSFT", 0.25)
+        iv_rank, iv_percentile, sample_size = _compute_iv_rank_percentile("MSFT", 0.25, history)
 
         self.assertIsNone(iv_rank)
         self.assertIsNone(iv_percentile)
         self.assertEqual(sample_size, 1)
 
     def test_annotate_black_scholes_greeks_adds_columns(self):
-        helpers = _load_market_helper_functions(options_iv_history={})
-        annotate = helpers["_annotate_black_scholes_greeks"]
-
         expiry = (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")
         chain = pd.DataFrame(
             {
@@ -104,7 +64,7 @@ class TestMarketHelpers(unittest.TestCase):
             }
         )
 
-        result = annotate(chain, "call", 102.0, expiry)
+        result = _annotate_black_scholes_greeks(chain, "call", 102.0, expiry)
 
         self.assertIn("Delta", result.columns)
         self.assertIn("Gamma", result.columns)
