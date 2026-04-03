@@ -30,8 +30,7 @@ class TaxLotTestBase(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
-        if self.db_path.exists():
-            self.db_path.unlink()
+        self.db_path.unlink(missing_ok=True)
 
     def _get_lots(self, symbol=None):
         conn = sqlite3.connect(self.db_path)

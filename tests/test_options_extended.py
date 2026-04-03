@@ -63,7 +63,7 @@ class TestRecordAtmIv(unittest.TestCase):
         self.assertIn("AAPL", result)
 
     def test_caps_at_400_entries(self):
-        entries = [{"date": f"2025-{i:04d}", "atm_iv": 0.2} for i in range(500)]
+        entries = [{"date": f"2024-01-{(i % 28) + 1:02d}", "atm_iv": 0.2} for i in range(500)]
         history = {"AAPL": entries}
         result = record_atm_iv("AAPL", 0.30, history)
         self.assertLessEqual(len(result["AAPL"]), 400)

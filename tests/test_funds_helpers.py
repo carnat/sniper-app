@@ -15,7 +15,7 @@ class TestNormalizeFundToken(unittest.TestCase):
     def test_basic(self):
         self.assertEqual(normalize_fund_token("SCBNDQ(E)"), "SCBNDQE")
 
-    def test_removes_all_special_chars(self):
+    def test_normalizes_fund_code(self):
         self.assertEqual(normalize_fund_token("SCB-S&P500 FUND(SSF)"), "SCBS&P500FUNDSSF")
 
     def test_none_input(self):

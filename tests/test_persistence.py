@@ -168,7 +168,7 @@ class TestOptionsIvHistory(PersistenceTestBase):
         self.assertEqual(len(loaded["AAPL"]), 1)
 
     def test_caps_at_400_entries(self):
-        entries = [{"date": f"2025-{i:04d}", "atm_iv": 0.2 + i * 0.001} for i in range(500)]
+        entries = [{"date": f"2024-01-{(i % 28) + 1:02d}", "atm_iv": 0.2 + i * 0.001} for i in range(500)]
         history = {"AAPL": entries}
         save_options_iv_history(history)
         loaded = load_options_iv_history()
