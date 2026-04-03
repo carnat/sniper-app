@@ -268,7 +268,7 @@ def fetch_latest_close_prices(tickers: tuple[str, ...]) -> dict[str, float]:
     if not tickers:
         return {}
     try:
-        downloaded = yf.download(list(tickers), period="1d", progress=False)
+        downloaded = yf.download(tickers, period="1d", progress=False)
         if downloaded is None or downloaded.empty:
             return {ticker: 0.0 for ticker in tickers}
 
@@ -318,5 +318,5 @@ def get_stock_data(portfolio_dict: dict, price_map: dict | None = None) -> pd.Da
     df['Value'] = df['Shares'] * df['Live Price']
     df['Cost Basis'] = df['Shares'] * df['Avg_Cost']
     df['P/L'] = df['Value'] - df['Cost Basis']
-    df['P/L %'] = (df['P/L'] / df['Cost Basis']) * 100
+    df['P/L %'] = df.apply(lambda r: (r['P/L'] / r['Cost Basis'] * 100) if r['Cost Basis'] != 0 else 0.0, axis=1)
     return df
