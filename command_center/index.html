@@ -2888,6 +2888,14 @@ const WarRoom = (function() {
   const ROOM_H = ROOM_ROWS * TILE;
   const WALK_SPEED = 28;         // agent walk speed in pixels/sec
   const HEADER_FOOTER_H = 130;   // approximate height of header + tab nav + footer in px
+  // v4.0 constants
+  const MIN_SCALE = 0.8;         // minimum canvas scale (prevents unreadable agents)
+  const MAX_SCALE = 3;           // maximum canvas scale
+  const TOUCH_HOLD_MS = 500;     // hold duration (ms) to open agent drawer on touch
+  const STALE_THRESHOLD_MIN = 15; // minutes before data is marked stale
+  const MAX_PARTICLES = 60;      // max particle count for performance
+  const PARTICLE_SPAWN_RATE = 0.02; // probability per frame per deployed agent
+  const MAX_COMPARE = 3;         // max agents in comparison panel
 
   // ── Sector palettes ──
   const PAL = {
@@ -3139,7 +3147,7 @@ const WarRoom = (function() {
     // Fractional scaling (A1): continuous 0.8-3x instead of integer jumps
     const sx = maxW / ROOM_W;
     const sy = maxH / ROOM_H;
-    scale = Math.max(0.8, Math.min(sx, sy, 3));
+    scale = Math.max(MIN_SCALE, Math.min(sx, sy, MAX_SCALE));
     const dpr = window.devicePixelRatio || 1;
     canvas.width = ROOM_W * scale * dpr;
     canvas.height = ROOM_H * scale * dpr;
@@ -4175,7 +4183,7 @@ const WarRoom = (function() {
     // Stale data indicator
     if (lastRefreshTime) {
       const staleMin = Math.floor((Date.now() - lastRefreshTime) / 60000);
-      if (staleMin > 15) {
+      if (staleMin > STALE_THRESHOLD_MIN) {
         ctx.fillStyle = '#ff4055';
         ctx.fillText('STALE ' + staleMin + 'm', 2 * TILE + 340, barY + 11);
       }
@@ -4331,9 +4339,9 @@ const WarRoom = (function() {
   // ── Particles (D21) ──
   function _updateParticles() {
     // Spawn particles for deployed agents
-    if (particles.length < 60) {
+    if (particles.length < MAX_PARTICLES) {
       agents.forEach(a => {
-        if (a.state === 'deployed' && Math.random() < 0.02 && !_isSectorHidden(a)) {
+        if (a.state === 'deployed' && Math.random() < PARTICLE_SPAWN_RATE && !_isSectorHidden(a)) {
           particles.push({
             x: a.x + (Math.random() - 0.5) * 8,
             y: a.y - 12,
@@ -4465,7 +4473,7 @@ const WarRoom = (function() {
       e.preventDefault();
       showTooltip(hoveredAgent, touch);
       // Hold timer: 500ms → open drawer
-      touchHoldTimer = setTimeout(() => { if (hoveredAgent) openDrawer(hoveredAgent); }, 500);
+      touchHoldTimer = setTimeout(() => { if (hoveredAgent) openDrawer(hoveredAgent); }, TOUCH_HOLD_MS);
     }
   }
   function onTouchMove(e) {
@@ -4705,7 +4713,7 @@ const WarRoom = (function() {
 
   // ── Multi-Agent Comparison (C18) ──
   function _addToCompare(a) {
-    if (compareAgents.length >= 3 || compareAgents.includes(a)) return;
+    if (compareAgents.length >= MAX_COMPARE || compareAgents.includes(a)) return;
     compareAgents.push(a);
     _renderCompare();
   }
