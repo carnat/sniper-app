@@ -2883,7 +2883,7 @@ const WarRoom = (function() {
   // ── Constants ──
   const TILE = 16;               // base tile size in pixels
   const ROOM_COLS = 40;          // room width in tiles (40 × 16 = 640px base)
-  const ROOM_ROWS = 30;          // room height in tiles (30 × 16 = 480px base)
+  const ROOM_ROWS = 36;          // room height in tiles (36 × 16 = 576px base) — expanded for parliament
   const ROOM_W = ROOM_COLS * TILE;
   const ROOM_H = ROOM_ROWS * TILE;
   const WALK_SPEED = 28;         // agent walk speed in pixels/sec
@@ -2897,21 +2897,41 @@ const WarRoom = (function() {
   const PARTICLE_SPAWN_RATE = 0.02; // probability per frame per deployed agent
   const MAX_COMPARE = 3;         // max agents in comparison panel
 
-  // ── Sector palettes ──
+  // ── Sector palettes (8-color: body, head, hi, dk, skin, glow, eye, accent) ──
   const PAL = {
-    semi_a:  { body: '#2070c0', head: '#4a9aee', hi: '#6ab8ff', dk: '#103860', skin: '#e8c8a0' },
-    semi_b:  { body: '#1a5a9a', head: '#3a80cc', hi: '#5aa0ee', dk: '#0a2848', skin: '#f0d0a8' },
-    semi_c:  { body: '#2888d0', head: '#58b0ee', hi: '#78c8ff', dk: '#184870', skin: '#d8c098' },
-    defense: { body: '#2a7040', head: '#4aba6a', hi: '#6ada8a', dk: '#0a3018', skin: '#d8b890' },
-    space:   { body: '#5a2aaa', head: '#8a5aee', hi: '#aa7aff', dk: '#2a0a5a', skin: '#e0c0b0' },
-    network: { body: '#b06000', head: '#ee8a20', hi: '#ffaa40', dk: '#5a2800', skin: '#e8c8a0' },
-    energy:  { body: '#007898', head: '#00aacc', hi: '#20ccee', dk: '#003040', skin: '#d8c0a0' },
-    vault:   { body: '#4a5a6a', head: '#7a8a9a', hi: '#9aaaba', dk: '#1a2a3a', skin: '#d0b8a0' },
-    cmd:     { body: '#8a6a10', head: '#ccaa30', hi: '#eedd60', dk: '#3a2800', skin: '#f0d8b8' },
-    sentinel:{ body: '#505050', head: '#808080', hi: '#a0a0a0', dk: '#282828', skin: '#c0c0c0' },
-    doctrine:{ body: '#5a20a0', head: '#9060e0', hi: '#b080ff', dk: '#200860', skin: '#e0d0f8' },
-    gate:    { body: '#1a508a', head: '#2a80cc', hi: '#50a8f0', dk: '#081828', skin: '#c0d8f8' },
-    watcher: { body: '#1a7a3a', head: '#2aaa5a', hi: '#50cc80', dk: '#083818', skin: '#c0f0d0' },
+    // Stock agent palettes
+    semi_a:  { body: '#2070c0', head: '#4a9aee', hi: '#6ab8ff', dk: '#103860', skin: '#e8c8a0', glow: '#4a9aff', eye: '#40c0ff', accent: '#2a6aaa' },
+    semi_b:  { body: '#1a5a9a', head: '#3a80cc', hi: '#5aa0ee', dk: '#0a2848', skin: '#f0d0a8', glow: '#3a80ee', eye: '#40c0ff', accent: '#1a5090' },
+    semi_c:  { body: '#2888d0', head: '#58b0ee', hi: '#78c8ff', dk: '#184870', skin: '#d8c098', glow: '#58b0ff', eye: '#40c0ff', accent: '#3090c0' },
+    defense: { body: '#2a7040', head: '#4aba6a', hi: '#6ada8a', dk: '#0a3018', skin: '#d8b890', glow: '#40e070', eye: '#30ff50', accent: '#1a5030' },
+    space:   { body: '#5a2aaa', head: '#8a5aee', hi: '#aa7aff', dk: '#2a0a5a', skin: '#e0c0b0', glow: '#9a70ff', eye: '#c080ff', accent: '#4a1a8a' },
+    network: { body: '#b06000', head: '#ee8a20', hi: '#ffaa40', dk: '#5a2800', skin: '#e8c8a0', glow: '#ffaa30', eye: '#ff8800', accent: '#8a4a00' },
+    energy:  { body: '#007898', head: '#00aacc', hi: '#20ccee', dk: '#003040', skin: '#d8c0a0', glow: '#20ddff', eye: '#00eeff', accent: '#006080' },
+    vault:   { body: '#4a5a6a', head: '#7a8a9a', hi: '#9aaaba', dk: '#1a2a3a', skin: '#d0b8a0', glow: '#8a9aaa', eye: '#88aacc', accent: '#3a4a5a' },
+    cmd:     { body: '#8a6a10', head: '#ccaa30', hi: '#eedd60', dk: '#3a2800', skin: '#f0d8b8', glow: '#ffdd44', eye: '#ffcc00', accent: '#6a4a00' },
+    sentinel:{ body: '#505050', head: '#808080', hi: '#a0a0a0', dk: '#282828', skin: '#c0c0c0', glow: '#888888', eye: '#ff4040', accent: '#404040' },
+    // Council palettes — Thesis Triad (warm gold/amber family)
+    elder:        { body: '#6a6a78', head: '#a0a0b0', hi: '#c8c8d8', dk: '#303038', skin: '#e0d0c0', glow: '#d0d0e0', eye: '#e0e0ff', accent: '#8888a0' },
+    sector_analyst:{ body: '#3a5a8a', head: '#5a8abb', hi: '#7aaade', dk: '#1a2a4a', skin: '#e0c8b0', glow: '#6a9acc', eye: '#80bbff', accent: '#4a6a90' },
+    capital_alloc: { body: '#2a6a3a', head: '#4a9a5a', hi: '#6aba7a', dk: '#0a3a18', skin: '#d8c0a0', glow: '#50bb60', eye: '#60dd70', accent: '#1a5a28' },
+    // Council palettes — Timing Triad (cool cyan/teal family)
+    robot:        { body: '#4a4a5a', head: '#8a8aa0', hi: '#b0b0c8', dk: '#1a1a28', skin: '#b0b0c0', glow: '#00ff88', eye: '#00ff66', accent: '#2a2a3a' },
+    macro_econ:   { body: '#107070', head: '#20a0a0', hi: '#40c8c8', dk: '#083838', skin: '#d8c8b8', glow: '#30dddd', eye: '#40eeee', accent: '#0a5858' },
+    clock:        { body: '#8a6a20', head: '#bba040', hi: '#ddcc60', dk: '#3a2808', skin: '#e8d0b0', glow: '#eedd44', eye: '#ffcc00', accent: '#6a4a10' },
+    // Council palettes — Safety Triad (red/warm family)
+    risk_mgr:     { body: '#8a1a2a', head: '#cc3040', hi: '#ee5060', dk: '#3a0810', skin: '#d8b8a0', glow: '#ff4060', eye: '#ff2020', accent: '#6a1020' },
+    architect:    { body: '#4a5060', head: '#6a7888', hi: '#8a98a8', dk: '#1a2028', skin: '#d0c0b0', glow: '#7a8898', eye: '#90aacc', accent: '#3a4050' },
+    psychologist: { body: '#6a3080', head: '#9a50b8', hi: '#bb70d8', dk: '#2a0838', skin: '#e0c8d0', glow: '#aa60cc', eye: '#cc80ff', accent: '#4a1860' },
+    integ_eng:    { body: '#9a5010', head: '#cc7830', hi: '#ee9a50', dk: '#4a2008', skin: '#e0c0a0', glow: '#ee8830', eye: '#ff8800', accent: '#7a3808' },
+    // Council palettes — External Intelligence Triad (deep blue/indigo family)
+    intel_off:    { body: '#2a1a6a', head: '#4a3a9a', hi: '#6a5abb', dk: '#100838', skin: '#d8c8c0', glow: '#6a5acc', eye: '#8070ff', accent: '#1a0a4a' },
+    geopolitical: { body: '#5a6a30', head: '#8a9a50', hi: '#aabb70', dk: '#2a3010', skin: '#d8c8a0', glow: '#8aaa50', eye: '#aacc30', accent: '#3a4a18' },
+    demand_side:  { body: '#8a6a10', head: '#bba030', hi: '#ddcc50', dk: '#3a2808', skin: '#e8d0b0', glow: '#ccaa30', eye: '#ffcc00', accent: '#6a4a08' },
+    // Council palettes — Floating (distinct outlier colors)
+    regulator:    { body: '#6a1020', head: '#9a2038', hi: '#cc3050', dk: '#2a0808', skin: '#d0b8a8', glow: '#cc2040', eye: '#ff3030', accent: '#4a0810' },
+    tech_forecast:{ body: '#1050aa', head: '#2070dd', hi: '#4090ff', dk: '#082848', skin: '#c8c8d8', glow: '#4090ff', eye: '#60bbff', accent: '#0840aa' },
+    // Council palettes — Bear (veto layer)
+    bear:         { body: '#2a0a0a', head: '#4a1818', hi: '#6a2828', dk: '#100404', skin: '#a08080', glow: '#ff1010', eye: '#ff0000', accent: '#1a0404' },
   };
 
   // ── Ticker → sector ──
@@ -2928,15 +2948,20 @@ const WarRoom = (function() {
     VST:'energy', BWXT:'defense',KTOS:'defense',PLTR:'defense',
   };
 
-  // ── Floor tile colors ──
-  const FLOOR_A = '#0c1018';
-  const FLOOR_B = '#0e1220';
-  const WALL_COLOR = '#161e2c';
-  const WALL_TOP = '#1e2a3c';
+  // ── Floor tile colors (Metro aesthetic) ──
+  const FLOOR_A = '#080c14';
+  const FLOOR_B = '#0a1018';
+  const WALL_COLOR = '#101828';
+  const WALL_TOP = '#182838';
   const ZONE_ARSENAL = 'rgba(58,159,255,0.10)';
   const ZONE_WT = 'rgba(0,200,224,0.08)';
   const ZONE_VAULT = 'rgba(128,128,128,0.08)';
-  const ZONE_COUNCIL = 'rgba(80,40,120,0.12)';
+  // Council Triad zone colors
+  const ZONE_THESIS   = 'rgba(180,140,40,0.10)';
+  const ZONE_TIMING   = 'rgba(0,200,200,0.10)';
+  const ZONE_SAFETY   = 'rgba(180,40,60,0.10)';
+  const ZONE_EXTINTEL = 'rgba(60,40,140,0.10)';
+  const ZONE_FLOATING = 'rgba(100,100,100,0.08)';
   const DESK_COLOR = '#1a2438';
   const DESK_TOP = '#243050';
 
@@ -2962,12 +2987,45 @@ const WarRoom = (function() {
   function wtSatPos(idx) {
     return { x: 4 + idx * 9, y: 22 };
   }
+  // ── Council Parliament Definitions ──
+  // 17 members: 4 Triads (13 voting) + 2 floating (non-voting) + Commander (existing) + Bear (veto layer)
+  const COUNCIL_MEMBERS = [
+    // Thesis Triad (row 25, left cluster)
+    { id: 'ELDER',    role: 'Conviction Horizon',       pal: 'elder',         triad: 'thesis',    x: 4,  y: 25 },
+    { id: 'SA',       role: 'Sector Analyst',           pal: 'sector_analyst',triad: 'thesis',    x: 9,  y: 25 },
+    { id: 'CA',       role: 'Capital Allocator',        pal: 'capital_alloc', triad: 'thesis',    x: 14, y: 25 },
+    // Timing Triad (row 25, right cluster)
+    { id: 'ROBOT',    role: 'Quantitative Engine',      pal: 'robot',         triad: 'timing',    x: 24, y: 25 },
+    { id: 'MACRO',    role: 'Macro Economist',          pal: 'macro_econ',    triad: 'timing',    x: 29, y: 25 },
+    { id: 'CLOCK',    role: 'Calendar & Blackout',      pal: 'clock',         triad: 'timing',    x: 34, y: 25 },
+    // Safety Triad (row 28, left cluster — 4 seats, 3/4 conviction)
+    { id: 'RISK',     role: 'Risk Manager',             pal: 'risk_mgr',      triad: 'safety',    x: 3,  y: 28 },
+    { id: 'ARCH',     role: 'Systems Architect',        pal: 'architect',     triad: 'safety',    x: 8,  y: 28 },
+    { id: 'PSY',      role: 'Behavioral Psychologist',  pal: 'psychologist',  triad: 'safety',    x: 13, y: 28 },
+    { id: 'IENG',     role: 'Integration Engineer',     pal: 'integ_eng',     triad: 'safety',    x: 18, y: 28 },
+    // External Intelligence Triad (row 28, right cluster)
+    { id: 'IO',       role: 'Intelligence Officer',     pal: 'intel_off',     triad: 'extintel',  x: 25, y: 28 },
+    { id: 'GEO',      role: 'Geopolitical Analyst',     pal: 'geopolitical',  triad: 'extintel',  x: 30, y: 28 },
+    { id: 'DSA',      role: 'Demand-Side Analyst',      pal: 'demand_side',   triad: 'extintel',  x: 35, y: 28 },
+    // Floating agents (row 31, non-voting)
+    { id: 'REG',      role: 'Regulator (Compliance)',    pal: 'regulator',     triad: 'floating',  x: 10, y: 31 },
+    { id: 'TF',       role: 'Technology Forecaster',     pal: 'tech_forecast', triad: 'floating',  x: 28, y: 31 },
+    // Bear — independent veto layer (row 33, center)
+    { id: 'BEAR',     role: 'Independent Veto Layer',    pal: 'bear',          triad: 'bear',      x: 19, y: 33 },
+  ];
+
+  // Triad metadata for rendering
+  const TRIAD_META = {
+    thesis:   { label: '◆ THESIS',       color: 'rgba(180,140,40,0.22)',  border: 'rgba(200,160,40,0.35)',  labelColor: '#bba040', x: 2,  y: 24, w: 17, h: 3 },
+    timing:   { label: '◆ TIMING',       color: 'rgba(0,200,200,0.18)',   border: 'rgba(0,220,220,0.30)',   labelColor: '#30b0b0', x: 21, y: 24, w: 17, h: 3 },
+    safety:   { label: '◆ SAFETY (3/4)', color: 'rgba(180,40,60,0.15)',   border: 'rgba(200,50,70,0.30)',   labelColor: '#cc4050', x: 1,  y: 27, w: 20, h: 3 },
+    extintel: { label: '◆ EXT INTEL',    color: 'rgba(60,40,140,0.15)',   border: 'rgba(80,50,160,0.30)',   labelColor: '#6a50aa', x: 22, y: 27, w: 16, h: 3 },
+    floating: { label: '◇ FLOATING',     color: 'rgba(100,100,100,0.08)', border: 'rgba(120,120,120,0.20)', labelColor: '#6a6a7a', x: 5,  y: 30, w: 30, h: 3 },
+    bear:     { label: '◇ BEAR VETO',    color: 'rgba(120,10,10,0.10)',   border: 'rgba(180,20,20,0.25)',   labelColor: '#8a2020', x: 14, y: 32.5, w: 12, h: 2 },
+  };
+
   function councilPos(idx) {
-    return [
-      { x: 6,  y: 27 },  // DOCTRINE (left)
-      { x: 20, y: 27 },  // GATE (center)
-      { x: 34, y: 27 },  // WATCHER (right)
-    ][idx];
+    return COUNCIL_MEMBERS[idx] ? { x: COUNCIL_MEMBERS[idx].x, y: COUNCIL_MEMBERS[idx].y } : { x: 20, y: 27 };
   }
 
   // ── Agent class ──
@@ -2980,11 +3038,12 @@ const WarRoom = (function() {
       if (ZONE_SECTOR[zone]) {
         this.sector = ZONE_SECTOR[zone];
       } else if (zone === 'council') {
+        // Council members get explicit palette from COUNCIL_MEMBERS definition
         this.sector = ticker.toLowerCase();
       } else {
         this.sector = SEC[ticker] || 'semi_a';
       }
-      this.pal = PAL[this.sector];
+      this.pal = PAL[this.sector] || PAL.semi_a;
       // pixel position
       this.x = tileX * TILE + TILE * 2;
       this.y = tileY * TILE + TILE;
@@ -3006,6 +3065,10 @@ const WarRoom = (function() {
       this.tier = null;
       this.thesis = null;
       this.removal = null;
+      // council properties
+      this.triad = null;           // triad affiliation (thesis/timing/safety/extintel/floating/bear)
+      this.isFloating = false;     // non-voting floating agent
+      this.conviction = null;      // triad conviction status (true/false/null)
       // animation
       this.t = Math.random() * 10;
       this.bobAmp = zone === 'watchtower' ? 0.5 : zone === 'council' ? 0.4 : 1.0;
@@ -3060,6 +3123,18 @@ const WarRoom = (function() {
         }
       }
 
+      // Floating council agent patrol (Regulator + Tech Forecaster drift between zones)
+      if (this.zone === 'council' && this.isFloating && this.state !== 'walking') {
+        this.walkTimer -= dt;
+        if (this.walkTimer <= 0) {
+          this.walkTimer = 6 + Math.random() * 10;
+          // Drift within floating zone area
+          this.targetX = this.homeX + (Math.random() - 0.5) * TILE * 6;
+          this.targetY = this.homeY + (Math.random() - 0.5) * TILE * 1;
+          this.state = 'walking';
+        }
+      }
+
       // council finding rotation
       if (this.zone === 'council' && this.findings.length > 0) {
         this.findingTimer -= dt;
@@ -3092,6 +3167,7 @@ const WarRoom = (function() {
   let hoveredAgent = null;
   let vixVal = 24.54, thbVal = 32.72;
   let consensusTickers = [];
+  let triadConvictions = {};   // triad → conviction status
   // v4.0 state
   let _focusedIdx = -1;
   let sectorFilters = {};       // sector → boolean (true = visible)
@@ -3215,20 +3291,18 @@ const WarRoom = (function() {
     cmd.speech = 'COMMANDER-IN-LOOP';
     cmd.speechLife = 99999;
     agents.push(cmd);
-    // Triad Council (3 members)
-    const triadDefs = [
-      { id: 'DOCTRINE', role: 'Rules Auditor',         pal: 'doctrine' },
-      { id: 'GATE',     role: 'Deployment Gatekeeper', pal: 'gate'     },
-      { id: 'WATCHER',  role: 'Portfolio Health',       pal: 'watcher'  },
-    ];
-    triadDefs.forEach((def, i) => {
-      const pos = councilPos(i);
-      const a = new Agent(def.id, 'council', pos.x, pos.y);
+    // War Council Parliament (16 members across 4 Triads + 2 floating + Bear)
+    COUNCIL_MEMBERS.forEach((def, i) => {
+      const a = new Agent(def.id, 'council', def.x, def.y);
       a.pal = PAL[def.pal];
+      a.sector = def.pal;
       a.role = def.role;
+      a.triad = def.triad;
+      a.isFloating = def.triad === 'floating';
       a.speech = def.id;
       a.speechSeverity = 'info';
       a.speechLife = 99999;
+      a.walkTimer = 3 + Math.random() * 5;
       agents.push(a);
     });
 
@@ -3711,9 +3785,28 @@ const WarRoom = (function() {
     vault:    { hairStyle: 'flat',   bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: 'headset' },
     sentinel: { hairStyle: 'flat',   bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: 'headset' },
     cmd:      { hairStyle: 'flat',   bodyW: 12, bodyH: 13, legLen: 7, armLen: 7, accessory: 'star' },
-    doctrine: { hairStyle: 'none',   bodyW: 14, bodyH: 14, legLen: 6, armLen: 7, accessory: 'robe' },
-    gate:     { hairStyle: 'none',   bodyW: 14, bodyH: 14, legLen: 6, armLen: 7, accessory: 'robe' },
-    watcher:  { hairStyle: 'none',   bodyW: 14, bodyH: 14, legLen: 6, armLen: 7, accessory: 'robe' },
+    // Council — Thesis Triad
+    elder:         { hairStyle: 'long',    bodyW: 14, bodyH: 15, legLen: 6, armLen: 7, accessory: 'robe' },
+    sector_analyst:{ hairStyle: 'mohawk',  bodyW: 11, bodyH: 13, legLen: 7, armLen: 7, accessory: 'scope' },
+    capital_alloc: { hairStyle: 'side',    bodyW: 13, bodyH: 12, legLen: 6, armLen: 7, accessory: 'ledger' },
+    // Council — Timing Triad
+    robot:         { hairStyle: 'antenna', bodyW: 11, bodyH: 12, legLen: 6, armLen: 6, accessory: 'screen' },
+    macro_econ:    { hairStyle: 'side',    bodyW: 12, bodyH: 13, legLen: 7, armLen: 7, accessory: null },
+    clock:         { hairStyle: 'flat',    bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: 'clock' },
+    // Council — Safety Triad
+    risk_mgr:      { hairStyle: 'flat',    bodyW: 14, bodyH: 12, legLen: 6, armLen: 7, accessory: 'shield' },
+    architect:     { hairStyle: 'beanie',  bodyW: 12, bodyH: 13, legLen: 6, armLen: 7, accessory: null },
+    psychologist:  { hairStyle: 'spiky',   bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: null },
+    integ_eng:     { hairStyle: 'crew',    bodyW: 13, bodyH: 12, legLen: 6, armLen: 7, accessory: 'wrench' },
+    // Council — Ext Intel Triad
+    intel_off:     { hairStyle: 'none',    bodyW: 13, bodyH: 14, legLen: 6, armLen: 7, accessory: 'robe' },
+    geopolitical:  { hairStyle: 'crew',    bodyW: 13, bodyH: 11, legLen: 5, armLen: 6, accessory: null },
+    demand_side:   { hairStyle: 'buzz',    bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: null },
+    // Council — Floating
+    regulator:     { hairStyle: 'flat',    bodyW: 14, bodyH: 12, legLen: 6, armLen: 7, accessory: 'shield' },
+    tech_forecast: { hairStyle: 'antenna', bodyW: 11, bodyH: 13, legLen: 7, armLen: 7, accessory: null },
+    // Council — Bear
+    bear:          { hairStyle: 'none',    bodyW: 16, bodyH: 16, legLen: 7, armLen: 8, accessory: 'robe' },
   };
   const DEFAULT_BODY_STYLE = BODY_STYLES.semi_a;
 
