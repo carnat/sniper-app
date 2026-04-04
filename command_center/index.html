@@ -3411,27 +3411,76 @@ const WarRoom = (function() {
     return arr.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
   }
 
-  function doctrineAudit(d) {
-    const findings = [];
-    // Thesis age checks for all Arsenal positions
+  // ── THESIS Triad Audit (Elder, Sector Analyst, Capital Allocator) ──
+  function thesisTriadAudit(d) {
+    const elder = [], sa = [], ca = [];
+    // Elder: Thesis age / conviction horizon checks
     [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
       if (!p.thesis) {
-        findings.push({ text: p.ticker + ': NO THESIS', severity: 'critical', ticker: p.ticker });
+        elder.push({ text: p.ticker + ': NO THESIS', severity: 'critical', ticker: p.ticker });
       } else {
         const age = _daysSince(p.thesis);
         if (age !== null && age > 60) {
-          findings.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' /COUNCIL', severity: 'critical', ticker: p.ticker });
+          elder.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' /COUNCIL', severity: 'critical', ticker: p.ticker });
         } else if (age !== null && age > 30) {
-          findings.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' NEGLECT', severity: 'warning', ticker: p.ticker });
+          elder.push({ text: 'DC-06: ' + p.ticker + ' D+' + age + ' NEGLECT', severity: 'warning', ticker: p.ticker });
         }
       }
     });
-    // China Watch (DC-46)
-    findings.push({ text: 'APH: ⚠ CHINA 15.6% (DC-46)', severity: 'warning', ticker: 'APH' });
-    // Geopolitical Watch (DC-47)
-    findings.push({ text: 'TSEM: ⚠ ISRAEL WATCH', severity: 'warning', ticker: 'TSEM' });
-    findings.push({ text: 'TSM: ⚠ ISRAEL/LNG CLIFF', severity: 'warning', ticker: 'TSM' });
-    // Blackout windows (earnings ±30d / +7d)
+    // Sector Analyst: F3 SMA checks (sector cycle health)
+    if (d?.prices) {
+      [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+        const entry = d.prices[p.ticker];
+        if (!entry || entry.sma50 == null || entry.sma200 == null || entry.price == null) return;
+        if (entry.price <= entry.sma200) {
+          sa.push({ text: p.ticker + ': F3=0 below SMA200', severity: 'warning', ticker: p.ticker });
+        } else if (entry.price <= entry.sma50) {
+          sa.push({ text: p.ticker + ': F3↓ below SMA50', severity: 'info', ticker: p.ticker });
+        }
+      });
+    }
+    // Capital Allocator: concentration & ROIC checks (placeholder)
+    const arsenalCount = ARSENAL_CORE.length + ARSENAL_SAT.length;
+    if (arsenalCount > 10) {
+      ca.push({ text: 'ARSENAL: ' + arsenalCount + ' positions (max 10)', severity: 'warning', ticker: null });
+    }
+    ca.push({ text: 'POSITIONS: ' + arsenalCount + '/10', severity: arsenalCount <= 10 ? 'ok' : 'warning', ticker: null });
+
+    _sortFindings(elder); _sortFindings(sa); _sortFindings(ca);
+    if (elder.length === 0) elder.push({ text: '✓ THESES CURRENT', severity: 'ok', ticker: null });
+    if (sa.length === 0) sa.push({ text: '✓ SECTOR HEALTH OK', severity: 'ok', ticker: null });
+    if (ca.length === 0) ca.push({ text: '✓ ALLOCATION OK', severity: 'ok', ticker: null });
+    return { ELDER: elder, SA: sa, CA: ca };
+  }
+
+  // ── TIMING Triad Audit (Robot, Macro Economist, Clock) ──
+  function timingTriadAudit(d) {
+    const robot = [], macro = [], clock = [];
+    const vix    = d?.gate?.vix ?? d?.vix ?? vixVal;
+    const spyAbv = d?.spy_above_200dma ?? null;
+    const reg    = getRegime(vix);
+    // Robot: VIX regime + ADV gates
+    if (reg === 'RED')      robot.push({ text: 'VIX ' + vix.toFixed(1) + ' → HARD FREEZE', severity: 'critical', ticker: null });
+    else if (reg === 'ORANGE') robot.push({ text: 'VIX ' + vix.toFixed(1) + ' → FREEZE',   severity: 'critical', ticker: null });
+    else if (reg === 'YELLOW') robot.push({ text: 'VIX ' + vix.toFixed(1) + ' → YELLOW ⚠', severity: 'warning',  ticker: null });
+    else                       robot.push({ text: 'VIX ' + vix.toFixed(1) + ' → GREEN ✓',  severity: 'ok',       ticker: null });
+    // ADV gate (DC-16)
+    const advCheck = ['FN', 'BWXT', 'ANET', 'MU', 'VRT', 'APH'];
+    if (d?.prices) {
+      advCheck.forEach(ticker => {
+        const entry = d.prices[ticker];
+        if (!entry || !entry.adv || !entry.volume) return;
+        const ratio = entry.volume / entry.adv;
+        if (ratio < 1.5) {
+          robot.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x (< 1.5x)', severity: 'info', ticker });
+        }
+      });
+    }
+    // Macro Economist: SPY 200DMA + heartbeat
+    if (spyAbv === false) macro.push({ text: '⚠ SPY below 200DMA', severity: 'warning', ticker: null });
+    else if (spyAbv === true) macro.push({ text: 'SPY above 200DMA ✓', severity: 'ok', ticker: null });
+    if (vix >= 25) macro.push({ text: 'HEARTBEAT: daily session req', severity: 'warning', ticker: null });
+    // Clock: Blackout windows
     const blackouts = [
       { ticker: 'BWXT', earnings: 'Apr 14, 2026' },
       { ticker: 'KTOS', earnings: 'Apr 17, 2026' },
@@ -3444,75 +3493,26 @@ const WarRoom = (function() {
       const now    = Date.now();
       if (now >= bStart.getTime() && now <= bEnd.getTime()) {
         const dLeft = Math.ceil((bEnd.getTime() - now) / 86400000);
-        findings.push({ text: ticker + ': ❄ BLACKOUT (' + dLeft + 'd left)', severity: 'critical', ticker });
+        clock.push({ text: ticker + ': ❄ BLACKOUT (' + dLeft + 'd left)', severity: 'critical', ticker });
       } else if (now < bStart.getTime()) {
         const dToStart = Math.ceil((bStart.getTime() - now) / 86400000);
         if (dToStart <= 14) {
-          findings.push({ text: ticker + ': BLACKOUT in ' + dToStart + 'd', severity: 'warning', ticker });
+          clock.push({ text: ticker + ': BLACKOUT in ' + dToStart + 'd', severity: 'warning', ticker });
         }
       }
     });
-    _sortFindings(findings);
-    if (findings.length === 0) findings.push({ text: '✓ ALL CLEAR', severity: 'ok', ticker: null });
-    return findings;
+
+    _sortFindings(robot); _sortFindings(macro); _sortFindings(clock);
+    if (robot.length === 0) robot.push({ text: '✓ QUANT OK', severity: 'ok', ticker: null });
+    if (macro.length === 0) macro.push({ text: '✓ MACRO OK', severity: 'ok', ticker: null });
+    if (clock.length === 0) clock.push({ text: '✓ NO BLACKOUTS', severity: 'ok', ticker: null });
+    return { ROBOT: robot, MACRO: macro, CLOCK: clock };
   }
 
-  function gateAudit(d) {
-    const findings = [];
-    const vix    = d?.gate?.vix ?? d?.vix ?? vixVal;
-    const spyAbv = d?.spy_above_200dma ?? null;
-    const reg    = getRegime(vix);
-    // VIX regime
-    if (reg === 'RED')      findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → HARD FREEZE', severity: 'critical', ticker: null });
-    else if (reg === 'ORANGE') findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → FREEZE',   severity: 'critical', ticker: null });
-    else if (reg === 'YELLOW') findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → YELLOW ⚠', severity: 'warning',  ticker: null });
-    else                       findings.push({ text: 'VIX ' + vix.toFixed(1) + ' → GREEN ✓',  severity: 'ok',       ticker: null });
-    // SPY vs 200DMA
-    if (spyAbv === false) findings.push({ text: '⚠ SPY below 200DMA', severity: 'warning', ticker: null });
-    else if (spyAbv === true) findings.push({ text: 'SPY above 200DMA ✓', severity: 'ok', ticker: null });
-    // ADV gate (DC-16) for key deployment candidates
-    const advCheck = ['FN', 'BWXT', 'ANET', 'MU', 'VRT', 'APH'];
-    if (d?.prices) {
-      advCheck.forEach(ticker => {
-        const entry = d.prices[ticker];
-        if (!entry || !entry.adv || !entry.volume) return;
-        const ratio = entry.volume / entry.adv;
-        if (ratio >= 1.5) {
-          findings.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x ✓', severity: 'ok', ticker });
-        } else {
-          findings.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x (< 1.5x)', severity: 'info', ticker });
-        }
-      });
-    }
-    // Heartbeat protocol when VIX >= 25
-    if (vix >= 25) findings.push({ text: 'HEARTBEAT: daily session req', severity: 'warning', ticker: null });
-    _sortFindings(findings);
-    if (findings.length === 0) findings.push({ text: '✓ ALL GATES CLEAR', severity: 'ok', ticker: null });
-    return findings;
-  }
-
-  function watchtowerAudit(d) {
-    const findings = [];
-    // DC-40 capacity status
-    const coreOk = WT_CORE_ROSTER.length === 12;
-    const satOk  = WT_SAT_ROSTER.length === 3;
-    findings.push({
-      text: 'WT: ' + WT_CORE_ROSTER.length + '/12 Core · ' + WT_SAT_ROSTER.length + '/3 Sat',
-      severity: coreOk && satOk ? 'ok' : 'warning',
-      ticker: null,
-    });
-    // Removal date proximity (<= 60 days)
-    [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].forEach(p => {
-      if (!p.removal) return;
-      const remStr = p.removal.includes(',') ? p.removal : p.removal + ', 2026';
-      const days = _daysUntil(remStr);
-      if (days !== null && days >= 0 && days <= 30) {
-        findings.push({ text: p.ticker + ': REMOVAL ' + days + 'd ⚠', severity: 'critical', ticker: p.ticker });
-      } else if (days !== null && days > 30 && days <= 60) {
-        findings.push({ text: p.ticker + ': removal ' + days + 'd', severity: 'warning', ticker: p.ticker });
-      }
-    });
-    // Tripwire status (static from doctrine_core_tripwires v1.0.0)
+  // ── SAFETY Triad Audit (Risk Manager, Architect, Psychologist, Integration Engineer) — 4 seats, 3/4 conviction ──
+  function safetyTriadAudit(d) {
+    const risk = [], arch = [], psy = [], ieng = [];
+    // Risk Manager: Concentration limits + tripwires
     const tripwires = [
       { ticker: 'APH',  code: 'TW-5', note: 'China 15.6% watch'   },
       { ticker: 'ONDS', code: 'TW-1', note: 'Mistral merger watch' },
@@ -3520,31 +3520,112 @@ const WarRoom = (function() {
       { ticker: 'TSM',  code: 'TW-2', note: 'LNG cliff May'        },
     ];
     tripwires.forEach(({ ticker, code, note }) => {
-      findings.push({ text: ticker + ' ' + code + ': ' + note, severity: 'warning', ticker });
+      risk.push({ text: ticker + ' ' + code + ': ' + note, severity: 'warning', ticker });
     });
-    // F3 live validation: price vs SMA50/SMA200
+    // Architect: Doctrine pointer checks + WT capacity
+    const coreOk = WT_CORE_ROSTER.length === 12;
+    const satOk  = WT_SAT_ROSTER.length === 3;
+    arch.push({
+      text: 'WT: ' + WT_CORE_ROSTER.length + '/12 Core · ' + WT_SAT_ROSTER.length + '/3 Sat',
+      severity: coreOk && satOk ? 'ok' : 'warning',
+      ticker: null,
+    });
+    // Psychologist: Behavioral flags (placeholder — could track FOMO signals etc)
+    const allGreen = agents.filter(a => a.zone === 'arsenal').every(a => (a.changePct || 0) >= 0);
+    if (allGreen) {
+      psy.push({ text: '⚠ ALL GREEN → complacency check', severity: 'info', ticker: null });
+    }
+    // Integration Engineer: Removal date proximity + cross-file constraints
+    [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].forEach(p => {
+      if (!p.removal) return;
+      const remStr = p.removal.includes(',') ? p.removal : p.removal + ', 2026';
+      const days = _daysUntil(remStr);
+      if (days !== null && days >= 0 && days <= 30) {
+        ieng.push({ text: p.ticker + ': REMOVAL ' + days + 'd ⚠', severity: 'critical', ticker: p.ticker });
+      } else if (days !== null && days > 30 && days <= 60) {
+        ieng.push({ text: p.ticker + ': removal ' + days + 'd', severity: 'warning', ticker: p.ticker });
+      }
+    });
+    // F3 live validation for WT tickers
     if (d?.prices) {
-      const f3Check = [...ARSENAL_CORE, ...ARSENAL_SAT, ...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker);
-      f3Check.forEach(ticker => {
-        const entry = d.prices[ticker];
+      [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].forEach(p => {
+        const entry = d.prices[p.ticker];
         if (!entry || entry.sma50 == null || entry.sma200 == null || entry.price == null) return;
-        const aboveSma50  = entry.price > entry.sma50;
-        const aboveSma200 = entry.price > entry.sma200;
-        if (!aboveSma200) {
-          findings.push({ text: ticker + ': F3=0 below SMA200', severity: 'warning', ticker });
-        } else if (!aboveSma50) {
-          findings.push({ text: ticker + ': F3↓ below SMA50', severity: 'info', ticker });
+        if (entry.price <= entry.sma200) {
+          ieng.push({ text: p.ticker + ': F3=0 below SMA200', severity: 'warning', ticker: p.ticker });
+        } else if (entry.price <= entry.sma50) {
+          ieng.push({ text: p.ticker + ': F3↓ below SMA50', severity: 'info', ticker: p.ticker });
         }
       });
     }
-    _sortFindings(findings);
-    if (findings.length === 0) findings.push({ text: '✓ WT ALL CLEAR', severity: 'ok', ticker: null });
-    return findings;
+
+    _sortFindings(risk); _sortFindings(arch); _sortFindings(psy); _sortFindings(ieng);
+    if (risk.length === 0) risk.push({ text: '✓ RISK CLEAR', severity: 'ok', ticker: null });
+    if (arch.length === 0) arch.push({ text: '✓ STRUCTURE OK', severity: 'ok', ticker: null });
+    if (psy.length === 0) psy.push({ text: '✓ BEHAVIOR OK', severity: 'ok', ticker: null });
+    if (ieng.length === 0) ieng.push({ text: '✓ INTEGRATION OK', severity: 'ok', ticker: null });
+    return { RISK: risk, ARCH: arch, PSY: psy, IENG: ieng };
   }
 
-  function _getConsensusTickers(f1, f2, f3) {
+  // ── EXTERNAL INTELLIGENCE Triad Audit (IO, Geopolitical, Demand-Side Analyst) ──
+  function extIntelTriadAudit(d) {
+    const io = [], geo = [], dsa = [];
+    // IO: News watermark / intelligence scanning
+    io.push({ text: 'IO: scanning feeds...', severity: 'info', ticker: null });
+    // Geopolitical: China/Israel/LNG watches
+    geo.push({ text: 'APH: ⚠ CHINA 15.6% (DC-46)', severity: 'warning', ticker: 'APH' });
+    geo.push({ text: 'TSEM: ⚠ ISRAEL WATCH', severity: 'warning', ticker: 'TSEM' });
+    geo.push({ text: 'TSM: ⚠ ISRAEL/LNG CLIFF', severity: 'warning', ticker: 'TSM' });
+    // Demand-Side Analyst: CapEx / demand signals (placeholder)
+    dsa.push({ text: 'DSA: monitoring demand signals', severity: 'info', ticker: null });
+
+    _sortFindings(io); _sortFindings(geo); _sortFindings(dsa);
+    return { IO: io, GEO: geo, DSA: dsa };
+  }
+
+  // ── Floating & Bear agent findings ──
+  function floatingAgentFindings(allTriadFindings) {
+    const reg = [], tf = [];
+    // Regulator: Scans all findings for compliance-relevant items
+    const allFindings = Object.values(allTriadFindings).flat();
+    const complianceFindings = allFindings.filter(f => f.severity === 'critical' || (f.text && f.text.includes('DC-')));
+    if (complianceFindings.length > 0) {
+      reg.push({ text: '🔒 COMPLIANCE: ' + complianceFindings.length + ' items', severity: 'warning', ticker: null });
+      complianceFindings.slice(0, 3).forEach(f => reg.push({ ...f, text: '🔒 ' + f.text }));
+    } else {
+      reg.push({ text: '🔒 COMPLIANCE CLEAR', severity: 'ok', ticker: null });
+    }
+    // Tech Forecaster: Domain ticker trigger
+    const domainTickers = ['ASTS', 'VST', 'MU', 'TSM', 'FN', 'COHR'];
+    const domainFindings = allFindings.filter(f => f.ticker && domainTickers.includes(f.ticker));
+    if (domainFindings.length > 0) {
+      tf.push({ text: 'TF DOMAIN TRIGGER: ' + domainFindings.length + ' active', severity: 'warning', ticker: null });
+      domainFindings.slice(0, 3).forEach(f => tf.push({ ...f, text: 'TF: ' + f.text }));
+    } else {
+      tf.push({ text: 'TF: SILENT', severity: 'ok', ticker: null });
+    }
+    return { REG: reg, TF: tf };
+  }
+
+  function bearVetoFindings(allTriadFindings) {
+    const bear = [];
+    const allFindings = Object.values(allTriadFindings).flat();
+    const criticals = allFindings.filter(f => f.severity === 'critical');
+    if (criticals.length >= 3) {
+      bear.push({ text: '🐻 BEAR VETO: ' + criticals.length + ' critical alerts', severity: 'critical', ticker: null });
+      bear.push({ text: '🐻 RECOMMEND FULL REVIEW', severity: 'critical', ticker: null });
+    } else if (criticals.length > 0) {
+      bear.push({ text: '🐻 BEAR WATCH: ' + criticals.length + ' critical', severity: 'warning', ticker: null });
+    } else {
+      bear.push({ text: '🐻 BEAR: no veto', severity: 'ok', ticker: null });
+    }
+    return bear;
+  }
+
+  // ── Consensus: 2-of-4 Triads flagging same ticker ──
+  function _getConsensusTickers(...triadFindingsArrays) {
     const counts = {};
-    [f1, f2, f3].forEach(findings => {
+    triadFindingsArrays.forEach(findings => {
       const seen = new Set();
       findings.forEach(f => {
         if (f.ticker && !seen.has(f.ticker)) {
@@ -3556,16 +3637,57 @@ const WarRoom = (function() {
     return Object.keys(counts).filter(t => counts[t] >= 2);
   }
 
+  // ── Conviction calculation per Triad ──
+  function _calcConviction(memberFindings, threshold) {
+    // conviction = no critical findings for majority of members
+    let okCount = 0;
+    Object.values(memberFindings).forEach(findings => {
+      const hasCritical = findings.some(f => f.severity === 'critical');
+      if (!hasCritical) okCount++;
+    });
+    return okCount >= threshold;
+  }
+
   function runTriadAudits(d) {
-    const triadAgents = agents.filter(a => a.zone === 'council');
-    if (triadAgents.length < 3) return;
+    const councilAgents = agents.filter(a => a.zone === 'council');
+    if (councilAgents.length < 3) return;
 
-    const docFindings  = doctrineAudit(d);
-    const gateFindings = gateAudit(d);
-    const wtFindings   = watchtowerAudit(d);
-    consensusTickers   = _getConsensusTickers(docFindings, gateFindings, wtFindings);
+    // Run 4 Triad audits
+    const thesisResults  = thesisTriadAudit(d);
+    const timingResults  = timingTriadAudit(d);
+    const safetyResults  = safetyTriadAudit(d);
+    const extIntelResults = extIntelTriadAudit(d);
 
-    // Promote consensus tickers to front of each member's queue
+    // Flatten Triad findings for consensus calculation
+    const thesisAll  = [...thesisResults.ELDER, ...thesisResults.SA, ...thesisResults.CA];
+    const timingAll  = [...timingResults.ROBOT, ...timingResults.MACRO, ...timingResults.CLOCK];
+    const safetyAll  = [...safetyResults.RISK, ...safetyResults.ARCH, ...safetyResults.PSY, ...safetyResults.IENG];
+    const extIntelAll = [...extIntelResults.IO, ...extIntelResults.GEO, ...extIntelResults.DSA];
+
+    consensusTickers = _getConsensusTickers(thesisAll, timingAll, safetyAll, extIntelAll);
+
+    // Calculate Triad convictions
+    triadConvictions.thesis   = _calcConviction(thesisResults, 2);   // 2/3
+    triadConvictions.timing   = _calcConviction(timingResults, 2);   // 2/3
+    triadConvictions.safety   = _calcConviction(safetyResults, 3);   // 3/4 (Safety has 4 seats)
+    triadConvictions.extintel = _calcConviction(extIntelResults, 2); // 2/3
+
+    // Floating + Bear findings
+    const allTriadFindings = { ...thesisResults, ...timingResults, ...safetyResults, ...extIntelResults };
+    const floatingResults = floatingAgentFindings(allTriadFindings);
+    const bearResults = bearVetoFindings(allTriadFindings);
+
+    // Map findings to member → agent
+    const memberFindings = {
+      ...thesisResults,
+      ...timingResults,
+      ...safetyResults,
+      ...extIntelResults,
+      ...floatingResults,
+      BEAR: bearResults,
+    };
+
+    // Promote consensus tickers to front
     function withConsensus(findings) {
       if (consensusTickers.length === 0) return findings;
       const promoted = findings
@@ -3575,16 +3697,13 @@ const WarRoom = (function() {
       return [...promoted, ...rest];
     }
 
-    const allFindings = [
-      withConsensus(docFindings),
-      withConsensus(gateFindings),
-      withConsensus(wtFindings),
-    ];
-
-    triadAgents.forEach((a, i) => {
-      a.findings = allFindings[i];
+    // Assign findings to each council agent by ticker → member mapping
+    councilAgents.forEach((a, i) => {
+      const key = a.ticker; // e.g. 'ELDER', 'SA', 'ROBOT', etc.
+      const findings = memberFindings[key] || [{ text: '✓ OK', severity: 'ok', ticker: null }];
+      a.findings = withConsensus(findings);
       a.findingIdx = 0;
-      a.findingTimer = 6 + i * 2; // stagger start so they don't speak simultaneously
+      a.findingTimer = 4 + i * 1.5; // stagger start
       if (a.findings.length > 0) {
         a.speech = a.findings[0].text;
         a.speechSeverity = a.findings[0].severity;
@@ -4932,14 +5051,20 @@ const WarRoom = (function() {
 
     const isMobile = window.innerWidth <= 768;
 
-    // Triad Council: show full findings list
+    // War Council Parliament: show full findings list with Triad affiliation
     if (a.zone === 'council') {
-      const roleColor = a.ticker === 'DOCTRINE' ? '#b080ff' : a.ticker === 'GATE' ? '#50a8f0' : '#50cc80';
+      const triadColors = {
+        thesis: '#bba040', timing: '#30b0b0', safety: '#cc4050', extintel: '#6a50aa',
+        floating: '#6a6a7a', bear: '#8a2020'
+      };
+      const roleColor = (a.pal && a.pal.hi) ? a.pal.hi : '#b080ff';
+      const triadColor = triadColors[a.triad] || '#8888aa';
+      const triadLabel = a.triad ? a.triad.toUpperCase() : 'COUNCIL';
       const sevColors = { critical: 'var(--red)', warning: 'var(--amber)', info: 'var(--cyan)', ok: 'var(--green)' };
-      const critCount = a.findings.filter(f => f.severity === 'critical').length;
-      const warnCount = a.findings.filter(f => f.severity === 'warning').length;
+      const critCount = (a.findings || []).filter(f => f.severity === 'critical').length;
+      const warnCount = (a.findings || []).filter(f => f.severity === 'warning').length;
       let findingsHtml = '';
-      if (a.findings.length > 0) {
+      if (a.findings && a.findings.length > 0) {
         findingsHtml = '<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">' + a.findings.length + ' findings &middot; <span style="color:var(--red)">' + critCount + ' crit</span> &middot; <span style="color:var(--amber)">' + warnCount + ' warn</span></div>';
         a.findings.slice(0, 12).forEach(f => {
           const color = sevColors[f.severity] || 'var(--text-mid)';
@@ -4949,12 +5074,20 @@ const WarRoom = (function() {
           findingsHtml += '<div style="font-size:10px;color:var(--text-dim);margin-top:2px">+' + (a.findings.length - 12) + ' more</div>';
         }
       }
+      // Conviction badge
+      const conv = triadConvictions[a.triad];
+      const convHtml = conv === true ? '<span style="color:var(--green);font-size:10px">✓ CONVICTION</span>' :
+                       conv === false ? '<span style="color:var(--red);font-size:10px">✗ NO CONVICTION</span>' : '';
+      // Non-voting badge for floating agents
+      const floatBadge = a.isFloating ? ' <span style="font-size:9px;color:var(--text-dim);background:rgba(100,100,100,0.2);padding:1px 4px;border-radius:2px">NON-VOTING</span>' : '';
       tip.innerHTML =
         '<div style="margin-bottom:6px">' +
           '<span class="tt-ticker" style="color:' + roleColor + '">' + a.ticker + '</span>' +
-          '<span class="tt-zone" style="background:rgba(130,60,200,0.1);color:' + roleColor + ';border:1px solid ' + roleColor + '">TRIAD</span>' +
+          '<span class="tt-zone" style="background:rgba(130,60,200,0.1);color:' + triadColor + ';border:1px solid ' + triadColor + '">' + triadLabel + '</span>' +
+          floatBadge +
         '</div>' +
-        '<div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">' + (a.role || 'Council Member') + '</div>' +
+        '<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">' + (a.role || 'Council Member') + '</div>' +
+        (convHtml ? '<div style="margin-bottom:6px">' + convHtml + '</div>' : '') +
         findingsHtml;
       tip.classList.add('visible');
       if (!isMobile) _positionTip(tip, e);
@@ -5025,10 +5158,26 @@ const WarRoom = (function() {
     let zoneLabel = a.zone.toUpperCase();
     if (a.zone === 'arsenal') zoneStyle = 'background:var(--blue-dim);color:var(--blue);border:1px solid var(--blue)';
     else if (a.zone === 'watchtower') zoneStyle = 'background:rgba(0,200,224,0.1);color:var(--cyan);border:1px solid rgba(0,200,224,0.3)';
-    else if (a.zone === 'council') { zoneLabel = 'TRIAD'; zoneStyle = 'background:rgba(130,60,200,0.1);color:#b080ff;border:1px solid #b080ff'; }
+    else if (a.zone === 'council') {
+      const triadColors = { thesis: '#bba040', timing: '#30b0b0', safety: '#cc4050', extintel: '#6a50aa', floating: '#6a6a7a', bear: '#8a2020' };
+      const tc = triadColors[a.triad] || '#b080ff';
+      zoneLabel = a.triad ? a.triad.toUpperCase() : 'COUNCIL';
+      zoneStyle = 'background:rgba(130,60,200,0.1);color:' + tc + ';border:1px solid ' + tc;
+    }
     html += '<div class="drawer-zone" style="' + zoneStyle + '">' + zoneLabel + '</div>';
 
-    if (a.role) html += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">' + a.role + '</div>';
+    if (a.role) html += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">' + a.role + '</div>';
+    // Triad affiliation and conviction in drawer
+    if (a.zone === 'council' && a.triad) {
+      const convStatus = triadConvictions[a.triad];
+      const convText = convStatus === true ? '✓ CONVICTION' : convStatus === false ? '✗ NO CONVICTION' : '— PENDING';
+      const convColor = convStatus === true ? 'var(--green)' : convStatus === false ? 'var(--red)' : 'var(--text-dim)';
+      html += '<div style="font-size:10px;margin-bottom:8px">';
+      html += '<span style="color:var(--text-dim)">Triad: </span><strong style="color:var(--text-bright)">' + a.triad.toUpperCase() + '</strong>';
+      html += ' · <span style="color:' + convColor + '">' + convText + '</span>';
+      if (a.isFloating) html += ' · <span style="color:var(--text-dim);font-size:9px">NON-VOTING</span>';
+      html += '</div>';
+    }
 
     // Data rows
     if (a.zone !== 'commander' && a.zone !== 'council') {
