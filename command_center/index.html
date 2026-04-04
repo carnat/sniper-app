@@ -2808,7 +2808,15 @@ const WarRoom = (function() {
     constructor(ticker, zone, tileX, tileY) {
       this.ticker = ticker;
       this.zone = zone;
-      this.sector = zone === 'sentinel' ? 'sentinel' : zone === 'commander' ? 'cmd' : zone === 'council' ? (ticker.toLowerCase()) : (SEC[ticker] || 'semi_a');
+      // Determine visual sector for body style + palette
+      const ZONE_SECTOR = { sentinel: 'sentinel', commander: 'cmd' };
+      if (ZONE_SECTOR[zone]) {
+        this.sector = ZONE_SECTOR[zone];
+      } else if (zone === 'council') {
+        this.sector = ticker.toLowerCase();
+      } else {
+        this.sector = SEC[ticker] || 'semi_a';
+      }
       this.pal = PAL[this.sector];
       // pixel position
       this.x = tileX * TILE + TILE * 2;
@@ -3734,7 +3742,8 @@ const WarRoom = (function() {
     ctx.save();
     ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = 1;
-    const spriteTop = bs.hairStyle === 'spiky' ? headTop - 2 : bs.hairStyle === 'mohawk' ? headTop - 3 : bs.hairStyle === 'none' ? headTop - 1 : headTop;
+    const HAIR_TOP_OFFSET = { spiky: -2, mohawk: -3, none: -1 };
+    const spriteTop = headTop + (HAIR_TOP_OFFSET[bs.hairStyle] || 0);
     const spriteBot = y + bs.legLen;
     ctx.strokeRect(x - halfW - 1, spriteTop, bs.bodyW + 4, spriteBot - spriteTop);
     ctx.restore();
