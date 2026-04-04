@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "doctrine_version": "1.12.1",
+    "ops_version": "1.15.1",
+    "council_version": "1.11.0",
+    "last_updated": "2026-04-04T18:00:00Z",
+    "updated_by": "Commander"
+  },
+  "theses": {
+    "VRT": {
+      "date": "2026-03-16",
+      "status": "YELLOW_WATCH",
+      "note": "F3=0 · 50pts",
+      "day0": true,
+      "flags": ["F3_ZERO"]
+    },
+    "MU": {
+      "date": "2026-03-15",
+      "status": "INTACT",
+      "note": "earnings watch",
+      "day0": false,
+      "flags": ["EARNINGS_WATCH"]
+    }
+  },
+  "tripwires": [
+    { "ticker": "APH", "code": "TW-5", "note": "China 15.6% watch", "active": true },
+    { "ticker": "ONDS", "code": "TW-1", "note": "Mistral merger watch", "active": true },
+    { "ticker": "TSEM", "code": "TW-2", "note": "Israel conflict", "active": true },
+    { "ticker": "TSM", "code": "TW-2", "note": "LNG cliff May", "active": true }
+  ],
+  "blackouts": [
+    { "ticker": "BWXT", "earnings_date": "2026-04-14", "pre_days": 30, "post_days": 7 },
+    { "ticker": "KTOS", "earnings_date": "2026-04-17", "pre_days": 30, "post_days": 7 },
+    { "ticker": "ASTS", "earnings_date": "2026-04-11", "pre_days": 30, "post_days": 7 }
+  ],
+  "geopolitical": [
+    { "ticker": "APH", "watch": "CHINA", "exposure_pct": 15.6, "rule": "DC-46" },
+    { "ticker": "TSEM", "watch": "ISRAEL", "rule": "DC-47" },
+    { "ticker": "TSM", "watch": "ISRAEL/LNG", "rule": "DC-47" }
+  ],
+  "standing_orders": [
+    { "id": "SO-3", "desc": "ASTS fill order paused during VIX ORANGE+", "active": true }
+  ],
+  "regime_overrides": {
+    "forced_regime": null,
+    "bear_restructure_active": false,
+    "dead_hand_last_review": "2026-03-16"
+  },
+  "council": {
+    "active_seats": ["ELDER", "SA", "CA", "ROBOT", "MACRO", "CLOCK", "RISK", "ARCH", "PSY", "IENG", "IO", "GEO", "DSA"],
+    "rotating_assignments": {},
+    "pending_motions": [],
+    "consensus_log": []
+  }
+}

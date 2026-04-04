@@ -2010,6 +2010,60 @@ function dismissPin() {
   document.getElementById('pinInput').value = '';
 }
 
+// ── Doctrine State Loader (data pipeline for thesis/tripwire/blackout data) ──
+let doctrineState = null; // loaded doctrine state
+
+async function fetchDoctrine() {
+  // 1. Try local doctrine_state.json (gitignored — Commander edits directly)
+  try {
+    const res = await fetch('./doctrine_state.json');
+    if (res.ok) {
+      doctrineState = await res.json();
+      injectDoctrineState(doctrineState);
+      return;
+    }
+  } catch (_) {}
+  // 2. Try data/ folder
+  try {
+    const res = await fetch('../data/doctrine_state.json');
+    if (res.ok) {
+      doctrineState = await res.json();
+      injectDoctrineState(doctrineState);
+      return;
+    }
+  } catch (_) {}
+  // 3. Fallback: use hardcoded defaults (current behavior — graceful degradation)
+  // No action needed — audit functions already have hardcoded fallbacks
+}
+
+function injectDoctrineState(ds) {
+  if (!ds) return;
+  // Merge thesis dates into ARSENAL arrays
+  if (ds.theses) {
+    [...ARSENAL_CORE, ...ARSENAL_SAT].forEach(p => {
+      const thesis = ds.theses[p.ticker];
+      if (thesis) {
+        if (thesis.date) p.thesis = thesis.date;
+        if (thesis.note) p.note = thesis.note;
+        if (thesis.flags && thesis.flags.length > 0) {
+          thesis.flags.forEach(f => {
+            if (!p.flag || p.flag === '—') p.flag = f;
+          });
+        }
+      }
+    });
+  }
+  // Refresh War Room agents with updated thesis data
+  if (typeof WarRoom !== 'undefined' && WarRoom.agents) {
+    WarRoom.agents.forEach(a => {
+      if (a.zone === 'arsenal') {
+        const src = [...ARSENAL_CORE, ...ARSENAL_SAT].find(p => p.ticker === a.ticker);
+        if (src && src.thesis) a.thesis = src.thesis;
+      }
+    });
+  }
+}
+
 // Allow Enter key in PIN input
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pinInput').addEventListener('keydown', e => {
@@ -5296,14 +5350,26 @@ const WarRoom = (function() {
   function _updateFindingsPanel() {
     const content = document.getElementById('wrFindingsContent');
     if (!content) return;
-    const triad = agents.filter(a => a.zone === 'council');
+    const councilAgents = agents.filter(a => a.zone === 'council');
     const sevColors = { critical: 'var(--red)', warning: 'var(--amber)', info: 'var(--cyan)', ok: 'var(--green)' };
+    const triadColors = {
+      thesis: '#bba040', timing: '#30b0b0', safety: '#cc4050', extintel: '#6a50aa',
+      floating: '#6a6a7a', bear: '#8a2020'
+    };
     let html = '';
-    triad.forEach(a => {
-      const roleColor = a.ticker === 'DOCTRINE' ? '#b080ff' : a.ticker === 'GATE' ? '#50a8f0' : '#50cc80';
-      html += '<div class="findings-agent" style="color:' + roleColor + '">' + a.ticker + ' — ' + (a.role || '') + '</div>';
-      (a.findings || []).forEach(f => {
-        html += '<div class="finding-item" style="color:' + (sevColors[f.severity] || 'var(--text-mid)') + '">' + f.text + '</div>';
+    // Group by Triad
+    const triads = ['thesis', 'timing', 'safety', 'extintel', 'floating', 'bear'];
+    triads.forEach(triad => {
+      const members = councilAgents.filter(a => a.triad === triad);
+      if (members.length === 0) return;
+      const tc = triadColors[triad] || '#8888aa';
+      html += '<div style="font-size:9px;color:' + tc + ';font-weight:700;margin-top:8px;margin-bottom:2px;text-transform:uppercase">' + triad + '</div>';
+      members.forEach(a => {
+        const roleColor = (a.pal && a.pal.hi) ? a.pal.hi : tc;
+        html += '<div class="findings-agent" style="color:' + roleColor + '">' + a.ticker + ' — ' + (a.role || '') + '</div>';
+        (a.findings || []).forEach(f => {
+          html += '<div class="finding-item" style="color:' + (sevColors[f.severity] || 'var(--text-mid)') + '">' + f.text + '</div>';
+        });
       });
     });
     content.innerHTML = html;
@@ -5314,7 +5380,7 @@ const WarRoom = (function() {
     const el = document.getElementById('wrConsensus');
     if (!el) return;
     if (consensusTickers.length > 0) {
-      el.textContent = '⚡ CONSENSUS: ' + consensusTickers.join(' · ') + ' — 2+ Triad agents flagged';
+      el.textContent = '⚡ CONSENSUS: ' + consensusTickers.join(' · ') + ' — 2+ Triads flagged';
       el.classList.add('visible');
     } else {
       el.classList.remove('visible');
@@ -5463,6 +5529,7 @@ window.addEventListener('load', () => {
   // Fetch live data
   setTimeout(fetchPrices, 300);
   setTimeout(fetchPrivate, 300);
+  setTimeout(fetchDoctrine, 400);
   updateWtCountdown();
 });
 
