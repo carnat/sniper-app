@@ -407,6 +407,7 @@
     position: relative; width: 100%; min-height: calc(100vh - 120px);
     background: #050608; overflow: hidden; display: flex; align-items: center; justify-content: center;
   }
+  .warroom-wrap.ambient { background: #020304; }
   .warroom-canvas {
     display: block; image-rendering: pixelated; image-rendering: crisp-edges; cursor: crosshair;
   }
@@ -442,10 +443,136 @@
   @keyframes wr-pulse-red { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
   .warroom-legend {
     position: absolute; bottom: 8px; left: 12px; display: flex; gap: 12px;
-    font-size: 9px; color: var(--text-dim); pointer-events: none;
+    font-size: 9px; color: var(--text-dim); pointer-events: auto; z-index: 5;
   }
-  .warroom-legend .leg-item { display: flex; align-items: center; gap: 4px; }
+  .warroom-legend .leg-item { display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; opacity: 1; transition: opacity 0.2s; }
+  .warroom-legend .leg-item.dimmed { opacity: 0.3; }
   .warroom-legend .leg-dot { width: 6px; height: 6px; border-radius: 1px; }
+  .warroom-legend .leg-all { cursor: pointer; color: var(--text-mid); font-weight: 700; user-select: none; }
+
+  /* ── Agent Detail Drawer (C13) ── */
+  .wr-drawer {
+    position: absolute; top: 0; right: -340px; width: 320px; height: 100%;
+    background: var(--bg-1); border-left: 1px solid var(--border-bright);
+    z-index: 20; overflow-y: auto; transition: right 0.25s ease;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.5); padding: 16px;
+  }
+  .wr-drawer.open { right: 0; }
+  .wr-drawer .drawer-close { position: absolute; top: 8px; right: 12px; cursor: pointer; color: var(--text-dim); font-size: 18px; background: none; border: none; }
+  .wr-drawer .drawer-ticker { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; color: var(--text-white); letter-spacing: 1px; margin-bottom: 4px; }
+  .wr-drawer .drawer-zone { font-size: 10px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: 3px; display: inline-block; margin-bottom: 12px; }
+  .wr-drawer .drawer-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .wr-drawer .drawer-key { color: var(--text-dim); }
+  .wr-drawer .drawer-val { color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .wr-drawer .drawer-section { font-size: 10px; color: var(--text-dim); margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .wr-drawer .drawer-flags { font-size: 11px; color: var(--amber); line-height: 1.8; }
+
+  /* ── Findings Sidebar Panel (B9) ── */
+  .wr-findings {
+    position: absolute; top: 0; left: -280px; width: 260px; height: 100%;
+    background: var(--bg-1); border-right: 1px solid var(--border-bright);
+    z-index: 18; overflow-y: auto; transition: left 0.25s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5); padding: 12px;
+  }
+  .wr-findings.open { left: 0; }
+  .wr-findings .findings-title { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: var(--text-white); letter-spacing: 1px; margin-bottom: 10px; }
+  .wr-findings .findings-agent { font-size: 11px; font-weight: 700; margin-top: 10px; margin-bottom: 4px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .wr-findings .finding-item { font-size: 10px; padding: 2px 0; line-height: 1.5; }
+  .wr-findings-toggle {
+    position: absolute; top: 50%; left: 4px; transform: translateY(-50%); z-index: 19;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 3px;
+    padding: 6px 4px; cursor: pointer; color: var(--text-dim); font-size: 10px;
+    writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 1px;
+    transition: left 0.25s ease;
+  }
+  .wr-findings.open ~ .wr-findings-toggle { left: 264px; }
+
+  /* ── Consensus Banner (B10) ── */
+  .wr-consensus {
+    position: absolute; top: 30px; left: 50%; transform: translateX(-50%); z-index: 15;
+    background: rgba(10,14,20,0.9); border: 1px solid var(--amber); border-radius: 4px;
+    padding: 6px 16px; font-size: 11px; color: var(--amber); cursor: pointer;
+    animation: wr-consensus-pulse 2s ease-in-out infinite; display: none;
+    font-family: 'JetBrains Mono', monospace; white-space: nowrap;
+  }
+  .wr-consensus.visible { display: block; }
+  @keyframes wr-consensus-pulse { 0%,100% { border-color: var(--amber); box-shadow: 0 0 6px rgba(255,184,0,0.2); } 50% { border-color: #ffcc44; box-shadow: 0 0 14px rgba(255,184,0,0.4); } }
+
+  /* ── Search Bar (C15) ── */
+  .wr-search {
+    position: absolute; top: 6px; right: 14px; z-index: 16; display: flex; align-items: center; gap: 6px;
+  }
+  .wr-search input {
+    background: rgba(10,14,20,0.85); border: 1px solid var(--border); border-radius: 3px;
+    color: var(--text-bright); font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    padding: 3px 8px; width: 80px; outline: none;
+  }
+  .wr-search input:focus { border-color: var(--blue); width: 120px; transition: width 0.2s; }
+
+  /* ── Toolbar Buttons ── */
+  .wr-toolbar {
+    position: absolute; top: 6px; right: 160px; z-index: 16; display: flex; gap: 4px;
+  }
+  .wr-toolbar button {
+    background: rgba(10,14,20,0.85); border: 1px solid var(--border); border-radius: 3px;
+    color: var(--text-dim); font-size: 11px; padding: 2px 8px; cursor: pointer;
+  }
+  .wr-toolbar button:hover { border-color: var(--blue); color: var(--text-bright); }
+  .wr-toolbar button.active { border-color: var(--amber); color: var(--amber); }
+
+  /* ── Context Menu (C17) ── */
+  .wr-context-menu {
+    position: absolute; z-index: 30; background: var(--bg-2); border: 1px solid var(--border-bright);
+    border-radius: 4px; padding: 4px 0; box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    display: none; min-width: 180px;
+  }
+  .wr-context-menu.visible { display: block; }
+  .wr-context-menu .ctx-item {
+    padding: 6px 14px; font-size: 11px; color: var(--text-bright); cursor: pointer;
+  }
+  .wr-context-menu .ctx-item:hover { background: var(--bg-3); }
+
+  /* ── Comparison Panel (C18) ── */
+  .wr-compare {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 14;
+    background: rgba(10,14,20,0.95); border-top: 1px solid var(--border-bright);
+    padding: 10px 16px; display: none;
+  }
+  .wr-compare.visible { display: flex; gap: 16px; align-items: flex-start; }
+  .wr-compare .cmp-card {
+    flex: 1; background: var(--bg-2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px; font-size: 11px;
+  }
+  .wr-compare .cmp-ticker { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-white); }
+  .wr-compare .cmp-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .wr-compare .cmp-clear { position: absolute; top: 6px; right: 12px; cursor: pointer; color: var(--text-dim); background: none; border: none; font-size: 11px; }
+
+  /* ── Mobile ≤768px ── */
+  @media (max-width: 768px) {
+    .warroom-wrap { overflow-x: auto; justify-content: flex-start; align-items: flex-start; }
+    .warroom-tooltip {
+      position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important;
+      top: auto !important; max-width: 100% !important; width: 100% !important;
+      border-radius: 12px 12px 0 0; max-height: 40vh; overflow-y: auto;
+      transform: none !important;
+    }
+    .wr-drawer {
+      position: fixed; top: auto; bottom: -100%; left: 0; right: 0;
+      width: 100%; height: auto; max-height: 70vh; border-left: none;
+      border-top: 1px solid var(--border-bright); border-radius: 12px 12px 0 0;
+    }
+    .wr-drawer.open { bottom: 0; right: 0; }
+    .wr-findings {
+      position: fixed; top: auto; bottom: -100%; left: 0; right: 0;
+      width: 100%; height: auto; max-height: 60vh; border-right: none;
+      border-top: 1px solid var(--border-bright); border-radius: 12px 12px 0 0;
+    }
+    .wr-findings.open { left: 0; bottom: 0; }
+    .wr-findings-toggle { top: auto; bottom: 60px; left: 4px; writing-mode: horizontal-tb; }
+    .wr-findings.open ~ .wr-findings-toggle { left: 4px; bottom: calc(60vh + 4px); }
+    .warroom-legend { bottom: 4px; left: 4px; gap: 6px; font-size: 8px; flex-wrap: wrap; }
+    .wr-compare { flex-direction: column; }
+  }
 
   /* ─── COLLAPSIBLE PANELS (A1) ─── */
   .cpanel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--panel-radius); margin-bottom: 8px; box-shadow: var(--shadow-card); transition: box-shadow var(--transition-normal); }
@@ -1439,15 +1566,47 @@
     <div class="warroom-tooltip" id="wrTooltip"></div>
     <div class="warroom-hud" id="wrHud">
       <span id="wrHudLeft"></span>
-      <span id="wrHudRight" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-dim)">SNIPER WAR ROOM v3.0 · INFORMATIONAL ONLY</span>
+      <span id="wrHudRight" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-dim)">SNIPER WAR ROOM v4.0 · INFORMATIONAL ONLY</span>
     </div>
+    <!-- Consensus Banner (B10) -->
+    <div class="wr-consensus" id="wrConsensus"></div>
+    <!-- Search (C15) -->
+    <div class="wr-search"><input id="wrSearchInput" type="text" placeholder="Search…" autocomplete="off"></div>
+    <!-- Toolbar -->
+    <div class="wr-toolbar">
+      <button id="wrBtnFindings" title="Toggle Findings Panel">📋</button>
+      <button id="wrBtnAmbient" title="Toggle Ambient Mode">🌙</button>
+    </div>
+    <!-- Findings Panel (B9) -->
+    <div class="wr-findings" id="wrFindings">
+      <div class="findings-title">TRIAD FINDINGS</div>
+      <div id="wrFindingsContent"></div>
+    </div>
+    <div class="wr-findings-toggle" id="wrFindingsToggle">FINDINGS</div>
+    <!-- Agent Drawer (C13) -->
+    <div class="wr-drawer" id="wrDrawer">
+      <button class="drawer-close" id="wrDrawerClose">✕</button>
+      <div id="wrDrawerContent"></div>
+    </div>
+    <!-- Context Menu (C17) -->
+    <div class="wr-context-menu" id="wrContextMenu">
+      <div class="ctx-item" data-action="view">📊 View Full Data</div>
+      <div class="ctx-item" data-action="compare">⚖ Compare</div>
+      <div class="ctx-item" data-action="goto">🔗 Show in Tab</div>
+    </div>
+    <!-- Comparison Panel (C18) -->
+    <div class="wr-compare" id="wrCompare">
+      <button class="cmp-clear" id="wrCmpClear">✕ Clear</button>
+    </div>
+    <!-- Legend with clickable filter toggles (C14) -->
     <div class="warroom-legend" id="wrLegend">
-      <div class="leg-item"><div class="leg-dot" style="background:#3a9fff"></div>SEMI</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#4aba6a"></div>DEFENSE</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#8a5aee"></div>SPACE</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#ee8a20"></div>NETWORK</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#00aacc"></div>ENERGY</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#6a7a8a"></div>VAULT</div>
+      <div class="leg-all" data-sector="all">ALL</div>
+      <div class="leg-item" data-sector="semi"><div class="leg-dot" style="background:#3a9fff"></div>SEMI</div>
+      <div class="leg-item" data-sector="defense"><div class="leg-dot" style="background:#4aba6a"></div>DEFENSE</div>
+      <div class="leg-item" data-sector="space"><div class="leg-dot" style="background:#8a5aee"></div>SPACE</div>
+      <div class="leg-item" data-sector="network"><div class="leg-dot" style="background:#ee8a20"></div>NETWORK</div>
+      <div class="leg-item" data-sector="energy"><div class="leg-dot" style="background:#00aacc"></div>ENERGY</div>
+      <div class="leg-item" data-sector="vault"><div class="leg-dot" style="background:#6a7a8a"></div>VAULT</div>
     </div>
   </div>
 </div>
@@ -2729,6 +2888,14 @@ const WarRoom = (function() {
   const ROOM_H = ROOM_ROWS * TILE;
   const WALK_SPEED = 28;         // agent walk speed in pixels/sec
   const HEADER_FOOTER_H = 130;   // approximate height of header + tab nav + footer in px
+  // v4.0 constants
+  const MIN_SCALE = 0.8;         // minimum canvas scale (prevents unreadable agents)
+  const MAX_SCALE = 3;           // maximum canvas scale
+  const TOUCH_HOLD_MS = 500;     // hold duration (ms) to open agent drawer on touch
+  const STALE_THRESHOLD_MIN = 15; // minutes before data is marked stale
+  const MAX_PARTICLES = 60;      // max particle count for performance
+  const PARTICLE_SPAWN_RATE = 0.02; // probability per frame per deployed agent
+  const MAX_COMPARE = 3;         // max agents in comparison panel
 
   // ── Sector palettes ──
   const PAL = {
@@ -2925,6 +3092,18 @@ const WarRoom = (function() {
   let hoveredAgent = null;
   let vixVal = 24.54, thbVal = 32.72;
   let consensusTickers = [];
+  // v4.0 state
+  let _focusedIdx = -1;
+  let sectorFilters = {};       // sector → boolean (true = visible)
+  let searchHighlight = null;   // ticker string to highlight
+  let ambientMode = false;
+  let particles = [];           // activity particles (D21)
+  let atmospherePhase = 0;      // (D22)
+  let drawerAgent = null;       // currently open drawer agent
+  let compareAgents = [];       // up to 3 agents for comparison (C18)
+  let resizeTimer = null;       // debounce (A5)
+  let touchHoldTimer = null;    // hold-to-open-drawer
+  let lastRefreshTime = null;
 
   // ── Initialize ──
   function init() {
@@ -2933,12 +3112,27 @@ const WarRoom = (function() {
     ctx = canvas.getContext('2d');
 
     resize();
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 150);
+    });
 
     // Mouse events
     canvas.addEventListener('mousemove', onMouseMove);
     canvas.addEventListener('click', onClick);
     canvas.addEventListener('mouseleave', () => { hoveredAgent = null; hideTooltip(); });
+    canvas.addEventListener('contextmenu', onContextMenu);
+
+    // Touch events (A3)
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd);
+
+    // Keyboard navigation (C16)
+    document.addEventListener('keydown', onWarRoomKey);
+
+    // DOM controls
+    _initDOMControls();
 
     // Create agents
     createAgents();
@@ -2950,7 +3144,10 @@ const WarRoom = (function() {
     if (!wrap) return;
     const maxW = wrap.clientWidth;
     const maxH = wrap.clientHeight || (window.innerHeight - HEADER_FOOTER_H);
-    scale = Math.max(1, Math.min(Math.floor(maxW / ROOM_W), Math.floor(maxH / ROOM_H), 3));
+    // Fractional scaling (A1): continuous 0.8-3x instead of integer jumps
+    const sx = maxW / ROOM_W;
+    const sy = maxH / ROOM_H;
+    scale = Math.max(MIN_SCALE, Math.min(sx, sy, MAX_SCALE));
     const dpr = window.devicePixelRatio || 1;
     canvas.width = ROOM_W * scale * dpr;
     canvas.height = ROOM_H * scale * dpr;
@@ -3773,6 +3970,51 @@ const WarRoom = (function() {
       ctx.fillText(a.score + 'pts', x, spriteBot + 18);
       ctx.restore();
     }
+
+    // Price/tier label above agent (B7)
+    if (a.zone === 'arsenal' && a.price != null) {
+      ctx.save();
+      ctx.font = '6px monospace';
+      ctx.textAlign = 'center';
+      const pColor = (a.changePct != null && a.changePct >= 0) ? '#40c070' : '#ff5060';
+      ctx.fillStyle = pColor;
+      ctx.fillText('$' + a.price.toFixed(1), x, spriteTop - 4);
+      ctx.restore();
+    } else if (a.zone === 'watchtower' && a.tier) {
+      ctx.save();
+      ctx.font = 'bold 6px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#6ab0d0';
+      ctx.fillText(a.tier, x, spriteTop - 4);
+      ctx.restore();
+    }
+
+    // State annotation icons (B11) — 4×4 pixel indicators
+    if (a.zone === 'arsenal' || a.zone === 'watchtower') {
+      const ix = x + halfW + 4;
+      let iy = spriteTop;
+      if (frozen) {
+        ctx.fillStyle = 'rgba(100,180,255,0.7)';
+        ctx.fillRect(ix, iy, 3, 3); iy += 5;
+      }
+      // Blackout check
+      const blackoutTickers = (typeof getBlackoutTickers === 'function') ? getBlackoutTickers() : [];
+      if (blackoutTickers.includes(a.ticker)) {
+        ctx.fillStyle = 'rgba(255,160,0,0.7)';
+        ctx.fillRect(ix, iy, 3, 3); iy += 5;
+      }
+    }
+
+    // Search highlight glow (C15)
+    if (searchHighlight && a.ticker === searchHighlight) {
+      const t = performance.now() / 500;
+      const glowAlpha = 0.3 + Math.sin(t) * 0.2;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,184,0,' + glowAlpha + ')';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - halfW - 5, spriteTop - 3, bs.bodyW + 12, spriteBot - spriteTop + 6);
+      ctx.restore();
+    }
   }
 
   function drawSpeechBubble(a) {
@@ -3889,7 +4131,7 @@ const WarRoom = (function() {
   }
 
   function drawStatusBar() {
-    // Bottom status bar
+    // Bottom status bar (B12: enhanced)
     const barY = (ROOM_ROWS - 1) * TILE;
     ctx.fillStyle = '#0a0e14';
     ctx.fillRect(TILE, barY, (ROOM_COLS - 2) * TILE, TILE);
@@ -3917,11 +4159,35 @@ const WarRoom = (function() {
     ctx.fillStyle = '#00d084';
     ctx.fillText(thbVal.toFixed(2), 2 * TILE + 168, barY + 11);
 
-    // Agent count
+    // PRI gauge value (B12)
+    if (typeof calculatePRI === 'function') {
+      try {
+        const pri = calculatePRI();
+        const priColor = pri < 30 ? '#00d084' : pri < 60 ? '#ffb800' : pri < 80 ? '#ff8c00' : '#ff4055';
+        ctx.fillStyle = '#8ab0c8';
+        ctx.fillText('PRI', 2 * TILE + 210, barY + 11);
+        ctx.fillStyle = priColor;
+        ctx.fillText(pri.toString(), 2 * TILE + 228, barY + 11);
+      } catch (_) { /* PRI not available */ }
+    }
+
+    // Agent count + freeze count
     const arsenalCount = agents.filter(a => a.zone === 'arsenal').length;
     const wtCount = agents.filter(a => a.zone === 'watchtower').length;
+    const frozenCount = agents.filter(a => a.state === 'frozen').length;
     ctx.fillStyle = '#8ab0c8';
-    ctx.fillText('ARSENAL ' + arsenalCount + ' · WT ' + wtCount, 2 * TILE + 220, barY + 11);
+    let countStr = 'A:' + arsenalCount + ' W:' + wtCount;
+    if (frozenCount > 0) countStr += ' ❄' + frozenCount;
+    ctx.fillText(countStr, 2 * TILE + 255, barY + 11);
+
+    // Stale data indicator
+    if (lastRefreshTime) {
+      const staleMin = Math.floor((Date.now() - lastRefreshTime) / 60000);
+      if (staleMin > STALE_THRESHOLD_MIN) {
+        ctx.fillStyle = '#ff4055';
+        ctx.fillText('STALE ' + staleMin + 'm', 2 * TILE + 340, barY + 11);
+      }
+    }
 
     // Time
     const now = new Date();
@@ -3960,17 +4226,45 @@ const WarRoom = (function() {
     ctx.clearRect(0, 0, ROOM_W, ROOM_H);
 
     drawFloor();
+    // Atmosphere pulse (D22)
+    if (ambientMode) {
+      atmospherePhase += 0.015;
+      const pulse = Math.sin(atmospherePhase) * 0.02 + 0.02;
+      ctx.fillStyle = 'rgba(58,159,255,' + pulse + ')';
+      for (let r = 2; r < ROOM_ROWS - 1; r += 2) {
+        for (let c = 2; c < ROOM_COLS - 1; c += 3) {
+          ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
+        }
+      }
+    }
     drawZones();
     drawRoomTitle();
     drawCouncilTable();
 
+    // Zone HUD panels (B8) — semi-transparent stat overlays
+    drawZoneHUDs();
+
     // Sort agents by Y for depth (paint back-to-front)
     const sorted = [...agents].sort((a, b) => a.y - b.y);
 
-    // Draw agents
-    sorted.forEach(a => drawAgent(a));
+    // Apply sector filter visibility
+    sorted.forEach(a => {
+      if (_isSectorHidden(a)) {
+        ctx.globalAlpha = 0.15;
+        drawAgent(a);
+        ctx.globalAlpha = 1;
+      } else {
+        drawAgent(a);
+      }
+    });
     // Draw speech bubbles on top
-    sorted.forEach(a => drawSpeechBubble(a));
+    sorted.forEach(a => {
+      if (!_isSectorHidden(a)) drawSpeechBubble(a);
+    });
+
+    // Particles (D21)
+    _updateParticles();
+    _drawParticles();
 
     drawStatusBar();
 
@@ -3983,11 +4277,96 @@ const WarRoom = (function() {
     // Vignette on canvas edges
     const vg = ctx.createRadialGradient(ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.35, ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.7);
     vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(1, 'rgba(0,0,0,0.15)');
+    vg.addColorStop(1, ambientMode ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.15)');
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, ROOM_W, ROOM_H);
 
     ctx.restore();
+  }
+
+  function _isSectorHidden(a) {
+    if (Object.keys(sectorFilters).length === 0) return false;
+    const sec = a.sector || '';
+    // Map semi_a/b/c → semi
+    const base = sec.startsWith('semi') ? 'semi' : sec;
+    return sectorFilters[base] === false;
+  }
+
+  // ── Zone HUD panels (B8) ──
+  function drawZoneHUDs() {
+    ctx.save();
+    ctx.font = '6px monospace';
+
+    // Arsenal zone stats
+    const arsAgents = agents.filter(a => a.zone === 'arsenal');
+    const arsAvgChg = arsAgents.reduce((s, a) => s + (a.changePct || 0), 0) / (arsAgents.length || 1);
+    ctx.fillStyle = 'rgba(10,14,20,0.7)';
+    ctx.fillRect(32 * TILE, 3.5 * TILE, 6 * TILE, 2.4 * TILE);
+    ctx.fillStyle = '#4a7aaa';
+    ctx.fillText('POSITIONS: ' + arsAgents.length, 32.3 * TILE, 4.2 * TILE);
+    const chgColor = arsAvgChg >= 0 ? '#40c070' : '#ff5060';
+    ctx.fillStyle = chgColor;
+    ctx.fillText('AVG: ' + (arsAvgChg >= 0 ? '+' : '') + arsAvgChg.toFixed(2) + '%', 32.3 * TILE, 5 * TILE);
+
+    // Watchtower zone stats
+    const wtAgents = agents.filter(a => a.zone === 'watchtower');
+    const coreCount = wtAgents.filter(a => a.tier && !a.tier.startsWith('SAT')).length;
+    const satCount = wtAgents.filter(a => a.tier && a.tier.startsWith('SAT')).length;
+    ctx.fillStyle = 'rgba(10,14,20,0.7)';
+    ctx.fillRect(32 * TILE, 11.5 * TILE, 6 * TILE, 2.4 * TILE);
+    ctx.fillStyle = '#3a8898';
+    ctx.fillText('CORE: ' + coreCount + '/12', 32.3 * TILE, 12.2 * TILE);
+    ctx.fillText('SAT: ' + satCount + '/3', 32.3 * TILE, 13 * TILE);
+
+    // Council zone stats
+    const triad = agents.filter(a => a.zone === 'council');
+    const allFindings = triad.reduce((arr, a) => arr.concat(a.findings || []), []);
+    const critF = allFindings.filter(f => f.severity === 'critical').length;
+    const warnF = allFindings.filter(f => f.severity === 'warning').length;
+    const infoF = allFindings.filter(f => f.severity === 'info' || f.severity === 'ok').length;
+    ctx.fillStyle = 'rgba(10,14,20,0.7)';
+    ctx.fillRect(32 * TILE, 24.5 * TILE, 6 * TILE, 2.4 * TILE);
+    ctx.fillStyle = '#ff4055';
+    ctx.fillText('🔴 ' + critF, 32.3 * TILE, 25.2 * TILE);
+    ctx.fillStyle = '#ffb800';
+    ctx.fillText('🟡 ' + warnF, 34 * TILE, 25.2 * TILE);
+    ctx.fillStyle = '#6a8a9a';
+    ctx.fillText('ℹ ' + infoF, 35.5 * TILE, 25.2 * TILE);
+
+    ctx.restore();
+  }
+
+  // ── Particles (D21) ──
+  function _updateParticles() {
+    // Spawn particles for deployed agents
+    if (particles.length < MAX_PARTICLES) {
+      agents.forEach(a => {
+        if (a.state === 'deployed' && Math.random() < PARTICLE_SPAWN_RATE && !_isSectorHidden(a)) {
+          particles.push({
+            x: a.x + (Math.random() - 0.5) * 8,
+            y: a.y - 12,
+            vy: -0.3 - Math.random() * 0.3,
+            life: 1,
+            color: a.pal.hi,
+          });
+        }
+      });
+    }
+    // Update existing
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.y += p.vy;
+      p.life -= 0.02;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+  function _drawParticles() {
+    particles.forEach(p => {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.life * 0.5;
+      ctx.fillRect(p.x, p.y, 1.5, 1.5);
+    });
+    ctx.globalAlpha = 1;
   }
 
   // ── Game loop ──
@@ -4021,10 +4400,17 @@ const WarRoom = (function() {
     };
   }
 
+  function _canvasToRoomTouch(touch) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (touch.clientX - rect.left) / scale,
+      y: (touch.clientY - rect.top) / scale,
+    };
+  }
+
   function onMouseMove(e) {
     const p = canvasToRoom(e);
     hoveredAgent = null;
-    // Check agents in reverse (front-to-back) for hit test
     for (let i = agents.length - 1; i >= 0; i--) {
       if (agents[i].hitTest(p.x, p.y)) {
         hoveredAgent = agents[i];
@@ -4041,26 +4427,113 @@ const WarRoom = (function() {
   }
 
   function onClick(e) {
+    if (e.shiftKey && hoveredAgent) {
+      // Multi-agent comparison (C18)
+      _addToCompare(hoveredAgent);
+      return;
+    }
     if (hoveredAgent) {
-      showTooltip(hoveredAgent, e);
+      openDrawer(hoveredAgent);
     }
   }
 
+  // ── Context Menu (C17) ──
+  function onContextMenu(e) {
+    e.preventDefault();
+    const p = canvasToRoom(e);
+    let target = null;
+    for (let i = agents.length - 1; i >= 0; i--) {
+      if (agents[i].hitTest(p.x, p.y)) { target = agents[i]; break; }
+    }
+    if (!target) { _hideContextMenu(); return; }
+    const menu = document.getElementById('wrContextMenu');
+    if (!menu) return;
+    const wrap = document.getElementById('warRoomWrap');
+    const wr = wrap.getBoundingClientRect();
+    menu.style.left = (e.clientX - wr.left) + 'px';
+    menu.style.top = (e.clientY - wr.top) + 'px';
+    menu.classList.add('visible');
+    menu._target = target;
+  }
+  function _hideContextMenu() {
+    const menu = document.getElementById('wrContextMenu');
+    if (menu) menu.classList.remove('visible');
+  }
+
+  // ── Touch Events (A3) ──
+  function onTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const p = _canvasToRoomTouch(touch);
+    hoveredAgent = null;
+    for (let i = agents.length - 1; i >= 0; i--) {
+      if (agents[i].hitTest(p.x, p.y)) { hoveredAgent = agents[i]; break; }
+    }
+    if (hoveredAgent) {
+      e.preventDefault();
+      showTooltip(hoveredAgent, touch);
+      // Hold timer: 500ms → open drawer
+      touchHoldTimer = setTimeout(() => { if (hoveredAgent) openDrawer(hoveredAgent); }, TOUCH_HOLD_MS);
+    }
+  }
+  function onTouchMove(e) {
+    clearTimeout(touchHoldTimer);
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const p = _canvasToRoomTouch(touch);
+    hoveredAgent = null;
+    for (let i = agents.length - 1; i >= 0; i--) {
+      if (agents[i].hitTest(p.x, p.y)) { hoveredAgent = agents[i]; break; }
+    }
+    if (hoveredAgent) {
+      e.preventDefault();
+      showTooltip(hoveredAgent, touch);
+    } else {
+      hideTooltip();
+    }
+  }
+  function onTouchEnd() {
+    clearTimeout(touchHoldTimer);
+  }
+
+  // ── Keyboard Navigation (C16) ──
+  function onWarRoomKey(e) {
+    // Only handle when War Room tab active
+    const wrTab = document.getElementById('tab-warroom');
+    if (!wrTab || wrTab.style.display === 'none' || wrTab.classList.contains('hidden')) return;
+    // Don't capture if typing in search
+    if (document.activeElement && document.activeElement.id === 'wrSearchInput') return;
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const dir = e.shiftKey ? -1 : 1;
+      _focusedIdx = ((_focusedIdx + dir) + agents.length) % agents.length;
+      hoveredAgent = agents[_focusedIdx];
+    } else if (e.key === 'Enter' && _focusedIdx >= 0 && _focusedIdx < agents.length) {
+      openDrawer(agents[_focusedIdx]);
+    } else if (e.key === 'Escape') {
+      closeDrawer();
+      _hideContextMenu();
+      hideTooltip();
+      _clearCompare();
+      searchHighlight = null;
+      const si = document.getElementById('wrSearchInput');
+      if (si) si.value = '';
+    } else if (e.key === 'f' || e.key === 'F') {
+      // Toggle findings panel
+      const fp = document.getElementById('wrFindings');
+      if (fp) fp.classList.toggle('open');
+    } else {
+      return; // don't prevent default for other keys
+    }
+  }
+
+  // ── Tooltip ──
   function showTooltip(a, e) {
     const tip = document.getElementById('wrTooltip');
     if (!tip) return;
 
-    // Position helper (shared)
-    function positionTip() {
-      const wrap = document.getElementById('warRoomWrap');
-      const wrapRect = wrap.getBoundingClientRect();
-      let tx = e.clientX - wrapRect.left + 16;
-      let ty = e.clientY - wrapRect.top - 10;
-      if (tx + 300 > wrapRect.width) tx = e.clientX - wrapRect.left - 280;
-      if (ty + 260 > wrapRect.height) ty = Math.max(0, ty - 140);
-      tip.style.left = tx + 'px';
-      tip.style.top  = ty + 'px';
-    }
+    const isMobile = window.innerWidth <= 768;
 
     // Triad Council: show full findings list
     if (a.zone === 'council') {
@@ -4070,25 +4543,24 @@ const WarRoom = (function() {
       const warnCount = a.findings.filter(f => f.severity === 'warning').length;
       let findingsHtml = '';
       if (a.findings.length > 0) {
-        findingsHtml = `<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">${a.findings.length} findings &middot; <span style="color:var(--red)">${critCount} crit</span> &middot; <span style="color:var(--amber)">${warnCount} warn</span></div>`;
+        findingsHtml = '<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">' + a.findings.length + ' findings &middot; <span style="color:var(--red)">' + critCount + ' crit</span> &middot; <span style="color:var(--amber)">' + warnCount + ' warn</span></div>';
         a.findings.slice(0, 12).forEach(f => {
           const color = sevColors[f.severity] || 'var(--text-mid)';
-          findingsHtml += `<div style="font-size:11px;color:${color};padding:1px 0">${f.text}</div>`;
+          findingsHtml += '<div style="font-size:11px;color:' + color + ';padding:1px 0">' + f.text + '</div>';
         });
         if (a.findings.length > 12) {
-          findingsHtml += `<div style="font-size:10px;color:var(--text-dim);margin-top:2px">+${a.findings.length - 12} more</div>`;
+          findingsHtml += '<div style="font-size:10px;color:var(--text-dim);margin-top:2px">+' + (a.findings.length - 12) + ' more</div>';
         }
       }
-      tip.innerHTML = `
-        <div style="margin-bottom:6px">
-          <span class="tt-ticker" style="color:${roleColor}">${a.ticker}</span>
-          <span class="tt-zone" style="background:rgba(130,60,200,0.1);color:${roleColor};border:1px solid ${roleColor}">TRIAD</span>
-        </div>
-        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${a.role || 'Council Member'}</div>
-        ${findingsHtml}
-      `;
+      tip.innerHTML =
+        '<div style="margin-bottom:6px">' +
+          '<span class="tt-ticker" style="color:' + roleColor + '">' + a.ticker + '</span>' +
+          '<span class="tt-zone" style="background:rgba(130,60,200,0.1);color:' + roleColor + ';border:1px solid ' + roleColor + '">TRIAD</span>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">' + (a.role || 'Council Member') + '</div>' +
+        findingsHtml;
       tip.classList.add('visible');
-      positionTip();
+      if (!isMobile) _positionTip(tip, e);
       return;
     }
 
@@ -4100,30 +4572,32 @@ const WarRoom = (function() {
 
     const priceStr = a.price != null ? '$' + a.price.toFixed(2) : '—';
     const changeStr = a.changePct != null
-      ? `<span style="color:${a.changePct >= 0 ? 'var(--green)' : 'var(--red)'}"> ${a.changePct >= 0 ? '+' : ''}${a.changePct.toFixed(2)}%</span>`
+      ? '<span style="color:' + (a.changePct >= 0 ? 'var(--green)' : 'var(--red)') + '"> ' + (a.changePct >= 0 ? '+' : '') + a.changePct.toFixed(2) + '%</span>'
       : '';
     const advStr = a.adv ? fmtVol(a.adv) : '—';
 
     let rows = '';
     if (a.zone !== 'commander') {
-      rows += `<div class="tt-row"><span class="tt-key">Price</span><span class="tt-val">${priceStr}${changeStr}</span></div>`;
+      rows += '<div class="tt-row"><span class="tt-key">Price</span><span class="tt-val">' + priceStr + changeStr + '</span></div>';
     }
-    if (a.cost) rows += `<div class="tt-row"><span class="tt-key">Cost basis</span><span class="tt-val">$${a.cost.toFixed(2)}</span></div>`;
-    if (a.tier) rows += `<div class="tt-row"><span class="tt-key">Tier</span><span class="tt-val">${a.tier}</span></div>`;
-    if (a.adv) rows += `<div class="tt-row"><span class="tt-key">ADV (20d)</span><span class="tt-val">${advStr}</span></div>`;
-    if (a.removal) rows += `<div class="tt-row"><span class="tt-key">Removal</span><span class="tt-val">${a.removal}</span></div>`;
-    rows += `<div class="tt-row"><span class="tt-key">State</span><span class="tt-val" style="color:${a.state === 'frozen' ? 'var(--cyan)' : 'var(--text-bright)'}">${a.state.toUpperCase()}</span></div>`;
+    if (a.cost) rows += '<div class="tt-row"><span class="tt-key">Cost basis</span><span class="tt-val">$' + a.cost.toFixed(2) + '</span></div>';
+    if (a.tier) rows += '<div class="tt-row"><span class="tt-key">Tier</span><span class="tt-val">' + a.tier + '</span></div>';
+    if (a.adv) rows += '<div class="tt-row"><span class="tt-key">ADV (20d)</span><span class="tt-val">' + advStr + '</span></div>';
+    if (a.removal) rows += '<div class="tt-row"><span class="tt-key">Removal</span><span class="tt-val">' + a.removal + '</span></div>';
+    rows += '<div class="tt-row"><span class="tt-key">State</span><span class="tt-val" style="color:' + (a.state === 'frozen' ? 'var(--cyan)' : 'var(--text-bright)') + '">' + a.state.toUpperCase() + '</span></div>';
 
-    const flagStr = a.flags.length > 0 ? `<div class="tt-flags">${a.flags.join(' · ')}</div>` : '';
-    const thesisStr = a.thesis ? `<div style="margin-top:4px;font-size:10px;color:var(--text-mid);border-top:1px solid var(--border);padding-top:4px">${a.thesis}</div>` : '';
+    const flagStr = a.flags.length > 0 ? '<div class="tt-flags">' + a.flags.join(' · ') + '</div>' : '';
+    const thesisStr = a.thesis ? '<div style="margin-top:4px;font-size:10px;color:var(--text-mid);border-top:1px solid var(--border);padding-top:4px">' + a.thesis + '</div>' : '';
 
-    tip.innerHTML = `
-      <div style="margin-bottom:6px"><span class="tt-ticker">${a.ticker}</span>${zoneBadge}</div>
-      ${rows}${flagStr}${thesisStr}
-    `;
+    tip.innerHTML =
+      '<div style="margin-bottom:6px"><span class="tt-ticker">' + a.ticker + '</span>' + zoneBadge + '</div>' +
+      rows + flagStr + thesisStr;
     tip.classList.add('visible');
 
-    // Position tooltip
+    if (!isMobile) _positionTip(tip, e);
+  }
+
+  function _positionTip(tip, e) {
     const wrap = document.getElementById('warRoomWrap');
     const wrapRect = wrap.getBoundingClientRect();
     let tx = e.clientX - wrapRect.left + 16;
@@ -4139,6 +4613,264 @@ const WarRoom = (function() {
     if (tip) tip.classList.remove('visible');
   }
 
+  // ── Agent Detail Drawer (C13) ──
+  function openDrawer(a) {
+    if (!a) return;
+    drawerAgent = a;
+    const drawer = document.getElementById('wrDrawer');
+    const content = document.getElementById('wrDrawerContent');
+    if (!drawer || !content) return;
+
+    let html = '<div class="drawer-ticker">' + a.ticker + '</div>';
+
+    // Zone badge
+    let zoneStyle = 'background:var(--bg-3);color:var(--text-mid);border:1px solid var(--border)';
+    let zoneLabel = a.zone.toUpperCase();
+    if (a.zone === 'arsenal') zoneStyle = 'background:var(--blue-dim);color:var(--blue);border:1px solid var(--blue)';
+    else if (a.zone === 'watchtower') zoneStyle = 'background:rgba(0,200,224,0.1);color:var(--cyan);border:1px solid rgba(0,200,224,0.3)';
+    else if (a.zone === 'council') { zoneLabel = 'TRIAD'; zoneStyle = 'background:rgba(130,60,200,0.1);color:#b080ff;border:1px solid #b080ff'; }
+    html += '<div class="drawer-zone" style="' + zoneStyle + '">' + zoneLabel + '</div>';
+
+    if (a.role) html += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">' + a.role + '</div>';
+
+    // Data rows
+    if (a.zone !== 'commander' && a.zone !== 'council') {
+      if (a.price != null) {
+        const chg = a.changePct != null ? (' <span style="color:' + (a.changePct >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (a.changePct >= 0 ? '+' : '') + a.changePct.toFixed(2) + '%</span>') : '';
+        html += '<div class="drawer-row"><span class="drawer-key">Price</span><span class="drawer-val">$' + a.price.toFixed(2) + chg + '</span></div>';
+      }
+      if (a.cost) html += '<div class="drawer-row"><span class="drawer-key">Cost Basis</span><span class="drawer-val">$' + a.cost.toFixed(2) + '</span></div>';
+      if (a.tier) html += '<div class="drawer-row"><span class="drawer-key">Tier</span><span class="drawer-val">' + a.tier + '</span></div>';
+      if (a.adv) html += '<div class="drawer-row"><span class="drawer-key">ADV (20d)</span><span class="drawer-val">' + fmtVol(a.adv) + '</span></div>';
+      if (a.removal) html += '<div class="drawer-row"><span class="drawer-key">Removal</span><span class="drawer-val">' + a.removal + '</span></div>';
+      html += '<div class="drawer-row"><span class="drawer-key">State</span><span class="drawer-val" style="color:' + (a.state === 'frozen' ? 'var(--cyan)' : 'var(--text-bright)') + '">' + a.state.toUpperCase() + '</span></div>';
+    }
+
+    // Flags
+    if (a.flags.length > 0) {
+      html += '<div class="drawer-section">Flags & Warnings</div>';
+      html += '<div class="drawer-flags">' + a.flags.join('<br>') + '</div>';
+    }
+
+    // Thesis
+    if (a.thesis) {
+      html += '<div class="drawer-section">Thesis</div>';
+      html += '<div style="font-size:11px;color:var(--text-mid)">' + a.thesis + '</div>';
+    }
+
+    // Council findings
+    if (a.zone === 'council' && a.findings && a.findings.length > 0) {
+      const sevColors = { critical: 'var(--red)', warning: 'var(--amber)', info: 'var(--cyan)', ok: 'var(--green)' };
+      html += '<div class="drawer-section">Findings (' + a.findings.length + ')</div>';
+      a.findings.forEach(f => {
+        html += '<div style="font-size:11px;color:' + (sevColors[f.severity] || 'var(--text-mid)') + ';padding:2px 0">' + f.text + '</div>';
+      });
+    }
+
+    content.innerHTML = html;
+    drawer.classList.add('open');
+    hideTooltip();
+  }
+
+  function closeDrawer() {
+    drawerAgent = null;
+    const drawer = document.getElementById('wrDrawer');
+    if (drawer) drawer.classList.remove('open');
+  }
+
+  // ── Zone Filter Toggles (C14) ──
+  function toggleSectorFilter(sector) {
+    if (sector === 'all') {
+      sectorFilters = {};
+      // Reset all legend items
+      document.querySelectorAll('#wrLegend .leg-item').forEach(el => el.classList.remove('dimmed'));
+      return;
+    }
+    if (sectorFilters[sector] === undefined) sectorFilters[sector] = true;
+    sectorFilters[sector] = !sectorFilters[sector];
+    // Update legend item visual
+    const legItems = document.querySelectorAll('#wrLegend .leg-item');
+    legItems.forEach(el => {
+      const s = el.dataset.sector;
+      if (s === sector) el.classList.toggle('dimmed', sectorFilters[sector] === false);
+    });
+    try { sessionStorage.setItem('wr_filters', JSON.stringify(sectorFilters)); } catch (_) {}
+  }
+
+  // ── Search Highlight (C15) ──
+  function setSearchHighlight(ticker) {
+    searchHighlight = ticker ? ticker.toUpperCase() : null;
+  }
+
+  // ── Ambient Mode (D23) ──
+  function toggleAmbient() {
+    ambientMode = !ambientMode;
+    const wrap = document.getElementById('warRoomWrap');
+    if (wrap) wrap.classList.toggle('ambient', ambientMode);
+    const btn = document.getElementById('wrBtnAmbient');
+    if (btn) btn.classList.toggle('active', ambientMode);
+  }
+
+  // ── Multi-Agent Comparison (C18) ──
+  function _addToCompare(a) {
+    if (compareAgents.length >= MAX_COMPARE || compareAgents.includes(a)) return;
+    compareAgents.push(a);
+    _renderCompare();
+  }
+  function _clearCompare() {
+    compareAgents = [];
+    const panel = document.getElementById('wrCompare');
+    if (panel) { panel.classList.remove('visible'); panel.innerHTML = '<button class="cmp-clear" id="wrCmpClear">✕ Clear</button>'; }
+  }
+  function _renderCompare() {
+    const panel = document.getElementById('wrCompare');
+    if (!panel) return;
+    if (compareAgents.length === 0) { _clearCompare(); return; }
+    let html = '<button class="cmp-clear" id="wrCmpClear">✕ Clear</button>';
+    compareAgents.forEach(a => {
+      const chg = a.changePct != null ? ((a.changePct >= 0 ? '+' : '') + a.changePct.toFixed(2) + '%') : '—';
+      const chgColor = (a.changePct != null && a.changePct >= 0) ? 'var(--green)' : 'var(--red)';
+      html += '<div class="cmp-card">' +
+        '<div class="cmp-ticker">' + a.ticker + '</div>' +
+        '<div class="cmp-row"><span>Price</span><span>' + (a.price != null ? '$' + a.price.toFixed(2) : '—') + '</span></div>' +
+        '<div class="cmp-row"><span>Change</span><span style="color:' + chgColor + '">' + chg + '</span></div>' +
+        '<div class="cmp-row"><span>ADV</span><span>' + (a.adv ? fmtVol(a.adv) : '—') + '</span></div>' +
+        '<div class="cmp-row"><span>Zone</span><span>' + a.zone.toUpperCase() + '</span></div>' +
+        '<div class="cmp-row"><span>State</span><span>' + a.state.toUpperCase() + '</span></div>' +
+        '</div>';
+    });
+    panel.innerHTML = html;
+    panel.classList.add('visible');
+    // Re-bind clear button
+    const clr = document.getElementById('wrCmpClear');
+    if (clr) clr.addEventListener('click', _clearCompare);
+  }
+
+  // ── Findings Panel (B9) ──
+  function _updateFindingsPanel() {
+    const content = document.getElementById('wrFindingsContent');
+    if (!content) return;
+    const triad = agents.filter(a => a.zone === 'council');
+    const sevColors = { critical: 'var(--red)', warning: 'var(--amber)', info: 'var(--cyan)', ok: 'var(--green)' };
+    let html = '';
+    triad.forEach(a => {
+      const roleColor = a.ticker === 'DOCTRINE' ? '#b080ff' : a.ticker === 'GATE' ? '#50a8f0' : '#50cc80';
+      html += '<div class="findings-agent" style="color:' + roleColor + '">' + a.ticker + ' — ' + (a.role || '') + '</div>';
+      (a.findings || []).forEach(f => {
+        html += '<div class="finding-item" style="color:' + (sevColors[f.severity] || 'var(--text-mid)') + '">' + f.text + '</div>';
+      });
+    });
+    content.innerHTML = html;
+  }
+
+  // ── Consensus Banner (B10) ──
+  function _updateConsensusBanner() {
+    const el = document.getElementById('wrConsensus');
+    if (!el) return;
+    if (consensusTickers.length > 0) {
+      el.textContent = '⚡ CONSENSUS: ' + consensusTickers.join(' · ') + ' — 2+ Triad agents flagged';
+      el.classList.add('visible');
+    } else {
+      el.classList.remove('visible');
+    }
+  }
+
+  // ── DOM Controls Init ──
+  function _initDOMControls() {
+    // Drawer close
+    const dc = document.getElementById('wrDrawerClose');
+    if (dc) dc.addEventListener('click', closeDrawer);
+
+    // Click outside drawer to close
+    document.addEventListener('click', (e) => {
+      const drawer = document.getElementById('wrDrawer');
+      if (drawer && drawer.classList.contains('open') && !drawer.contains(e.target) && e.target !== canvas) {
+        closeDrawer();
+      }
+      _hideContextMenu();
+    });
+
+    // Findings panel toggle
+    const ft = document.getElementById('wrFindingsToggle');
+    if (ft) ft.addEventListener('click', () => {
+      const fp = document.getElementById('wrFindings');
+      if (fp) fp.classList.toggle('open');
+    });
+    const fb = document.getElementById('wrBtnFindings');
+    if (fb) fb.addEventListener('click', () => {
+      const fp = document.getElementById('wrFindings');
+      if (fp) fp.classList.toggle('open');
+    });
+
+    // Ambient mode
+    const ab = document.getElementById('wrBtnAmbient');
+    if (ab) ab.addEventListener('click', toggleAmbient);
+
+    // Search input (C15)
+    const si = document.getElementById('wrSearchInput');
+    if (si) {
+      si.addEventListener('input', () => { setSearchHighlight(si.value.trim()); });
+      si.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const match = agents.find(a => a.ticker === searchHighlight);
+          if (match) openDrawer(match);
+        } else if (e.key === 'Escape') {
+          si.value = '';
+          setSearchHighlight(null);
+          si.blur();
+        }
+      });
+    }
+
+    // Legend filter toggles (C14)
+    const legend = document.getElementById('wrLegend');
+    if (legend) {
+      legend.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-sector]');
+        if (item) toggleSectorFilter(item.dataset.sector);
+      });
+    }
+
+    // Context menu actions (C17)
+    const ctxMenu = document.getElementById('wrContextMenu');
+    if (ctxMenu) {
+      ctxMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.ctx-item');
+        if (!item || !ctxMenu._target) return;
+        const action = item.dataset.action;
+        const a = ctxMenu._target;
+        if (action === 'view') openDrawer(a);
+        else if (action === 'compare') _addToCompare(a);
+        else if (action === 'goto') {
+          // Switch to appropriate tab
+          const tabId = a.zone === 'arsenal' ? 'arsenal' : a.zone === 'watchtower' ? 'watchtower' : null;
+          if (tabId && typeof switchTab === 'function') switchTab(tabId);
+        }
+        _hideContextMenu();
+      });
+    }
+
+    // Compare clear
+    const cc = document.getElementById('wrCmpClear');
+    if (cc) cc.addEventListener('click', _clearCompare);
+
+    // Consensus banner dismiss
+    const cb = document.getElementById('wrConsensus');
+    if (cb) cb.addEventListener('click', () => cb.classList.remove('visible'));
+
+    // Restore sector filters from sessionStorage
+    try {
+      const saved = sessionStorage.getItem('wr_filters');
+      if (saved) {
+        sectorFilters = JSON.parse(saved);
+        document.querySelectorAll('#wrLegend .leg-item').forEach(el => {
+          const s = el.dataset.sector;
+          if (sectorFilters[s] === false) el.classList.add('dimmed');
+        });
+      }
+    } catch (_) {}
+  }
+
   // ── Public API ──
   return {
     init: init,
@@ -4146,9 +4878,21 @@ const WarRoom = (function() {
     stop: stop,
     resize: resize,
     syncPrices: syncPrices,
-    updateFromPriceData: updateFromPriceData,
+    updateFromPriceData: function(d) {
+      updateFromPriceData(d);
+      lastRefreshTime = Date.now();
+      _updateFindingsPanel();
+      _updateConsensusBanner();
+    },
+    openDrawer: openDrawer,
+    closeDrawer: closeDrawer,
+    toggleSectorFilter: toggleSectorFilter,
+    setSearchHighlight: setSearchHighlight,
+    toggleAmbient: toggleAmbient,
     get agents() { return agents; },
     get regime() { return regime; },
+    get _focusedIdx() { return _focusedIdx; },
+    set _focusedIdx(v) { _focusedIdx = v; },
   };
 })();
 
