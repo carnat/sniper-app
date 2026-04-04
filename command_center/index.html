@@ -2732,7 +2732,9 @@ const WarRoom = (function() {
 
   // ── Sector palettes ──
   const PAL = {
-    semi:    { body: '#2070c0', head: '#4a9aee', hi: '#6ab8ff', dk: '#103860', skin: '#e8c8a0' },
+    semi_a:  { body: '#2070c0', head: '#4a9aee', hi: '#6ab8ff', dk: '#103860', skin: '#e8c8a0' },
+    semi_b:  { body: '#1a5a9a', head: '#3a80cc', hi: '#5aa0ee', dk: '#0a2848', skin: '#f0d0a8' },
+    semi_c:  { body: '#2888d0', head: '#58b0ee', hi: '#78c8ff', dk: '#184870', skin: '#d8c098' },
     defense: { body: '#2a7040', head: '#4aba6a', hi: '#6ada8a', dk: '#0a3018', skin: '#d8b890' },
     space:   { body: '#5a2aaa', head: '#8a5aee', hi: '#aa7aff', dk: '#2a0a5a', skin: '#e0c0b0' },
     network: { body: '#b06000', head: '#ee8a20', hi: '#ffaa40', dk: '#5a2800', skin: '#e8c8a0' },
@@ -2746,9 +2748,14 @@ const WarRoom = (function() {
   };
 
   // ── Ticker → sector ──
+  // Semi-conductor tickers split into 3 visual sub-types for character diversity:
+  //   semi_a: fab/foundry (flat cap, standard build)
+  //   semi_b: chip design (mohawk, lean build)
+  //   semi_c: equipment/materials (beanie, stocky build)
   const SEC = {
-    VRT:'semi',MU:'semi',TSM:'semi',COHR:'semi',TSEM:'semi',FORM:'semi',ENTG:'semi',
-    ONTO:'semi',SKYT:'semi',QRVO:'semi',NBIS:'semi',MOD:'semi',
+    VRT:'semi_a',MU:'semi_b',TSM:'semi_a',COHR:'semi_c',
+    TSEM:'semi_b',FORM:'semi_c',ENTG:'semi_c',
+    ONTO:'semi_c',SKYT:'semi_b',QRVO:'semi_b',NBIS:'semi_a',MOD:'semi_a',
     ASTS:'space',RKLB:'space',SATL:'space',PL:'space',
     ANET:'network',FN:'network',LITE:'network',ONDS:'network',APH:'network',
     VST:'energy', BWXT:'defense',KTOS:'defense',PLTR:'defense',
@@ -2801,7 +2808,15 @@ const WarRoom = (function() {
     constructor(ticker, zone, tileX, tileY) {
       this.ticker = ticker;
       this.zone = zone;
-      this.sector = zone === 'sentinel' ? 'sentinel' : zone === 'commander' ? 'cmd' : (SEC[ticker] || 'semi');
+      // Determine visual sector for body style + palette
+      const ZONE_SECTOR = { sentinel: 'sentinel', commander: 'cmd' };
+      if (ZONE_SECTOR[zone]) {
+        this.sector = ZONE_SECTOR[zone];
+      } else if (zone === 'council') {
+        this.sector = ticker.toLowerCase();
+      } else {
+        this.sector = SEC[ticker] || 'semi_a';
+      }
       this.pal = PAL[this.sector];
       // pixel position
       this.x = tileX * TILE + TILE * 2;
@@ -3488,19 +3503,21 @@ const WarRoom = (function() {
 
   // ── Body style diversity per sector (inspired by Pixel Agents' 6 diverse characters) ──
   const BODY_STYLES = {
-    semi:     { hairStyle: 'flat',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
-    space:    { hairStyle: 'spiky', bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null },
-    network:  { hairStyle: 'side',  bodyW: 9, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
-    energy:   { hairStyle: 'buzz',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
-    defense:  { hairStyle: 'crew',  bodyW: 9, bodyH: 7, legLen: 3, armLen: 4, accessory: null },
-    vault:    { hairStyle: 'flat',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
-    sentinel: { hairStyle: 'flat',  bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
-    cmd:      { hairStyle: 'flat',  bodyW: 8, bodyH: 9, legLen: 5, armLen: 5, accessory: 'star' },
-    doctrine: { hairStyle: 'none',  bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
-    gate:     { hairStyle: 'none',  bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
-    watcher:  { hairStyle: 'none',  bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
+    semi_a:   { hairStyle: 'flat',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
+    semi_b:   { hairStyle: 'mohawk', bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null },
+    semi_c:   { hairStyle: 'beanie', bodyW: 9, bodyH: 8, legLen: 4, armLen: 4, accessory: null },
+    space:    { hairStyle: 'spiky',  bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null },
+    network:  { hairStyle: 'side',   bodyW: 9, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
+    energy:   { hairStyle: 'buzz',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
+    defense:  { hairStyle: 'crew',   bodyW: 9, bodyH: 7, legLen: 3, armLen: 4, accessory: null },
+    vault:    { hairStyle: 'flat',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
+    sentinel: { hairStyle: 'flat',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
+    cmd:      { hairStyle: 'flat',   bodyW: 8, bodyH: 9, legLen: 5, armLen: 5, accessory: 'star' },
+    doctrine: { hairStyle: 'none',   bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
+    gate:     { hairStyle: 'none',   bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
+    watcher:  { hairStyle: 'none',   bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
   };
-  const DEFAULT_BODY_STYLE = BODY_STYLES.semi;
+  const DEFAULT_BODY_STYLE = BODY_STYLES.semi_a;
 
   function getBodyStyle(sector) {
     return BODY_STYLES[sector] || DEFAULT_BODY_STYLE;
@@ -3646,6 +3663,24 @@ const WarRoom = (function() {
         ctx.fillRect(x - 3, headTop, 6, 2);
         ctx.fillRect(x - 3 + (f > 0 ? 0 : 4), headTop, 2, 4);
         break;
+      case 'mohawk':
+        // Tall center ridge
+        ctx.fillRect(x - 1, headTop - 3, 2, 3);
+        ctx.fillRect(x - 2, headTop, 4, 1);
+        // Side shave
+        ctx.fillStyle = p.dk;
+        ctx.fillRect(x - 3, headTop, 1, 2);
+        ctx.fillRect(x + 2, headTop, 1, 2);
+        break;
+      case 'beanie':
+        // Rounded cap covering top of head
+        ctx.fillRect(x - 3, headTop, 6, 3);
+        ctx.fillRect(x - 4, headTop + 1, 1, 2);
+        ctx.fillRect(x + 3, headTop + 1, 1, 2);
+        // Beanie rim
+        ctx.fillStyle = p.dk;
+        ctx.fillRect(x - 3, headTop + 2, 6, 1);
+        break;
       case 'spiky':
         ctx.fillRect(x - 3, headTop, 6, 2);
         ctx.fillRect(x - 3, headTop - 1, 2, 1);
@@ -3707,7 +3742,8 @@ const WarRoom = (function() {
     ctx.save();
     ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = 1;
-    const spriteTop = bs.hairStyle === 'spiky' ? headTop - 2 : bs.hairStyle === 'none' ? headTop - 1 : headTop;
+    const HAIR_TOP_OFFSET = { spiky: -2, mohawk: -3, none: -1 };
+    const spriteTop = headTop + (HAIR_TOP_OFFSET[bs.hairStyle] || 0);
     const spriteBot = y + bs.legLen;
     ctx.strokeRect(x - halfW - 1, spriteTop, bs.bodyW + 4, spriteBot - spriteTop);
     ctx.restore();
