@@ -2913,8 +2913,8 @@ const WarRoom = (function() {
     }
 
     hitTest(px, py) {
-      const hw = 14, hh = 18;
-      return px >= this.x - hw && px <= this.x + hw && py >= this.y - hh && py <= this.y + 4;
+      const hw = 20, hh = 28;
+      return px >= this.x - hw && px <= this.x + hw && py >= this.y - hh && py <= this.y + 8;
     }
   }
 
@@ -2951,8 +2951,9 @@ const WarRoom = (function() {
     const maxW = wrap.clientWidth;
     const maxH = wrap.clientHeight || (window.innerHeight - HEADER_FOOTER_H);
     scale = Math.max(1, Math.min(Math.floor(maxW / ROOM_W), Math.floor(maxH / ROOM_H), 3));
-    canvas.width = ROOM_W * scale;
-    canvas.height = ROOM_H * scale;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = ROOM_W * scale * dpr;
+    canvas.height = ROOM_H * scale * dpr;
     canvas.style.width = (ROOM_W * scale) + 'px';
     canvas.style.height = (ROOM_H * scale) + 'px';
     ctx.imageSmoothingEnabled = false;
@@ -3400,7 +3401,7 @@ const WarRoom = (function() {
 
     // Zone labels
     ctx.save();
-    ctx.font = '7px monospace';
+    ctx.font = '9px monospace';
     ctx.textAlign = 'left';
     ctx.fillStyle = '#4a7aaa';
     ctx.fillText('ARSENAL', 2.5 * TILE, 4.2 * TILE);
@@ -3431,18 +3432,18 @@ const WarRoom = (function() {
     ctx.stroke();
     // Table center label
     ctx.save();
-    ctx.font = 'bold 6px monospace';
+    ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#4a4a8a';
-    ctx.fillText('TRIAD', cx, cy + 2);
+    ctx.fillText('TRIAD', cx, cy + 3);
     ctx.restore();
     // Consensus glow when 2-of-3 agree on same ticker
     if (consensusTickers.length > 0) {
       ctx.save();
-      ctx.font = 'bold 4px monospace';
+      ctx.font = 'bold 6px monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#cc8800';
-      ctx.fillText('⚡ ' + consensusTickers.slice(0, 3).join(' · '), cx, cy - 8);
+      ctx.fillText('⚡ ' + consensusTickers.slice(0, 3).join(' · '), cx, cy - 10);
       ctx.restore();
     }
   }
@@ -3450,72 +3451,72 @@ const WarRoom = (function() {
   function drawDesk(x, y, agent) {
     // Small desk behind agent
     ctx.fillStyle = DESK_COLOR;
-    ctx.fillRect(x, y - 2, TILE * 3, TILE + 2);
+    ctx.fillRect(x, y - 3, TILE * 3, TILE + 3);
     ctx.fillStyle = DESK_TOP;
-    ctx.fillRect(x, y - 2, TILE * 3, 2);
+    ctx.fillRect(x, y - 3, TILE * 3, 3);
     // Monitor frame
     ctx.fillStyle = '#0a1820';
-    ctx.fillRect(x + 10, y - 6, 12, 6);
+    ctx.fillRect(x + 8, y - 10, 18, 9);
     // Monitor screen
     ctx.fillStyle = '#1a3050';
-    ctx.fillRect(x + 11, y - 5, 10, 4);
+    ctx.fillRect(x + 9, y - 9, 16, 7);
     // Active monitor: scrolling code lines when agent is deployed
     if (agent && agent.state === 'deployed') {
       const t = agent.t;
       ctx.fillStyle = 'rgba(58,159,255,0.25)';
-      for (let i = 0; i < 3; i++) {
-        const ly = y - 4.5 + i * 1.2;
-        const lw = 3 + ((Math.floor(t * 2 + i * 7)) % 5);
-        const lx = x + 12 + ((Math.floor(t + i * 3)) % 2);
-        ctx.fillRect(lx, ly, lw, 0.5);
+      for (let i = 0; i < 4; i++) {
+        const ly = y - 8.5 + i * 1.5;
+        const lw = 4 + ((Math.floor(t * 2 + i * 7)) % 7);
+        const lx = x + 10 + ((Math.floor(t + i * 3)) % 3);
+        ctx.fillRect(lx, ly, lw, 0.8);
       }
       // Cursor blink
       if (Math.floor(t * 3) % 2 === 0) {
         ctx.fillStyle = 'rgba(58,255,120,0.4)';
-        ctx.fillRect(x + 12, y - 2.5, 1, 1);
+        ctx.fillRect(x + 10, y - 3.5, 2, 2);
       }
     }
     // Screen glow
     ctx.fillStyle = 'rgba(58,159,255,0.10)';
-    ctx.fillRect(x + 11, y - 5, 10, 4);
+    ctx.fillRect(x + 9, y - 9, 16, 7);
     // Monitor stand
     ctx.fillStyle = '#0a1820';
-    ctx.fillRect(x + 15, y, 2, 1);
+    ctx.fillRect(x + 15, y - 1, 3, 2);
     // Keyboard (tiny dots in front of monitor)
     ctx.fillStyle = '#1a2a3a';
-    ctx.fillRect(x + 10, y + 1, 12, 2);
+    ctx.fillRect(x + 8, y + 2, 18, 3);
     ctx.fillStyle = '#2a3a4a';
-    for (let i = 0; i < 5; i++) {
-      ctx.fillRect(x + 11 + i * 2.2, y + 1.3, 1.5, 0.8);
+    for (let i = 0; i < 6; i++) {
+      ctx.fillRect(x + 9 + i * 2.8, y + 2.5, 2, 1.2);
     }
     // Coffee cup on desk
     ctx.fillStyle = '#3a2818';
-    ctx.fillRect(x + 26, y - 1, 3, 3);
+    ctx.fillRect(x + 30, y - 2, 4, 4);
     ctx.fillStyle = '#5a3820';
-    ctx.fillRect(x + 26, y - 1, 3, 1);
+    ctx.fillRect(x + 30, y - 2, 4, 1);
     // Steam (animated)
     if (agent) {
       const st = Math.sin(agent.t * 2) * 0.5;
       ctx.fillStyle = 'rgba(180,180,200,0.15)';
-      ctx.fillRect(x + 27, y - 2.5 + st, 1, 1);
+      ctx.fillRect(x + 31, y - 3.5 + st, 2, 2);
     }
   }
 
   // ── Body style diversity per sector (inspired by Pixel Agents' 6 diverse characters) ──
   const BODY_STYLES = {
-    semi_a:   { hairStyle: 'flat',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
-    semi_b:   { hairStyle: 'mohawk', bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null },
-    semi_c:   { hairStyle: 'beanie', bodyW: 9, bodyH: 8, legLen: 4, armLen: 4, accessory: null },
-    space:    { hairStyle: 'spiky',  bodyW: 7, bodyH: 9, legLen: 5, armLen: 5, accessory: null },
-    network:  { hairStyle: 'side',   bodyW: 9, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
-    energy:   { hairStyle: 'buzz',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: null },
-    defense:  { hairStyle: 'crew',   bodyW: 9, bodyH: 7, legLen: 3, armLen: 4, accessory: null },
-    vault:    { hairStyle: 'flat',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
-    sentinel: { hairStyle: 'flat',   bodyW: 8, bodyH: 8, legLen: 4, armLen: 5, accessory: 'headset' },
-    cmd:      { hairStyle: 'flat',   bodyW: 8, bodyH: 9, legLen: 5, armLen: 5, accessory: 'star' },
-    doctrine: { hairStyle: 'none',   bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
-    gate:     { hairStyle: 'none',   bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
-    watcher:  { hairStyle: 'none',   bodyW: 9, bodyH: 9, legLen: 4, armLen: 5, accessory: 'robe' },
+    semi_a:   { hairStyle: 'flat',   bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: null },
+    semi_b:   { hairStyle: 'mohawk', bodyW: 10, bodyH: 13, legLen: 7, armLen: 7, accessory: null },
+    semi_c:   { hairStyle: 'beanie', bodyW: 13, bodyH: 12, legLen: 6, armLen: 6, accessory: null },
+    space:    { hairStyle: 'spiky',  bodyW: 10, bodyH: 13, legLen: 7, armLen: 7, accessory: null },
+    network:  { hairStyle: 'side',   bodyW: 13, bodyH: 12, legLen: 6, armLen: 7, accessory: null },
+    energy:   { hairStyle: 'buzz',   bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: null },
+    defense:  { hairStyle: 'crew',   bodyW: 13, bodyH: 10, legLen: 5, armLen: 6, accessory: null },
+    vault:    { hairStyle: 'flat',   bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: 'headset' },
+    sentinel: { hairStyle: 'flat',   bodyW: 12, bodyH: 12, legLen: 6, armLen: 7, accessory: 'headset' },
+    cmd:      { hairStyle: 'flat',   bodyW: 12, bodyH: 13, legLen: 7, armLen: 7, accessory: 'star' },
+    doctrine: { hairStyle: 'none',   bodyW: 14, bodyH: 14, legLen: 6, armLen: 7, accessory: 'robe' },
+    gate:     { hairStyle: 'none',   bodyW: 14, bodyH: 14, legLen: 6, armLen: 7, accessory: 'robe' },
+    watcher:  { hairStyle: 'none',   bodyW: 14, bodyH: 14, legLen: 6, armLen: 7, accessory: 'robe' },
   };
   const DEFAULT_BODY_STYLE = BODY_STYLES.semi_a;
 
@@ -3536,10 +3537,10 @@ const WarRoom = (function() {
     if (a.zone === 'arsenal') {
       drawDesk(a.deskX, a.deskY, a);
     }
-    // Council agents: small seat indicator
+    // Council agents: seat indicator
     if (a.zone === 'council') {
       ctx.fillStyle = '#0d1020';
-      ctx.fillRect(Math.round(a.x) - 4, Math.round(a.y + a.bob) + 1, 8, 4);
+      ctx.fillRect(x - 6, y + 2, 12, 5);
     }
 
     ctx.save();
@@ -3548,7 +3549,7 @@ const WarRoom = (function() {
     // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.beginPath();
-    ctx.ellipse(x, y + 2, 5, 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + 3, 8, 3, 0, 0, Math.PI * 2);
     ctx.fill();
 
     const f = a.facing;
@@ -3558,56 +3559,56 @@ const WarRoom = (function() {
     let leftLegOff = 0, rightLegOff = 0;
     if (a.state === 'walking') {
       switch (a.frame) {
-        case 0: leftLegOff = -1; rightLegOff = 2; break;  // right forward
+        case 0: leftLegOff = -2; rightLegOff = 3; break;  // right forward
         case 1: leftLegOff = 0;  rightLegOff = 0; break;  // neutral
-        case 2: leftLegOff = 2;  rightLegOff = -1; break; // left forward
+        case 2: leftLegOff = 3;  rightLegOff = -2; break; // left forward
         case 3: leftLegOff = 0;  rightLegOff = 0; break;  // neutral
       }
     }
     ctx.fillStyle = '#1a1a2a';
-    ctx.fillRect(x - 3, y - 3, 2, bs.legLen + leftLegOff);
-    ctx.fillRect(x + 1, y - 3, 2, bs.legLen + rightLegOff);
+    ctx.fillRect(x - 4, y - 4, 3, bs.legLen + leftLegOff);
+    ctx.fillRect(x + 2, y - 4, 3, bs.legLen + rightLegOff);
 
     // ── Body ──
-    const bodyTop = y - 3 - bs.bodyH;
+    const bodyTop = y - 4 - bs.bodyH;
     if (bs.accessory === 'robe') {
       // Robed council members: wider flowing garment
       ctx.fillStyle = p.dk;
-      ctx.fillRect(x - halfW - 1, bodyTop, bs.bodyW + 2, bs.bodyH + 2);
+      ctx.fillRect(x - halfW - 2, bodyTop, bs.bodyW + 4, bs.bodyH + 3);
       ctx.fillStyle = p.body;
       ctx.fillRect(x - halfW, bodyTop, bs.bodyW, bs.bodyH);
       // Robe trim
       ctx.fillStyle = p.hi;
-      ctx.fillRect(x - halfW, bodyTop + bs.bodyH - 1, bs.bodyW, 1);
+      ctx.fillRect(x - halfW, bodyTop + bs.bodyH - 2, bs.bodyW, 2);
       // Center seam
       ctx.fillStyle = p.dk;
-      ctx.fillRect(x, bodyTop + 1, 1, bs.bodyH - 2);
+      ctx.fillRect(x, bodyTop + 2, 1, bs.bodyH - 4);
     } else {
       ctx.fillStyle = p.body;
       ctx.fillRect(x - halfW, bodyTop, bs.bodyW, bs.bodyH);
       // Body highlight
       ctx.fillStyle = p.hi;
-      ctx.fillRect(x - halfW + (f > 0 ? 0 : bs.bodyW - 2), bodyTop, 2, bs.bodyH);
+      ctx.fillRect(x - halfW + (f > 0 ? 0 : bs.bodyW - 3), bodyTop, 3, bs.bodyH);
     }
 
     // Star badge for Commander
     if (bs.accessory === 'star') {
       ctx.fillStyle = '#ffdd44';
-      ctx.fillRect(x - 1, bodyTop + 2, 2, 2);
+      ctx.fillRect(x - 1, bodyTop + 3, 3, 3);
     }
 
     // ── Arms (with walk-cycle swing and activity animations) ──
-    const armX1 = x - halfW - 2;
+    const armX1 = x - halfW - 3;
     const armX2 = x + halfW;
     if (isTyping) {
       // Typing pose: hands bob up/down
       const typeBob = a.frame === 0 ? 0 : 1;
       ctx.fillStyle = p.body;
-      ctx.fillRect(armX1, bodyTop + 2, 2, 4);
-      ctx.fillRect(armX2, bodyTop + 2, 2, 4);
+      ctx.fillRect(armX1, bodyTop + 3, 3, 5);
+      ctx.fillRect(armX2, bodyTop + 3, 3, 5);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(armX1, bodyTop + 5 + typeBob, 2, 2);
-      ctx.fillRect(armX2, bodyTop + 5 - typeBob, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 7 + typeBob, 3, 2);
+      ctx.fillRect(armX2, bodyTop + 7 - typeBob, 3, 2);
     } else if (a.state === 'walking') {
       // Arms swing opposite to legs
       let leftArmOff = 0, rightArmOff = 0;
@@ -3618,158 +3619,158 @@ const WarRoom = (function() {
         case 3: leftArmOff = 0; rightArmOff = 0;  break;
       }
       ctx.fillStyle = p.body;
-      ctx.fillRect(armX1, bodyTop + 1 + leftArmOff, 2, bs.armLen);
-      ctx.fillRect(armX2, bodyTop + 1 + rightArmOff, 2, bs.armLen);
+      ctx.fillRect(armX1, bodyTop + 2 + leftArmOff, 3, bs.armLen);
+      ctx.fillRect(armX2, bodyTop + 2 + rightArmOff, 3, bs.armLen);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(armX1, bodyTop + 1 + bs.armLen + leftArmOff, 2, 2);
-      ctx.fillRect(armX2, bodyTop + 1 + bs.armLen + rightArmOff, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 2 + bs.armLen + leftArmOff, 3, 2);
+      ctx.fillRect(armX2, bodyTop + 2 + bs.armLen + rightArmOff, 3, 2);
     } else if (isWatching) {
       // Watching: one hand up to eyes (binocular gesture)
       ctx.fillStyle = p.body;
-      ctx.fillRect(armX1, bodyTop + 1, 2, bs.armLen);
-      ctx.fillRect(armX2, bodyTop - 1, 2, 4);
+      ctx.fillRect(armX1, bodyTop + 2, 3, bs.armLen);
+      ctx.fillRect(armX2, bodyTop - 1, 3, 5);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(armX1, bodyTop + 1 + bs.armLen, 2, 2);
-      ctx.fillRect(armX2, bodyTop + 3, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 2 + bs.armLen, 3, 2);
+      ctx.fillRect(armX2, bodyTop + 4, 3, 2);
       // Small scope/binocular near eyes
       ctx.fillStyle = '#2a3a4a';
-      ctx.fillRect(x + halfW, bodyTop - 5, 2, 2);
+      ctx.fillRect(x + halfW, bodyTop - 7, 3, 3);
     } else {
       // Idle arms
       ctx.fillStyle = p.body;
-      ctx.fillRect(armX1, bodyTop + 1, 2, bs.armLen);
-      ctx.fillRect(armX2, bodyTop + 1, 2, bs.armLen);
+      ctx.fillRect(armX1, bodyTop + 2, 3, bs.armLen);
+      ctx.fillRect(armX2, bodyTop + 2, 3, bs.armLen);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(armX1, bodyTop + 1 + bs.armLen, 2, 2);
-      ctx.fillRect(armX2, bodyTop + 1 + bs.armLen, 2, 2);
+      ctx.fillRect(armX1, bodyTop + 2 + bs.armLen, 3, 2);
+      ctx.fillRect(armX2, bodyTop + 2 + bs.armLen, 3, 2);
     }
 
     // ── Head ──
-    const headTop = bodyTop - 6;
+    const headTop = bodyTop - 9;
     ctx.fillStyle = p.skin;
-    ctx.fillRect(x - 3, headTop, 6, 6);
+    ctx.fillRect(x - 4, headTop, 9, 9);
 
     // Watching state: head turns left-right
-    let eyeOffset = f > 0 ? 0 : 2;
+    let eyeOffset = f > 0 ? 0 : 3;
     if (isWatching) {
       const lookDir = Math.sin(a.t * 1.5);
-      eyeOffset = lookDir > 0.3 ? 0 : lookDir < -0.3 ? 2 : 1;
+      eyeOffset = lookDir > 0.3 ? 0 : lookDir < -0.3 ? 3 : 2;
     }
 
     // ── Hair styles ──
     ctx.fillStyle = p.head;
     switch (bs.hairStyle) {
       case 'flat':
-        ctx.fillRect(x - 3, headTop, 6, 2);
-        ctx.fillRect(x - 3 + (f > 0 ? 0 : 4), headTop, 2, 4);
+        ctx.fillRect(x - 4, headTop, 9, 3);
+        ctx.fillRect(x - 4 + (f > 0 ? 0 : 6), headTop, 3, 5);
         break;
       case 'mohawk':
         // Tall center ridge
-        ctx.fillRect(x - 1, headTop - 3, 2, 3);
-        ctx.fillRect(x - 2, headTop, 4, 1);
+        ctx.fillRect(x - 1, headTop - 4, 3, 4);
+        ctx.fillRect(x - 3, headTop, 6, 2);
         // Side shave
         ctx.fillStyle = p.dk;
-        ctx.fillRect(x - 3, headTop, 1, 2);
-        ctx.fillRect(x + 2, headTop, 1, 2);
+        ctx.fillRect(x - 4, headTop, 2, 3);
+        ctx.fillRect(x + 3, headTop, 2, 3);
         break;
       case 'beanie':
         // Rounded cap covering top of head
-        ctx.fillRect(x - 3, headTop, 6, 3);
-        ctx.fillRect(x - 4, headTop + 1, 1, 2);
-        ctx.fillRect(x + 3, headTop + 1, 1, 2);
+        ctx.fillRect(x - 4, headTop, 9, 4);
+        ctx.fillRect(x - 5, headTop + 1, 2, 3);
+        ctx.fillRect(x + 4, headTop + 1, 2, 3);
         // Beanie rim
         ctx.fillStyle = p.dk;
-        ctx.fillRect(x - 3, headTop + 2, 6, 1);
+        ctx.fillRect(x - 4, headTop + 3, 9, 1);
         break;
       case 'spiky':
-        ctx.fillRect(x - 3, headTop, 6, 2);
-        ctx.fillRect(x - 3, headTop - 1, 2, 1);
-        ctx.fillRect(x - 1, headTop - 2, 2, 1);
-        ctx.fillRect(x + 1, headTop - 1, 2, 1);
+        ctx.fillRect(x - 4, headTop, 9, 3);
+        ctx.fillRect(x - 4, headTop - 2, 3, 2);
+        ctx.fillRect(x - 1, headTop - 3, 3, 2);
+        ctx.fillRect(x + 2, headTop - 2, 3, 2);
         break;
       case 'side':
-        ctx.fillRect(x - 3, headTop, 6, 2);
-        ctx.fillRect(x - 3, headTop, 2, 5);
+        ctx.fillRect(x - 4, headTop, 9, 3);
+        ctx.fillRect(x - 4, headTop, 3, 7);
         break;
       case 'buzz':
-        ctx.fillRect(x - 3, headTop, 6, 1);
-        ctx.fillRect(x - 3 + (f > 0 ? 0 : 5), headTop, 1, 2);
+        ctx.fillRect(x - 4, headTop, 9, 2);
+        ctx.fillRect(x - 4 + (f > 0 ? 0 : 7), headTop, 2, 3);
         break;
       case 'crew':
-        ctx.fillRect(x - 3, headTop, 6, 2);
-        ctx.fillRect(x - 3, headTop + 2, 1, 1);
-        ctx.fillRect(x + 2, headTop + 2, 1, 1);
+        ctx.fillRect(x - 4, headTop, 9, 3);
+        ctx.fillRect(x - 4, headTop + 3, 2, 2);
+        ctx.fillRect(x + 3, headTop + 3, 2, 2);
         break;
       case 'none':
         // Robed council: hood
         ctx.fillStyle = p.dk;
-        ctx.fillRect(x - 4, headTop - 1, 8, 3);
-        ctx.fillRect(x - 4, headTop + 1, 1, 2);
-        ctx.fillRect(x + 3, headTop + 1, 1, 2);
+        ctx.fillRect(x - 5, headTop - 2, 11, 5);
+        ctx.fillRect(x - 5, headTop + 2, 2, 3);
+        ctx.fillRect(x + 4, headTop + 2, 2, 3);
         break;
     }
 
     // Headset accessory (vault/sentinel)
     if (bs.accessory === 'headset') {
       ctx.fillStyle = '#3a3a4a';
-      ctx.fillRect(x - 4, headTop + 2, 1, 3);
-      ctx.fillRect(x + 3, headTop + 2, 1, 3);
-      ctx.fillRect(x - 4, headTop + 1, 8, 1);
+      ctx.fillRect(x - 5, headTop + 3, 2, 4);
+      ctx.fillRect(x + 4, headTop + 3, 2, 4);
+      ctx.fillRect(x - 5, headTop + 2, 11, 1);
       // Mic
       ctx.fillStyle = '#5a5a6a';
-      ctx.fillRect(x - 4, headTop + 5, 1, 1);
+      ctx.fillRect(x - 5, headTop + 7, 2, 2);
     }
 
     // Eyes
     ctx.fillStyle = '#1a1a2a';
-    ctx.fillRect(x - 1 + eyeOffset, headTop + 3, 1, 1);
-    ctx.fillRect(x + 1 + eyeOffset - 1, headTop + 3, 1, 1);
+    ctx.fillRect(x - 2 + eyeOffset, headTop + 5, 1, 2);
+    ctx.fillRect(x + 1 + eyeOffset, headTop + 5, 1, 2);
 
     ctx.restore();
 
     // Frozen overlay
     if (frozen) {
       ctx.fillStyle = 'rgba(100,180,255,0.2)';
-      ctx.fillRect(x - 5, headTop - 1, 10, y + 4 - headTop + 1);
+      ctx.fillRect(x - 7, headTop - 2, 14, y + 5 - headTop + 2);
       // Ice crystals
       ctx.fillStyle = 'rgba(150,220,255,0.6)';
-      ctx.fillRect(x - 4, headTop + 1, 1, 1);
-      ctx.fillRect(x + 3, headTop + 7, 1, 1);
-      ctx.fillRect(x - 2, y - 1, 1, 1);
+      ctx.fillRect(x - 5, headTop + 2, 2, 2);
+      ctx.fillRect(x + 4, headTop + 10, 2, 2);
+      ctx.fillRect(x - 3, y - 1, 2, 2);
     }
 
     // 1px dark outline
     ctx.save();
     ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = 1;
-    const HAIR_TOP_OFFSET = { spiky: -2, mohawk: -3, none: -1 };
+    const HAIR_TOP_OFFSET = { spiky: -3, mohawk: -4, none: -2 };
     const spriteTop = headTop + (HAIR_TOP_OFFSET[bs.hairStyle] || 0);
     const spriteBot = y + bs.legLen;
-    ctx.strokeRect(x - halfW - 1, spriteTop, bs.bodyW + 4, spriteBot - spriteTop);
+    ctx.strokeRect(x - halfW - 2, spriteTop, bs.bodyW + 6, spriteBot - spriteTop);
     ctx.restore();
 
     // Hovered highlight
     if (a === hoveredAgent) {
       ctx.strokeStyle = '#3a9fff';
       ctx.lineWidth = 1;
-      ctx.strokeRect(x - halfW - 2, spriteTop - 1, bs.bodyW + 6, spriteBot - spriteTop + 2);
+      ctx.strokeRect(x - halfW - 3, spriteTop - 1, bs.bodyW + 8, spriteBot - spriteTop + 2);
     }
 
     // Ticker label below
     ctx.save();
-    ctx.font = 'bold 5px monospace';
+    ctx.font = 'bold 8px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = a === hoveredAgent ? '#ffffff' : (frozen ? '#80b0e0' : '#8ab0d0');
-    ctx.fillText(a.ticker, x, y + 9);
+    ctx.fillText(a.ticker, x, spriteBot + 10);
     ctx.restore();
 
     // Score badge (if applicable)
     if (a.score) {
       ctx.save();
-      ctx.font = 'bold 4.5px monospace';
+      ctx.font = 'bold 7px monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#ffb800';
-      ctx.fillText(a.score + 'pts', x, y + 14);
+      ctx.fillText(a.score + 'pts', x, spriteBot + 18);
       ctx.restore();
     }
   }
@@ -3780,7 +3781,7 @@ const WarRoom = (function() {
     const y = Math.round(a.y + a.bob);
 
     // Stagger bubble height by ticker's first character so overlapping agents don't stack identically
-    const stagger = (a.ticker.charCodeAt(0) % 3) * 4;
+    const stagger = (a.ticker.charCodeAt(0) % 3) * 6;
 
     // Fade-in alpha (first 0.3s of speech life)
     const maxLife = a.zone === 'council' ? 99999 : 6;
@@ -3789,14 +3790,14 @@ const WarRoom = (function() {
 
     ctx.save();
     ctx.globalAlpha = fadeAlpha;
-    ctx.font = '5px monospace';
+    ctx.font = '8px monospace';
     const text = a.speech;
     const tw = ctx.measureText(text).width;
-    const bw = tw + 10;
-    const bh = 10;
+    const bw = tw + 14;
+    const bh = 16;
     const bx = x - bw / 2;
-    const by = y - 28 - bh - stagger;
-    const r = 2; // corner radius
+    const by = y - 38 - bh - stagger;
+    const r = 3; // corner radius
 
     // Rounded bubble background
     ctx.fillStyle = '#141e30';
@@ -3813,23 +3814,23 @@ const WarRoom = (function() {
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#3a5070';
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 1;
     ctx.stroke();
 
     // Triangle tail/pointer
     ctx.fillStyle = '#141e30';
     ctx.beginPath();
-    ctx.moveTo(x - 2, by + bh);
-    ctx.lineTo(x, by + bh + 3);
-    ctx.lineTo(x + 2, by + bh);
+    ctx.moveTo(x - 3, by + bh);
+    ctx.lineTo(x, by + bh + 5);
+    ctx.lineTo(x + 3, by + bh);
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#3a5070';
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(x - 2, by + bh);
-    ctx.lineTo(x, by + bh + 3);
-    ctx.lineTo(x + 2, by + bh);
+    ctx.moveTo(x - 3, by + bh);
+    ctx.lineTo(x, by + bh + 5);
+    ctx.lineTo(x + 3, by + bh);
     ctx.stroke();
 
     // Text color
@@ -3847,7 +3848,7 @@ const WarRoom = (function() {
     if (a.zone === 'council' && a.speechSeverity) {
       const sevBorders = { critical: '#cc1028', warning: '#aa6600', info: '#006688', ok: '#006030' };
       ctx.strokeStyle = sevBorders[a.speechSeverity] || '#3a5070';
-      ctx.lineWidth = 0.5;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(bx + r, by);
       ctx.lineTo(bx + bw - r, by);
@@ -3873,16 +3874,16 @@ const WarRoom = (function() {
       for (let i = 0; i < 3; i++) {
         dots += (dotPhase >= i) ? '·' : ' ';
       }
-      ctx.fillText(text, x, by + 7);
+      ctx.fillText(text, x, by + 11);
       // Pulsing dots after text
       ctx.fillStyle = speechColor;
       ctx.globalAlpha = fadeAlpha * 0.6;
-      ctx.fillText(dots, x + tw / 2 + 4, by + 7);
+      ctx.fillText(dots, x + tw / 2 + 6, by + 11);
       ctx.globalAlpha = fadeAlpha;
     } else {
       ctx.fillStyle = speechColor;
       ctx.textAlign = 'center';
-      ctx.fillText(text, x, by + 7);
+      ctx.fillText(text, x, by + 11);
     }
     ctx.restore();
   }
@@ -3894,33 +3895,33 @@ const WarRoom = (function() {
     ctx.fillRect(TILE, barY, (ROOM_COLS - 2) * TILE, TILE);
 
     ctx.save();
-    ctx.font = '5px monospace';
+    ctx.font = '8px monospace';
     ctx.textAlign = 'left';
 
     // VIX
     const vixColor = regime === 'GREEN' ? '#00d084' : regime === 'YELLOW' ? '#ffb800' : regime === 'ORANGE' ? '#ff8c00' : '#ff4055';
     ctx.fillStyle = '#8ab0c8';
-    ctx.fillText('VIX', 2 * TILE, barY + 6);
+    ctx.fillText('VIX', 2 * TILE, barY + 11);
     ctx.fillStyle = vixColor;
-    ctx.fillText(vixVal.toFixed(2), 2 * TILE + 16, barY + 6);
+    ctx.fillText(vixVal.toFixed(2), 2 * TILE + 22, barY + 11);
 
     // Regime
     ctx.fillStyle = '#8ab0c8';
-    ctx.fillText('REGIME', 2 * TILE + 50, barY + 6);
+    ctx.fillText('REGIME', 2 * TILE + 65, barY + 11);
     ctx.fillStyle = vixColor;
-    ctx.fillText(regime, 2 * TILE + 78, barY + 6);
+    ctx.fillText(regime, 2 * TILE + 100, barY + 11);
 
     // THB
     ctx.fillStyle = '#8ab0c8';
-    ctx.fillText('THB', 2 * TILE + 110, barY + 6);
+    ctx.fillText('THB', 2 * TILE + 145, barY + 11);
     ctx.fillStyle = '#00d084';
-    ctx.fillText(thbVal.toFixed(2), 2 * TILE + 126, barY + 6);
+    ctx.fillText(thbVal.toFixed(2), 2 * TILE + 168, barY + 11);
 
     // Agent count
     const arsenalCount = agents.filter(a => a.zone === 'arsenal').length;
     const wtCount = agents.filter(a => a.zone === 'watchtower').length;
     ctx.fillStyle = '#8ab0c8';
-    ctx.fillText('ARSENAL ' + arsenalCount + ' · WT ' + wtCount, 2 * TILE + 170, barY + 6);
+    ctx.fillText('ARSENAL ' + arsenalCount + ' · WT ' + wtCount, 2 * TILE + 220, barY + 11);
 
     // Time
     const now = new Date();
@@ -3928,33 +3929,34 @@ const WarRoom = (function() {
     const timeStr = String(bkk.getHours()).padStart(2, '0') + ':' + String(bkk.getMinutes()).padStart(2, '0');
     ctx.textAlign = 'right';
     ctx.fillStyle = '#8ab0c8';
-    ctx.fillText(timeStr + ' BKK', (ROOM_COLS - 2) * TILE, barY + 6);
+    ctx.fillText(timeStr + ' BKK', (ROOM_COLS - 2) * TILE, barY + 11);
 
     // Frozen indicator
     if (regime === 'ORANGE' || regime === 'RED') {
       ctx.textAlign = 'center';
       ctx.fillStyle = regime === 'RED' ? '#ff4055' : '#ff8c00';
-      ctx.fillText('❄ DEPLOYMENT FREEZE ❄', ROOM_COLS * TILE / 2, barY + 12);
+      ctx.fillText('❄ DEPLOYMENT FREEZE ❄', ROOM_COLS * TILE / 2, barY + 14);
     }
     ctx.restore();
   }
 
   function drawRoomTitle() {
     ctx.save();
-    ctx.font = 'bold 8px monospace';
+    ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#6a8aaa';
-    ctx.fillText('SNIPER WAR ROOM', ROOM_W / 2, 10);
-    ctx.font = '5px monospace';
+    ctx.fillText('SNIPER WAR ROOM', ROOM_W / 2, 13);
+    ctx.font = '7px monospace';
     ctx.fillStyle = '#4a6a8a';
-    ctx.fillText('AGENT-BASED PORTFOLIO OS · INFORMATIONAL ONLY', ROOM_W / 2, 18);
+    ctx.fillText('AGENT-BASED PORTFOLIO OS · INFORMATIONAL ONLY', ROOM_W / 2, 23);
     ctx.restore();
   }
 
   // ── Render frame ──
   function render() {
     ctx.save();
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
     ctx.clearRect(0, 0, ROOM_W, ROOM_H);
 
     drawFloor();
