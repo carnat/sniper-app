@@ -3593,38 +3593,61 @@ const WarRoom = (function() {
     });
   }
 
-  // ── Drawing ──
+  // ── Drawing (Metro Pixel Art aesthetic) ──
+  let metroPhase = 0;   // animated circuit pulse phase
+  let glitchTimer = 0;  // CRT glitch timer
+
   function drawFloor() {
-    // Checkerboard floor
+    metroPhase += 0.02;
+    // Dark metro-tile floor
     for (let r = 0; r < ROOM_ROWS; r++) {
       for (let c = 0; c < ROOM_COLS; c++) {
         ctx.fillStyle = (r + c) % 2 === 0 ? FLOOR_A : FLOOR_B;
         ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
       }
     }
-    // Subtle grid lines on floor tiles
-    ctx.strokeStyle = 'rgba(255,255,255,0.02)';
-    ctx.lineWidth = 0.5;
+    // Animated circuit-trace grid lines (cyan/magenta pulses)
     for (let r = 1; r < ROOM_ROWS; r++) {
+      const pulse = Math.sin(metroPhase + r * 0.3) * 0.5 + 0.5;
+      const cyanAlpha = 0.02 + pulse * 0.04;
+      ctx.strokeStyle = 'rgba(0,200,220,' + cyanAlpha.toFixed(3) + ')';
+      ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(0, r * TILE);
       ctx.lineTo(ROOM_COLS * TILE, r * TILE);
       ctx.stroke();
     }
     for (let c = 1; c < ROOM_COLS; c++) {
+      const pulse = Math.sin(metroPhase * 0.8 + c * 0.4) * 0.5 + 0.5;
+      const magAlpha = 0.02 + pulse * 0.03;
+      ctx.strokeStyle = 'rgba(200,0,220,' + magAlpha.toFixed(3) + ')';
+      ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.moveTo(c * TILE, 0);
       ctx.lineTo(c * TILE, ROOM_ROWS * TILE);
       ctx.stroke();
     }
-    // Floor decoration marks at some intersections
-    ctx.fillStyle = 'rgba(58,159,255,0.04)';
+    // Data pulse ripple from council center (every ~3s)
+    const ripplePhase = (metroPhase * 2) % (Math.PI * 2);
+    if (ripplePhase < Math.PI) {
+      const cx = ROOM_W / 2, cy = 27 * TILE;
+      const radius = ripplePhase / Math.PI * ROOM_W * 0.6;
+      const alpha = (1 - ripplePhase / Math.PI) * 0.06;
+      ctx.strokeStyle = 'rgba(0,200,255,' + alpha.toFixed(3) + ')';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    // Floor decoration — small neon dots at intersections
     for (let r = 2; r < ROOM_ROWS - 1; r += 3) {
       for (let c = 2; c < ROOM_COLS - 1; c += 4) {
+        const dotPulse = Math.sin(metroPhase * 1.5 + r + c) * 0.5 + 0.5;
+        ctx.fillStyle = 'rgba(0,200,255,' + (0.03 + dotPulse * 0.04).toFixed(3) + ')';
         ctx.fillRect(c * TILE - 0.5, r * TILE - 0.5, 1, 1);
       }
     }
-    // Walls (top 2 rows, bottom row)
+    // Walls (top 2 rows, bottom row) — metro station walls
     for (let c = 0; c < ROOM_COLS; c++) {
       ctx.fillStyle = WALL_COLOR;
       ctx.fillRect(c * TILE, 0, TILE, TILE * 1.5);
@@ -3633,12 +3656,39 @@ const WarRoom = (function() {
       ctx.fillStyle = WALL_COLOR;
       ctx.fillRect(c * TILE, (ROOM_ROWS - 1) * TILE, TILE, TILE);
     }
-    // Side walls
+    // Parallax cityscape silhouette on top wall
+    ctx.fillStyle = '#0c1420';
+    const bldgs = [3,5,2,7,4,6,3,8,2,5,4,7,3,6,5,4,8,3,5,7];
+    for (let i = 0; i < bldgs.length; i++) {
+      const bx = (i * 2 + Math.sin(metroPhase * 0.03) * 0.5) * TILE;
+      const bh = bldgs[i];
+      ctx.fillRect(bx, TILE * 1.5 - bh, TILE * 1.5, bh);
+    }
+    // Antenna dots on tallest buildings
+    ctx.fillStyle = '#ff3040';
+    for (let i = 0; i < bldgs.length; i += 3) {
+      if (bldgs[i] >= 6) {
+        const bx = (i * 2 + Math.sin(metroPhase * 0.03) * 0.5) * TILE + TILE * 0.7;
+        const blink = Math.sin(metroPhase * 3 + i) > 0.5 ? 0.8 : 0.2;
+        ctx.globalAlpha = blink;
+        ctx.fillRect(bx, TILE * 1.5 - bldgs[i] - 2, 1, 1);
+        ctx.globalAlpha = 1;
+      }
+    }
+    // Bottom wall — subway platform yellow warning stripe
+    const barY = (ROOM_ROWS - 1) * TILE;
+    ctx.fillStyle = 'rgba(200,180,0,0.15)';
+    ctx.fillRect(TILE, barY, (ROOM_COLS - 2) * TILE, 2);
+    // Side walls with subtle neon edge
     for (let r = 0; r < ROOM_ROWS; r++) {
       ctx.fillStyle = WALL_COLOR;
       ctx.fillRect(0, r * TILE, TILE, TILE);
       ctx.fillRect((ROOM_COLS - 1) * TILE, r * TILE, TILE, TILE);
     }
+    // Left/right wall neon strip
+    ctx.fillStyle = 'rgba(0,160,220,0.06)';
+    ctx.fillRect(TILE - 1, TILE * 2, 1, (ROOM_ROWS - 3) * TILE);
+    ctx.fillRect((ROOM_COLS - 1) * TILE, TILE * 2, 1, (ROOM_ROWS - 3) * TILE);
   }
 
   function drawZones() {
@@ -3651,11 +3701,28 @@ const WarRoom = (function() {
     // Vault zone highlight
     ctx.fillStyle = ZONE_VAULT;
     ctx.fillRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
-    // Triad Council zone highlight
-    ctx.fillStyle = ZONE_COUNCIL;
-    ctx.fillRect(2 * TILE, 24.5 * TILE, 36 * TILE, 4 * TILE);
 
-    // Zone border lines
+    // Council Parliament — Triad zone highlights with neon borders
+    Object.entries(TRIAD_META).forEach(([key, tm]) => {
+      const zx = tm.x * TILE, zy = tm.y * TILE, zw = tm.w * TILE, zh = tm.h * TILE;
+      // Fill
+      ctx.fillStyle = tm.color;
+      ctx.fillRect(zx, zy, zw, zh);
+      // Neon border (1-2px, flickering)
+      ctx.save();
+      const flicker = 0.8 + Math.sin(metroPhase * 3 + key.length) * 0.2;
+      ctx.globalAlpha = flicker;
+      if (key === 'floating') {
+        ctx.setLineDash([4, 4]);
+      }
+      ctx.strokeStyle = tm.border;
+      ctx.lineWidth = key === 'bear' ? 1 : 1.5;
+      ctx.strokeRect(zx, zy, zw, zh);
+      ctx.setLineDash([]);
+      ctx.restore();
+    });
+
+    // Zone border lines (stock zones)
     ctx.save();
     ctx.lineWidth = 0.5;
     ctx.setLineDash([3, 3]);
@@ -3665,12 +3732,10 @@ const WarRoom = (function() {
     ctx.strokeRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
     ctx.strokeStyle = 'rgba(128,128,128,0.18)';
     ctx.strokeRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
-    ctx.strokeStyle = 'rgba(120,80,200,0.22)';
-    ctx.strokeRect(2 * TILE, 24.5 * TILE, 36 * TILE, 4 * TILE);
     ctx.setLineDash([]);
     ctx.restore();
 
-    // Zone labels
+    // Zone labels — metro station sign style
     ctx.save();
     ctx.font = '9px monospace';
     ctx.textAlign = 'left';
@@ -3680,41 +3745,107 @@ const WarRoom = (function() {
     ctx.fillText('WATCHTOWER', 2.5 * TILE, 12.2 * TILE);
     ctx.fillStyle = '#6a7a8a';
     ctx.fillText('VAULT / RESERVE', 2.5 * TILE, 20.6 * TILE);
-    ctx.fillStyle = '#6a5090';
-    ctx.fillText('TRIAD COUNCIL', 2.5 * TILE, 25.1 * TILE);
+
+    // Triad labels with indicator dots
+    ctx.font = 'bold 8px monospace';
+    Object.entries(TRIAD_META).forEach(([key, tm]) => {
+      ctx.fillStyle = tm.labelColor;
+      ctx.fillText(tm.label, (tm.x + 0.3) * TILE, tm.y * TILE + 10);
+      // Animated indicator dot
+      const dotPulse = Math.sin(metroPhase * 2 + key.length * 1.5) > 0.3 ? 1 : 0.3;
+      ctx.globalAlpha = dotPulse;
+      ctx.fillRect((tm.x + 0.1) * TILE, tm.y * TILE + 6, 2, 2);
+      ctx.globalAlpha = 1;
+    });
+    ctx.restore();
+
+    // Conviction badges per Triad
+    ctx.save();
+    ctx.font = 'bold 7px monospace';
+    ctx.textAlign = 'right';
+    Object.entries(TRIAD_META).forEach(([key, tm]) => {
+      if (key === 'floating' || key === 'bear') return;
+      const conv = triadConvictions[key];
+      if (conv === true) {
+        ctx.fillStyle = '#30cc60';
+        ctx.fillText('✓ CONVICTION', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
+      } else if (conv === false) {
+        ctx.fillStyle = '#ff4050';
+        ctx.fillText('✗ NO CONVICTION', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
+      } else {
+        ctx.fillStyle = '#8888aa';
+        ctx.fillText('— PENDING', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
+      }
+    });
+    ctx.restore();
+  }
+
+  // Data-flow pipes between zones (metro map routes)
+  function drawDataPipes() {
+    ctx.save();
+    ctx.lineWidth = 0.5;
+    // Arsenal → Watchtower pipe
+    const pipeAlpha = 0.08 + Math.sin(metroPhase * 1.5) * 0.04;
+    ctx.strokeStyle = 'rgba(58,159,255,' + pipeAlpha.toFixed(3) + ')';
+    ctx.beginPath();
+    ctx.moveTo(20 * TILE, 11 * TILE);
+    ctx.lineTo(20 * TILE, 11.5 * TILE);
+    ctx.stroke();
+    // Watchtower → Council pipe
+    ctx.strokeStyle = 'rgba(0,200,224,' + pipeAlpha.toFixed(3) + ')';
+    ctx.beginPath();
+    ctx.moveTo(20 * TILE, 19.5 * TILE);
+    ctx.lineTo(20 * TILE, 24 * TILE);
+    ctx.stroke();
+    // Animated data dots traveling along pipes
+    const dotPos = (metroPhase * 30) % ((24 - 11) * TILE);
+    ctx.fillStyle = 'rgba(0,200,255,0.3)';
+    ctx.fillRect(20 * TILE - 1, 11 * TILE + dotPos, 2, 2);
     ctx.restore();
   }
 
   function drawCouncilTable() {
+    // Parliament amphitheater center area — between Thesis/Timing and Safety/ExtIntel
     const cx = Math.round(ROOM_W / 2);
-    const cy = Math.round(25.8 * TILE);
-    // Table shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    const cy = Math.round(26.5 * TILE);
+    // Council floor glow
+    ctx.fillStyle = 'rgba(80,40,120,0.06)';
     ctx.beginPath();
-    ctx.ellipse(cx, cy + 3, TILE * 5, TILE * 1.4, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, TILE * 8, TILE * 4.5, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Table surface
-    ctx.fillStyle = '#12162a';
+    // Central table (smaller, parliament-style)
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
     ctx.beginPath();
-    ctx.ellipse(cx, cy, TILE * 5, TILE * 1.4, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy + 2, TILE * 3, TILE * 1, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#252848';
+    ctx.fillStyle = '#0e1224';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, TILE * 3, TILE * 1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1a2040';
     ctx.lineWidth = 1;
     ctx.stroke();
-    // Table center label
+    // War Council label
     ctx.save();
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#4a4a8a';
-    ctx.fillText('TRIAD', cx, cy + 3);
+    ctx.fillText('WAR COUNCIL', cx, cy + 3);
     ctx.restore();
-    // Consensus glow when 2-of-3 agree on same ticker
+    // Consensus glow when 2-of-4 Triads agree
     if (consensusTickers.length > 0) {
       ctx.save();
-      ctx.font = 'bold 6px monospace';
+      ctx.font = 'bold 7px monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#cc8800';
-      ctx.fillText('⚡ ' + consensusTickers.slice(0, 3).join(' · '), cx, cy - 10);
+      ctx.fillText('⚡ CONSENSUS: ' + consensusTickers.slice(0, 3).join(' · '), cx, cy - 8);
+      // Pulsing glow around table
+      const glow = Math.sin(metroPhase * 3) * 0.08 + 0.08;
+      ctx.strokeStyle = 'rgba(255,180,0,' + glow.toFixed(3) + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, TILE * 3.5, TILE * 1.3, 0, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
   }
@@ -3831,16 +3962,32 @@ const WarRoom = (function() {
     if (a.zone === 'council') {
       ctx.fillStyle = '#0d1020';
       ctx.fillRect(x - 6, y + 2, 12, 5);
+      // Sector-colored neon glow circle under council agents
+      if (p.glow) {
+        ctx.fillStyle = p.glow;
+        ctx.globalAlpha = 0.08 + Math.sin(a.t * 1.5) * 0.04;
+        ctx.beginPath();
+        ctx.ellipse(x, y + 3, 10, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
     }
 
     ctx.save();
     if (frozen) ctx.globalAlpha = 0.5;
+    // Floating agents: reduced opacity to indicate non-voting
+    if (a.isFloating) ctx.globalAlpha = 0.75;
 
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.beginPath();
-    ctx.ellipse(x, y + 3, 8, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Shadow — pixel dither pattern instead of solid ellipse
+    const shadowAlpha = 0.25;
+    ctx.fillStyle = 'rgba(0,0,0,' + shadowAlpha + ')';
+    for (let si = -7; si <= 7; si++) {
+      for (let sj = -2; sj <= 2; sj++) {
+        if ((si + sj) % 2 === 0 && (si * si / 64 + sj * sj / 9) <= 1) {
+          ctx.fillRect(x + si, y + 2 + sj, 1, 1);
+        }
+      }
+    }
 
     const f = a.facing;
     const halfW = Math.floor(bs.bodyW / 2);
@@ -3867,6 +4014,12 @@ const WarRoom = (function() {
       ctx.fillRect(x - halfW - 2, bodyTop, bs.bodyW + 4, bs.bodyH + 3);
       ctx.fillStyle = p.body;
       ctx.fillRect(x - halfW, bodyTop, bs.bodyW, bs.bodyH);
+      // Dithered shading between body and dk
+      for (let dy = 0; dy < bs.bodyH; dy += 2) {
+        ctx.fillStyle = p.dk;
+        ctx.fillRect(x - halfW + (dy % 4 === 0 ? 0 : 1), bodyTop + dy, 1, 1);
+        ctx.fillRect(x + halfW - (dy % 4 === 0 ? 1 : 2), bodyTop + dy, 1, 1);
+      }
       // Robe trim
       ctx.fillStyle = p.hi;
       ctx.fillRect(x - halfW, bodyTop + bs.bodyH - 2, bs.bodyW, 2);
@@ -3876,9 +4029,21 @@ const WarRoom = (function() {
     } else {
       ctx.fillStyle = p.body;
       ctx.fillRect(x - halfW, bodyTop, bs.bodyW, bs.bodyH);
-      // Body highlight
+      // Body highlight — animated shine stripe (top→bottom)
+      const shineY = Math.floor((a.t * 0.3) % bs.bodyH);
       ctx.fillStyle = p.hi;
       ctx.fillRect(x - halfW + (f > 0 ? 0 : bs.bodyW - 3), bodyTop, 3, bs.bodyH);
+      // Moving shine
+      ctx.fillStyle = p.hi;
+      ctx.globalAlpha = (ctx.globalAlpha || 1) * 0.4;
+      ctx.fillRect(x - halfW + 1, bodyTop + shineY, bs.bodyW - 2, 2);
+      ctx.globalAlpha = frozen ? 0.5 : (a.isFloating ? 0.75 : 1);
+      // Dithered depth on body edges
+      for (let dy = 0; dy < bs.bodyH; dy += 2) {
+        ctx.fillStyle = p.dk;
+        ctx.fillRect(x - halfW, bodyTop + dy, 1, 1);
+        ctx.fillRect(x + halfW - 1, bodyTop + dy, 1, 1);
+      }
     }
 
     // Star badge for Commander
@@ -3991,6 +4156,26 @@ const WarRoom = (function() {
         ctx.fillRect(x - 4, headTop + 3, 2, 2);
         ctx.fillRect(x + 3, headTop + 3, 2, 2);
         break;
+      case 'long':
+        // Elder: long flowing hair/beard
+        ctx.fillRect(x - 4, headTop, 9, 3);
+        ctx.fillRect(x - 5, headTop, 2, 8);
+        ctx.fillRect(x + 4, headTop, 2, 8);
+        // Beard pixels
+        ctx.fillStyle = p.hi;
+        ctx.fillRect(x - 3, headTop + 8, 7, 2);
+        ctx.fillRect(x - 2, headTop + 10, 5, 1);
+        break;
+      case 'antenna':
+        // Robot/TF: metallic antenna
+        ctx.fillRect(x - 4, headTop, 9, 2);
+        ctx.fillStyle = '#6a6a8a';
+        ctx.fillRect(x, headTop - 5, 1, 5);
+        // Blinking tip
+        const blink = Math.sin(a.t * 5) > 0 ? p.glow || '#00ff88' : '#333';
+        ctx.fillStyle = blink;
+        ctx.fillRect(x - 1, headTop - 6, 3, 2);
+        break;
       case 'none':
         // Robed council: hood
         ctx.fillStyle = p.dk;
@@ -4000,7 +4185,7 @@ const WarRoom = (function() {
         break;
     }
 
-    // Headset accessory (vault/sentinel)
+    // ── Accessories ──
     if (bs.accessory === 'headset') {
       ctx.fillStyle = '#3a3a4a';
       ctx.fillRect(x - 5, headTop + 3, 2, 4);
@@ -4010,9 +4195,64 @@ const WarRoom = (function() {
       ctx.fillStyle = '#5a5a6a';
       ctx.fillRect(x - 5, headTop + 7, 2, 2);
     }
+    if (bs.accessory === 'scope') {
+      // Sector Analyst: magnifying scope near eye
+      ctx.fillStyle = '#4a6a8a';
+      ctx.fillRect(x + halfW, headTop + 3, 4, 4);
+      ctx.strokeStyle = '#6a9acc';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.arc(x + halfW + 2, headTop + 5, 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    if (bs.accessory === 'ledger') {
+      // Capital Allocator: small book/ledger held
+      ctx.fillStyle = '#2a5a2a';
+      ctx.fillRect(x - halfW - 5, bodyTop + 5, 4, 5);
+      ctx.fillStyle = '#4a8a4a';
+      ctx.fillRect(x - halfW - 5, bodyTop + 5, 4, 1);
+    }
+    if (bs.accessory === 'screen') {
+      // Robot: screen-face overlay
+      ctx.fillStyle = 'rgba(0,255,100,0.15)';
+      ctx.fillRect(x - 3, headTop + 2, 7, 5);
+      // Scan line
+      const scanY = Math.floor(a.t * 3) % 5;
+      ctx.fillStyle = 'rgba(0,255,100,0.25)';
+      ctx.fillRect(x - 3, headTop + 2 + scanY, 7, 1);
+    }
+    if (bs.accessory === 'clock') {
+      // Clock: small clock-face on body
+      ctx.fillStyle = '#ccaa30';
+      ctx.beginPath();
+      ctx.arc(x, bodyTop + 4, 3, 0, Math.PI * 2);
+      ctx.fill();
+      // Clock hands
+      ctx.strokeStyle = '#3a2808';
+      ctx.lineWidth = 0.5;
+      const hr = a.t * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, bodyTop + 4);
+      ctx.lineTo(x + Math.cos(hr) * 2, bodyTop + 4 + Math.sin(hr) * 2);
+      ctx.stroke();
+    }
+    if (bs.accessory === 'shield') {
+      // Risk Manager / Regulator: small shield
+      ctx.fillStyle = p.accent || p.dk;
+      ctx.fillRect(x + halfW + 1, bodyTop + 2, 4, 6);
+      ctx.fillStyle = p.hi;
+      ctx.fillRect(x + halfW + 2, bodyTop + 3, 2, 2);
+    }
+    if (bs.accessory === 'wrench') {
+      // Integration Engineer: wrench tool
+      ctx.fillStyle = '#7a7a8a';
+      ctx.fillRect(x - halfW - 4, bodyTop + 4, 3, 1);
+      ctx.fillRect(x - halfW - 5, bodyTop + 3, 2, 3);
+    }
 
-    // Eyes
-    ctx.fillStyle = '#1a1a2a';
+    // Eyes — per-sector colored
+    const eyeColor = p.eye || '#1a1a2a';
+    ctx.fillStyle = eyeColor;
     ctx.fillRect(x - 2 + eyeOffset, headTop + 5, 1, 2);
     ctx.fillRect(x + 1 + eyeOffset, headTop + 5, 1, 2);
 
@@ -4033,7 +4273,7 @@ const WarRoom = (function() {
     ctx.save();
     ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = 1;
-    const HAIR_TOP_OFFSET = { spiky: -3, mohawk: -4, none: -2 };
+    const HAIR_TOP_OFFSET = { spiky: -3, mohawk: -4, none: -2, long: 0, antenna: -6 };
     const spriteTop = headTop + (HAIR_TOP_OFFSET[bs.hairStyle] || 0);
     const spriteBot = y + bs.legLen;
     ctx.strokeRect(x - halfW - 2, spriteTop, bs.bodyW + 6, spriteBot - spriteTop);
@@ -4319,9 +4559,36 @@ const WarRoom = (function() {
     ctx.clearRect(0, 0, ROOM_W, ROOM_H);
 
     drawFloor();
-    // Atmosphere pulse (D22)
+    // Regime-driven atmosphere (Metro aesthetic)
+    atmospherePhase += 0.015;
+    if (regime === 'GREEN') {
+      // Emerald data-rain (Matrix-style, subtle)
+      ctx.fillStyle = 'rgba(0,200,80,0.04)';
+      for (let c = 2; c < ROOM_COLS - 1; c += 3) {
+        const ry = ((atmospherePhase * 40 + c * 7) % ROOM_H);
+        ctx.fillRect(c * TILE + 6, ry, 1, 4);
+      }
+    } else if (regime === 'YELLOW') {
+      // Amber scan-lines sweep
+      const sweepX = ((atmospherePhase * 60) % ROOM_W);
+      ctx.fillStyle = 'rgba(255,184,0,0.03)';
+      ctx.fillRect(sweepX, TILE * 2, 3, (ROOM_ROWS - 3) * TILE);
+    } else if (regime === 'ORANGE') {
+      // Pulsing orange perimeter glow
+      const orangePulse = Math.sin(atmospherePhase * 2) * 0.03 + 0.03;
+      ctx.strokeStyle = 'rgba(255,140,0,' + orangePulse.toFixed(3) + ')';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(TILE, TILE * 1.5, (ROOM_COLS - 2) * TILE, (ROOM_ROWS - 2.5) * TILE);
+    } else if (regime === 'RED') {
+      // Red alert: rapid red flash overlay + screen shake
+      const flash = Math.sin(atmospherePhase * 6) > 0.7 ? 0.04 : 0;
+      if (flash > 0) {
+        ctx.fillStyle = 'rgba(255,0,0,' + flash + ')';
+        ctx.fillRect(0, 0, ROOM_W, ROOM_H);
+      }
+    }
+    // Ambient mode pulse (legacy support)
     if (ambientMode) {
-      atmospherePhase += 0.015;
       const pulse = Math.sin(atmospherePhase) * 0.02 + 0.02;
       ctx.fillStyle = 'rgba(58,159,255,' + pulse + ')';
       for (let r = 2; r < ROOM_ROWS - 1; r += 2) {
@@ -4331,6 +4598,7 @@ const WarRoom = (function() {
       }
     }
     drawZones();
+    drawDataPipes();
     drawRoomTitle();
     drawCouncilTable();
 
@@ -4355,24 +4623,53 @@ const WarRoom = (function() {
       if (!_isSectorHidden(a)) drawSpeechBubble(a);
     });
 
-    // Particles (D21)
+    // Particles (D21) — sector-colored spark particles with trails
     _updateParticles();
     _drawParticles();
 
     drawStatusBar();
 
-    // Scanline overlay (subtle CRT effect)
-    ctx.fillStyle = 'rgba(0,0,0,0.02)';
+    // Enhanced CRT scanlines
+    ctx.fillStyle = 'rgba(0,0,0,0.025)';
     for (let sy = 0; sy < ROOM_H; sy += 2) {
       ctx.fillRect(0, sy, ROOM_W, 1);
     }
 
-    // Vignette on canvas edges
+    // Occasional glitch bar (2px tall, every ~10s)
+    glitchTimer += 0.016;
+    if (glitchTimer > 10) {
+      glitchTimer = 0;
+    }
+    if (glitchTimer < 0.06) {
+      const gy = Math.random() * ROOM_H;
+      ctx.fillStyle = 'rgba(0,200,255,0.08)';
+      ctx.fillRect(0, gy, ROOM_W, 2);
+    }
+
+    // Chromatic aberration hint on text areas (subtle 1px offset)
+    // Applied via composite - minimal perf impact
+
+    // Animated vignette (pulses with VIX)
+    const vixDarken = regime === 'RED' ? 0.35 : regime === 'ORANGE' ? 0.28 : regime === 'YELLOW' ? 0.22 : 0.15;
+    const vigPulse = vixDarken + Math.sin(atmospherePhase * 0.5) * 0.02;
     const vg = ctx.createRadialGradient(ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.35, ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.7);
     vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(1, ambientMode ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.15)');
+    vg.addColorStop(1, 'rgba(0,0,0,' + vigPulse.toFixed(3) + ')');
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, ROOM_W, ROOM_H);
+
+    // Corner CRT bezel brackets
+    ctx.strokeStyle = 'rgba(40,40,50,0.3)';
+    ctx.lineWidth = 2;
+    const bz = 8;
+    // Top-left
+    ctx.beginPath(); ctx.moveTo(bz, 1); ctx.lineTo(1, 1); ctx.lineTo(1, bz); ctx.stroke();
+    // Top-right
+    ctx.beginPath(); ctx.moveTo(ROOM_W - bz, 1); ctx.lineTo(ROOM_W - 1, 1); ctx.lineTo(ROOM_W - 1, bz); ctx.stroke();
+    // Bottom-left
+    ctx.beginPath(); ctx.moveTo(bz, ROOM_H - 1); ctx.lineTo(1, ROOM_H - 1); ctx.lineTo(1, ROOM_H - bz); ctx.stroke();
+    // Bottom-right
+    ctx.beginPath(); ctx.moveTo(ROOM_W - bz, ROOM_H - 1); ctx.lineTo(ROOM_W - 1, ROOM_H - 1); ctx.lineTo(ROOM_W - 1, ROOM_H - bz); ctx.stroke();
 
     ctx.restore();
   }
@@ -4411,20 +4708,27 @@ const WarRoom = (function() {
     ctx.fillText('CORE: ' + coreCount + '/12', 32.3 * TILE, 12.2 * TILE);
     ctx.fillText('SAT: ' + satCount + '/3', 32.3 * TILE, 13 * TILE);
 
-    // Council zone stats
-    const triad = agents.filter(a => a.zone === 'council');
-    const allFindings = triad.reduce((arr, a) => arr.concat(a.findings || []), []);
+    // Council Parliament zone stats
+    const councilAgents = agents.filter(a => a.zone === 'council');
+    const allFindings = councilAgents.reduce((arr, a) => arr.concat(a.findings || []), []);
     const critF = allFindings.filter(f => f.severity === 'critical').length;
     const warnF = allFindings.filter(f => f.severity === 'warning').length;
     const infoF = allFindings.filter(f => f.severity === 'info' || f.severity === 'ok').length;
     ctx.fillStyle = 'rgba(10,14,20,0.7)';
-    ctx.fillRect(32 * TILE, 24.5 * TILE, 6 * TILE, 2.4 * TILE);
+    ctx.fillRect(32 * TILE, 24 * TILE, 6 * TILE, 3 * TILE);
+    ctx.fillStyle = '#6a5090';
+    ctx.fillText('COUNCIL: ' + councilAgents.length, 32.3 * TILE, 24.7 * TILE);
     ctx.fillStyle = '#ff4055';
-    ctx.fillText('🔴 ' + critF, 32.3 * TILE, 25.2 * TILE);
+    ctx.fillText('🔴 ' + critF, 32.3 * TILE, 25.5 * TILE);
     ctx.fillStyle = '#ffb800';
-    ctx.fillText('🟡 ' + warnF, 34 * TILE, 25.2 * TILE);
+    ctx.fillText('🟡 ' + warnF, 34 * TILE, 25.5 * TILE);
     ctx.fillStyle = '#6a8a9a';
-    ctx.fillText('ℹ ' + infoF, 35.5 * TILE, 25.2 * TILE);
+    ctx.fillText('ℹ ' + infoF, 35.5 * TILE, 25.5 * TILE);
+    // Consensus count
+    if (consensusTickers.length > 0) {
+      ctx.fillStyle = '#cc8800';
+      ctx.fillText('⚡ ' + consensusTickers.length, 32.3 * TILE, 26.3 * TILE);
+    }
 
     ctx.restore();
   }
