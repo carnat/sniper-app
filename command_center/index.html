@@ -2950,6 +2950,7 @@ const WarRoom = (function() {
   const MAX_PARTICLES = 60;      // max particle count for performance
   const PARTICLE_SPAWN_RATE = 0.02; // probability per frame per deployed agent
   const MAX_COMPARE = 3;         // max agents in comparison panel
+  const TF_DOMAIN_TICKERS = ['ASTS', 'VST', 'MU', 'TSM', 'FN', 'COHR']; // Tech Forecaster domain trigger tickers
 
   // ── Sector palettes (8-color: body, head, hi, dk, skin, glow, eye, accent) ──
   const PAL = {
@@ -3070,10 +3071,10 @@ const WarRoom = (function() {
 
   // Triad metadata for rendering
   const TRIAD_META = {
-    thesis:   { label: '◆ THESIS',       color: 'rgba(180,140,40,0.22)',  border: 'rgba(200,160,40,0.35)',  labelColor: '#bba040', x: 2,  y: 24, w: 17, h: 3 },
-    timing:   { label: '◆ TIMING',       color: 'rgba(0,200,200,0.18)',   border: 'rgba(0,220,220,0.30)',   labelColor: '#30b0b0', x: 21, y: 24, w: 17, h: 3 },
-    safety:   { label: '◆ SAFETY (3/4)', color: 'rgba(180,40,60,0.15)',   border: 'rgba(200,50,70,0.30)',   labelColor: '#cc4050', x: 1,  y: 27, w: 20, h: 3 },
-    extintel: { label: '◆ EXT INTEL',    color: 'rgba(60,40,140,0.15)',   border: 'rgba(80,50,160,0.30)',   labelColor: '#6a50aa', x: 22, y: 27, w: 16, h: 3 },
+    thesis:   { label: '◆ THESIS',       color: 'rgba(180,140,40,0.22)',  border: 'rgba(200,160,40,0.35)',  labelColor: '#bba040', x: 2,  y: 24, w: 17, h: 3, convictionThreshold: 2 },
+    timing:   { label: '◆ TIMING',       color: 'rgba(0,200,200,0.18)',   border: 'rgba(0,220,220,0.30)',   labelColor: '#30b0b0', x: 21, y: 24, w: 17, h: 3, convictionThreshold: 2 },
+    safety:   { label: '◆ SAFETY (3/4)', color: 'rgba(180,40,60,0.15)',   border: 'rgba(200,50,70,0.30)',   labelColor: '#cc4050', x: 1,  y: 27, w: 20, h: 3, convictionThreshold: 3 },
+    extintel: { label: '◆ EXT INTEL',    color: 'rgba(60,40,140,0.15)',   border: 'rgba(80,50,160,0.30)',   labelColor: '#6a50aa', x: 22, y: 27, w: 16, h: 3, convictionThreshold: 2 },
     floating: { label: '◇ FLOATING',     color: 'rgba(100,100,100,0.08)', border: 'rgba(120,120,120,0.20)', labelColor: '#6a6a7a', x: 5,  y: 30, w: 30, h: 3 },
     bear:     { label: '◇ BEAR VETO',    color: 'rgba(120,10,10,0.10)',   border: 'rgba(180,20,20,0.25)',   labelColor: '#8a2020', x: 14, y: 32.5, w: 12, h: 2 },
   };
@@ -3662,8 +3663,7 @@ const WarRoom = (function() {
       reg.push({ text: '🔒 COMPLIANCE CLEAR', severity: 'ok', ticker: null });
     }
     // Tech Forecaster: Domain ticker trigger
-    const domainTickers = ['ASTS', 'VST', 'MU', 'TSM', 'FN', 'COHR'];
-    const domainFindings = allFindings.filter(f => f.ticker && domainTickers.includes(f.ticker));
+    const domainFindings = allFindings.filter(f => f.ticker && TF_DOMAIN_TICKERS.includes(f.ticker));
     if (domainFindings.length > 0) {
       tf.push({ text: 'TF DOMAIN TRIGGER: ' + domainFindings.length + ' active', severity: 'warning', ticker: null });
       domainFindings.slice(0, 3).forEach(f => tf.push({ ...f, text: 'TF: ' + f.text }));
@@ -3732,11 +3732,11 @@ const WarRoom = (function() {
 
     consensusTickers = _getConsensusTickers(thesisAll, timingAll, safetyAll, extIntelAll);
 
-    // Calculate Triad convictions
-    triadConvictions.thesis   = _calcConviction(thesisResults, 2);   // 2/3
-    triadConvictions.timing   = _calcConviction(timingResults, 2);   // 2/3
-    triadConvictions.safety   = _calcConviction(safetyResults, 3);   // 3/4 (Safety has 4 seats)
-    triadConvictions.extintel = _calcConviction(extIntelResults, 2); // 2/3
+    // Calculate Triad convictions (thresholds defined in TRIAD_META)
+    triadConvictions.thesis   = _calcConviction(thesisResults, TRIAD_META.thesis.convictionThreshold);
+    triadConvictions.timing   = _calcConviction(timingResults, TRIAD_META.timing.convictionThreshold);
+    triadConvictions.safety   = _calcConviction(safetyResults, TRIAD_META.safety.convictionThreshold);
+    triadConvictions.extintel = _calcConviction(extIntelResults, TRIAD_META.extintel.convictionThreshold);
 
     // Floating + Bear findings
     const allTriadFindings = { ...thesisResults, ...timingResults, ...safetyResults, ...extIntelResults };
@@ -4456,7 +4456,7 @@ const WarRoom = (function() {
     ctx.save();
     ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = 1;
-    const HAIR_TOP_OFFSET = { spiky: -3, mohawk: -4, none: -2, long: 0, antenna: -6 };
+    const HAIR_TOP_OFFSET = { spiky: -3, mohawk: -4, none: -2, long: 0, antenna: -6, flat: -1, side: -2, crew: -2, buzz: -1, beanie: -3 };
     const spriteTop = headTop + (HAIR_TOP_OFFSET[bs.hairStyle] || 0);
     const spriteBot = y + bs.legLen;
     ctx.strokeRect(x - halfW - 2, spriteTop, bs.bodyW + 6, spriteBot - spriteTop);
@@ -4970,20 +4970,17 @@ const WarRoom = (function() {
       ctx.fillRect(0, gy, ROOM_W, 2);
     }
 
-    // Chromatic aberration — 1px red/blue channel offset (subtle CRT phosphor misalignment)
-    // Use compositing to create color fringe on bright areas
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.015;
-    // Red channel shift right+down 1px
-    ctx.drawImage(canvas, 1 / (scale * dpr), 0.5 / (scale * dpr));
-    ctx.globalAlpha = 0.012;
-    // Blue channel shift left 1px (via tinted overlay at offset)
-    ctx.fillStyle = 'rgba(0,0,255,0.008)';
-    ctx.fillRect(-1, 0, ROOM_W, ROOM_H);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    ctx.restore();
+    // Chromatic aberration — 1px red/blue channel offset (CRT phosphor misalignment)
+    // Only active in non-GREEN regimes to reduce perf impact
+    if (regime !== 'GREEN') {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.015;
+      ctx.drawImage(canvas, 1 / (scale * dpr), 0.5 / (scale * dpr));
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
 
     // Animated vignette (pulses with VIX)
     const vixDarkenMap = { RED: 0.35, ORANGE: 0.28, YELLOW: 0.22 };
