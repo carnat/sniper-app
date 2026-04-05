@@ -632,6 +632,10 @@
   .stale-badge { font-size: var(--font-xs); padding: 2px 6px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; margin-left: 8px; }
   .stale-badge.warn { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
   .stale-badge.crit { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); animation: blink 1s step-end infinite; }
+  .stale-banner { display: none; width: 100%; padding: 6px 16px; text-align: center; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: var(--font-sm); letter-spacing: 1px; box-sizing: border-box; }
+  .stale-banner.active { display: block; }
+  .stale-banner.warn { background: var(--amber-dim); color: var(--amber); border-bottom: 1px solid var(--amber); }
+  .stale-banner.crit { background: var(--red-dim); color: var(--red); border-bottom: 1px solid var(--red); animation: blink 1s step-end infinite; }
 
   /* ─── PRI GAUGE (B1) ─── */
   .pri-wrap { text-align: center; padding: 12px; }
@@ -739,11 +743,13 @@
     <div class="pin-dismiss" onclick="dismissPin()">skip — stay in public view</div>
   </div>
 </div>
+<!-- STALE DATA BANNER -->
+<div id="staleBanner" class="stale-banner"></div>
 <!-- HEADER -->
 <header class="header">
   <div class="header-left">
     <div class="logo">SNIPER <span>CMD</span></div>
-    <div class="version-badge">v2.0</div>
+    <div class="version-badge" id="appVersion">v2.0</div>
   </div>
   <div class="header-center">
     <div class="gate-badge freeze" id="gateBadge">
@@ -2096,6 +2102,27 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// ─── FETCH VERSION — reads version.json for header display ───
+async function fetchVersion() {
+  const paths = ['./version.json', '../command_center/version.json'];
+  for (const path of paths) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) continue;
+      const v = await res.json();
+      const el = document.getElementById('appVersion');
+      if (el && v.app) el.textContent = 'v' + v.app;
+      // Build doctrine version tooltip
+      const parts = [];
+      if (v.doctrine_core) parts.push('core ' + v.doctrine_core);
+      if (v.doctrine_ops) parts.push('ops ' + v.doctrine_ops);
+      if (v.doctrine_council) parts.push('council ' + v.doctrine_council);
+      if (el && parts.length) el.title = 'Doctrine: ' + parts.join(' · ');
+      return;
+    } catch (_) {}
+  }
+}
+
 // ─── FETCH BAR HELPERS ───
 function barStart() {
   const b = document.getElementById('fetchBar');
@@ -2151,6 +2178,7 @@ async function fetchPrices() {
 
     pricesStale = false;
     lastPriceData = d;
+    updateStaleIndicator(d);
     renderArsenal(ARSENAL_CORE, 'arsenalCore');
     renderArsenal(ARSENAL_SAT, 'arsenalSatellite');
     updateWatchtowerLive(d);
@@ -2161,7 +2189,6 @@ async function fetchPrices() {
     renderTickerTape(d);
     renderPRI(d);
     renderSignalConvergence(d);
-    updateStaleIndicator(d);
 
     // Price timestamp — use first available arsenal ticker's market_time
     const firstSym = ARSENAL_CORE[0]?.ticker || Object.keys(d.prices)[0];
@@ -2175,7 +2202,6 @@ async function fetchPrices() {
       tsEl.textContent = '· Data as of: ' + d.updated_bkk;
     }
 
-    document.getElementById('lastRefresh').textContent = 'Last refresh: ' + d.updated_bkk;
     barDone(true);
 
   } catch (err) {
@@ -2694,17 +2720,32 @@ function newsBadges(headline) {
 // ─── STALE DATA INDICATOR (B8) ───
 function updateStaleIndicator(d) {
   const badge = document.getElementById('staleBadge');
+  const banner = document.getElementById('staleBanner');
   if (!badge) return;
-  if (!d || !d.last_updated) { badge.innerHTML = ''; return; }
+  if (!d || !d.last_updated) { badge.innerHTML = ''; if (banner) { banner.className = 'stale-banner'; banner.textContent = ''; } return; }
   const updated = new Date(d.last_updated);
   const ageMs = Date.now() - updated.getTime();
   const ageHrs = ageMs / (1000 * 60 * 60);
+  // Footer badge
   if (ageHrs > 48) {
     badge.innerHTML = '<span class="stale-badge crit">STALE 48h+</span>';
   } else if (ageHrs > 24) {
     badge.innerHTML = '<span class="stale-badge warn">STALE 24h+</span>';
   } else {
     badge.innerHTML = '';
+  }
+  // Top-of-page stale banner (28h = missed daily refresh window)
+  if (banner) {
+    if (ageHrs > 48) {
+      banner.className = 'stale-banner active crit';
+      banner.textContent = `⚠ PRICE DATA STALE — last update ${Math.round(ageHrs)}h ago · check GitHub Actions pipeline`;
+    } else if (ageHrs > 28) {
+      banner.className = 'stale-banner active warn';
+      banner.textContent = `⚠ PRICE DATA STALE — last update ${Math.round(ageHrs)}h ago · daily refresh may have failed`;
+    } else {
+      banner.className = 'stale-banner';
+      banner.textContent = '';
+    }
   }
   // Update relative time
   const refreshEl = document.getElementById('lastRefresh');
@@ -5725,6 +5766,7 @@ window.addEventListener('load', () => {
   setTimeout(fetchPrices, 300);
   setTimeout(fetchPrivate, 300);
   setTimeout(fetchDoctrine, 400);
+  setTimeout(fetchVersion, 200);
   updateWtCountdown();
 });
 
