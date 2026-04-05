@@ -450,6 +450,22 @@
   .warroom-legend .leg-dot { width: 6px; height: 6px; border-radius: 1px; }
   .warroom-legend .leg-all { cursor: pointer; color: var(--text-mid); font-weight: 700; user-select: none; }
 
+  /* ── View Toggle (stocks/council split) ── */
+  .wr-view-toggle {
+    position: absolute; bottom: 8px; right: 12px; display: flex; gap: 2px;
+    font-size: 9px; z-index: 5; pointer-events: auto;
+  }
+  .wr-view-btn {
+    background: rgba(20,24,36,0.85); border: 1px solid rgba(80,90,110,0.3);
+    color: var(--text-dim); padding: 3px 8px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600;
+    letter-spacing: 1px; transition: all 0.15s;
+  }
+  .wr-view-btn:first-child { border-radius: 3px 0 0 3px; }
+  .wr-view-btn:last-child { border-radius: 0 3px 3px 0; }
+  .wr-view-btn:hover { background: rgba(40,50,70,0.9); color: var(--text-mid); }
+  .wr-view-btn.active { background: rgba(58,159,255,0.25); border-color: rgba(58,159,255,0.5); color: #8ac4ff; }
+
   /* ── Agent Detail Drawer (C13) ── */
   .wr-drawer {
     position: absolute; top: 0; right: -340px; width: 320px; height: 100%;
@@ -571,6 +587,8 @@
     .wr-findings-toggle { top: auto; bottom: 60px; left: 4px; writing-mode: horizontal-tb; }
     .wr-findings.open ~ .wr-findings-toggle { left: 4px; bottom: calc(60vh + 4px); }
     .warroom-legend { bottom: 4px; left: 4px; gap: 6px; font-size: 8px; flex-wrap: wrap; }
+    .wr-view-toggle { bottom: 4px; right: 4px; }
+    .wr-view-btn { padding: 2px 6px; font-size: 8px; }
     .wr-compare { flex-direction: column; }
   }
 
@@ -1597,6 +1615,12 @@
     <!-- Comparison Panel (C18) -->
     <div class="wr-compare" id="wrCompare">
       <button class="cmp-clear" id="wrCmpClear">✕ Clear</button>
+    </div>
+    <!-- View Toggle (split stocks / council) -->
+    <div class="wr-view-toggle" id="wrViewToggle">
+      <button class="wr-view-btn active" data-view="all">ALL</button>
+      <button class="wr-view-btn" data-view="stocks">STOCKS</button>
+      <button class="wr-view-btn" data-view="council">COUNCIL</button>
     </div>
     <!-- Legend with clickable filter toggles (C14) -->
     <div class="warroom-legend" id="wrLegend">
@@ -3226,6 +3250,7 @@ const WarRoom = (function() {
   // v4.0 state
   let _focusedIdx = -1;
   let sectorFilters = {};       // sector → boolean (true = visible)
+  let currentView = 'all';      // sub-view: 'all' | 'stocks' | 'council'
   let searchHighlight = null;   // ticker string to highlight
   let ambientMode = false;
   let particles = [];           // activity particles (D21)
@@ -3780,7 +3805,7 @@ const WarRoom = (function() {
 
   // ── Drawing (Metro Pixel Art aesthetic) ──
   let metroPhase = 0;   // animated circuit pulse phase
-  let glitchTimer = 0;  // CRT glitch timer
+  // (CRT effects removed in v4.1)
 
   function drawFloor() {
     metroPhase += 0.02;
@@ -3877,96 +3902,105 @@ const WarRoom = (function() {
   }
 
   function drawZones() {
-    // Arsenal zone highlight
-    ctx.fillStyle = ZONE_ARSENAL;
-    ctx.fillRect(2 * TILE, 3.5 * TILE, 36 * TILE, 7.5 * TILE);
-    // Watchtower zone highlight
-    ctx.fillStyle = ZONE_WT;
-    ctx.fillRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
-    // Vault zone highlight
-    ctx.fillStyle = ZONE_VAULT;
-    ctx.fillRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
+    // Stock zones — hidden in council-only view
+    if (currentView !== 'council') {
+      // Arsenal zone highlight
+      ctx.fillStyle = ZONE_ARSENAL;
+      ctx.fillRect(2 * TILE, 3.5 * TILE, 36 * TILE, 7.5 * TILE);
+      // Watchtower zone highlight
+      ctx.fillStyle = ZONE_WT;
+      ctx.fillRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
+      // Vault zone highlight
+      ctx.fillStyle = ZONE_VAULT;
+      ctx.fillRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
 
-    // Council Parliament — Triad zone highlights with neon borders
-    Object.entries(TRIAD_META).forEach(([key, tm]) => {
-      const zx = tm.x * TILE, zy = tm.y * TILE, zw = tm.w * TILE, zh = tm.h * TILE;
-      // Fill
-      ctx.fillStyle = tm.color;
-      ctx.fillRect(zx, zy, zw, zh);
-      // Neon border (1-2px, flickering)
+      // Zone border lines (stock zones)
       ctx.save();
-      const flicker = 0.8 + Math.sin(metroPhase * 3 + key.length) * 0.2;
-      ctx.globalAlpha = flicker;
-      if (key === 'floating') {
-        ctx.setLineDash([4, 4]);
-      }
-      ctx.strokeStyle = tm.border;
-      ctx.lineWidth = key === 'bear' ? 1 : 1.5;
-      ctx.strokeRect(zx, zy, zw, zh);
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = 'rgba(58,159,255,0.20)';
+      ctx.strokeRect(2 * TILE, 3.5 * TILE, 36 * TILE, 7.5 * TILE);
+      ctx.strokeStyle = 'rgba(0,200,224,0.18)';
+      ctx.strokeRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
+      ctx.strokeStyle = 'rgba(128,128,128,0.18)';
+      ctx.strokeRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
       ctx.setLineDash([]);
       ctx.restore();
-    });
 
-    // Zone border lines (stock zones)
-    ctx.save();
-    ctx.lineWidth = 0.5;
-    ctx.setLineDash([3, 3]);
-    ctx.strokeStyle = 'rgba(58,159,255,0.20)';
-    ctx.strokeRect(2 * TILE, 3.5 * TILE, 36 * TILE, 7.5 * TILE);
-    ctx.strokeStyle = 'rgba(0,200,224,0.18)';
-    ctx.strokeRect(2 * TILE, 11.5 * TILE, 36 * TILE, 8 * TILE);
-    ctx.strokeStyle = 'rgba(128,128,128,0.18)';
-    ctx.strokeRect(2 * TILE, 20 * TILE, 36 * TILE, 4.5 * TILE);
-    ctx.setLineDash([]);
-    ctx.restore();
+      // Zone labels — metro station sign style (stock zones)
+      ctx.save();
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#4a7aaa';
+      ctx.fillText('ARSENAL', 2.5 * TILE, 4.2 * TILE);
+      ctx.fillStyle = '#3a8898';
+      ctx.fillText('WATCHTOWER', 2.5 * TILE, 12.2 * TILE);
+      ctx.fillStyle = '#6a7a8a';
+      ctx.fillText('VAULT / RESERVE', 2.5 * TILE, 20.6 * TILE);
+      ctx.restore();
+    }
 
-    // Zone labels — metro station sign style
-    ctx.save();
-    ctx.font = '9px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#4a7aaa';
-    ctx.fillText('ARSENAL', 2.5 * TILE, 4.2 * TILE);
-    ctx.fillStyle = '#3a8898';
-    ctx.fillText('WATCHTOWER', 2.5 * TILE, 12.2 * TILE);
-    ctx.fillStyle = '#6a7a8a';
-    ctx.fillText('VAULT / RESERVE', 2.5 * TILE, 20.6 * TILE);
+    // Council Parliament — hidden in stocks-only view
+    if (currentView !== 'stocks') {
+      // Triad zone highlights with neon borders
+      Object.entries(TRIAD_META).forEach(([key, tm]) => {
+        const zx = tm.x * TILE, zy = tm.y * TILE, zw = tm.w * TILE, zh = tm.h * TILE;
+        // Fill
+        ctx.fillStyle = tm.color;
+        ctx.fillRect(zx, zy, zw, zh);
+        // Neon border (1-2px, flickering)
+        ctx.save();
+        const flicker = 0.8 + Math.sin(metroPhase * 3 + key.length) * 0.2;
+        ctx.globalAlpha = flicker;
+        if (key === 'floating') {
+          ctx.setLineDash([4, 4]);
+        }
+        ctx.strokeStyle = tm.border;
+        ctx.lineWidth = key === 'bear' ? 1 : 1.5;
+        ctx.strokeRect(zx, zy, zw, zh);
+        ctx.setLineDash([]);
+        ctx.restore();
+      });
 
-    // Triad labels with indicator dots
-    ctx.font = 'bold 8px monospace';
-    Object.entries(TRIAD_META).forEach(([key, tm]) => {
-      ctx.fillStyle = tm.labelColor;
-      ctx.fillText(tm.label, (tm.x + 0.3) * TILE, tm.y * TILE + 10);
-      // Animated indicator dot
-      const dotPulse = Math.sin(metroPhase * 2 + key.length * 1.5) > 0.3 ? 1 : 0.3;
-      ctx.globalAlpha = dotPulse;
-      ctx.fillRect((tm.x + 0.1) * TILE, tm.y * TILE + 6, 2, 2);
-      ctx.globalAlpha = 1;
-    });
-    ctx.restore();
+      // Triad labels with indicator dots
+      ctx.save();
+      ctx.font = 'bold 8px monospace';
+      Object.entries(TRIAD_META).forEach(([key, tm]) => {
+        ctx.fillStyle = tm.labelColor;
+        ctx.fillText(tm.label, (tm.x + 0.3) * TILE, tm.y * TILE + 10);
+        // Animated indicator dot
+        const dotPulse = Math.sin(metroPhase * 2 + key.length * 1.5) > 0.3 ? 1 : 0.3;
+        ctx.globalAlpha = dotPulse;
+        ctx.fillRect((tm.x + 0.1) * TILE, tm.y * TILE + 6, 2, 2);
+        ctx.globalAlpha = 1;
+      });
+      ctx.restore();
 
-    // Conviction badges per Triad
-    ctx.save();
-    ctx.font = 'bold 7px monospace';
-    ctx.textAlign = 'right';
-    Object.entries(TRIAD_META).forEach(([key, tm]) => {
-      if (key === 'floating' || key === 'bear') return;
-      const conv = triadConvictions[key];
-      if (conv === true) {
-        ctx.fillStyle = '#30cc60';
-        ctx.fillText('✓ CONVICTION', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
-      } else if (conv === false) {
-        ctx.fillStyle = '#ff4050';
-        ctx.fillText('✗ NO CONVICTION', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
-      } else {
-        ctx.fillStyle = '#8888aa';
-        ctx.fillText('— PENDING', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
-      }
-    });
-    ctx.restore();
+      // Conviction badges per Triad
+      ctx.save();
+      ctx.font = 'bold 7px monospace';
+      ctx.textAlign = 'right';
+      Object.entries(TRIAD_META).forEach(([key, tm]) => {
+        if (key === 'floating' || key === 'bear') return;
+        const conv = triadConvictions[key];
+        if (conv === true) {
+          ctx.fillStyle = '#30cc60';
+          ctx.fillText('✓ CONVICTION', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
+        } else if (conv === false) {
+          ctx.fillStyle = '#ff4050';
+          ctx.fillText('✗ NO CONVICTION', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
+        } else {
+          ctx.fillStyle = '#8888aa';
+          ctx.fillText('— PENDING', (tm.x + tm.w - 0.3) * TILE, tm.y * TILE + 10);
+        }
+      });
+      ctx.restore();
+    }
   }
 
   // Data-flow pipes between zones (metro map routes)
   function drawDataPipes() {
+    if (currentView !== 'all') return; // pipes only meaningful when all zones visible
     ctx.save();
     ctx.lineWidth = 0.5;
     // Arsenal → Watchtower pipe
@@ -3990,6 +4024,7 @@ const WarRoom = (function() {
   }
 
   function drawCouncilTable() {
+    if (currentView === 'stocks') return; // council not visible in stocks view
     // Parliament amphitheater center area — between Thesis/Timing and Safety/ExtIntel
     const cx = Math.round(ROOM_W / 2);
     const cy = Math.round(26.5 * TILE);
@@ -4753,6 +4788,7 @@ const WarRoom = (function() {
     ctx.fillText('RADAR', mx + 1, my + 4);
     // Agent dots
     agents.forEach(a => {
+      if (_isViewHidden(a)) return;
       const dx = mx + a.x * sx;
       const dy = my + a.y * sy;
       const blink = (a.zone === 'council' || a.zone === 'commander') ? (Math.sin(atmospherePhase * 3 + a.x) > 0.3 ? 1 : 0.3) : 1;
@@ -4926,8 +4962,9 @@ const WarRoom = (function() {
     // Sort agents by Y for depth (paint back-to-front)
     const sorted = [...agents].sort((a, b) => a.y - b.y);
 
-    // Apply sector filter visibility
+    // Apply sector filter + view filter visibility
     sorted.forEach(a => {
+      if (_isViewHidden(a)) return; // completely hidden in this view
       if (_isSectorHidden(a)) {
         ctx.globalAlpha = 0.15;
         drawAgent(a);
@@ -4938,7 +4975,7 @@ const WarRoom = (function() {
     });
     // Draw speech bubbles on top
     sorted.forEach(a => {
-      if (!_isSectorHidden(a)) drawSpeechBubble(a);
+      if (!_isViewHidden(a) && !_isSectorHidden(a)) drawSpeechBubble(a);
     });
 
     // Particles (D21) — sector-colored spark particles with trails
@@ -4953,58 +4990,6 @@ const WarRoom = (function() {
     drawDepartureBoard();
     drawMiniMap();
 
-    // Enhanced CRT scanlines
-    ctx.fillStyle = 'rgba(0,0,0,0.025)';
-    for (let sy = 0; sy < ROOM_H; sy += 2) {
-      ctx.fillRect(0, sy, ROOM_W, 1);
-    }
-
-    // Occasional glitch bar (2px tall, every ~10s)
-    glitchTimer += 0.016;
-    if (glitchTimer > 10) {
-      glitchTimer = 0;
-    }
-    if (glitchTimer < 0.06) {
-      const gy = Math.random() * ROOM_H;
-      ctx.fillStyle = 'rgba(0,200,255,0.08)';
-      ctx.fillRect(0, gy, ROOM_W, 2);
-    }
-
-    // Chromatic aberration — 1px red/blue channel offset (CRT phosphor misalignment)
-    // Only active in non-GREEN regimes to reduce perf impact
-    if (regime !== 'GREEN') {
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.015;
-      ctx.drawImage(canvas, 1 / (scale * dpr), 0.5 / (scale * dpr));
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1;
-      ctx.restore();
-    }
-
-    // Animated vignette (pulses with VIX)
-    const vixDarkenMap = { RED: 0.35, ORANGE: 0.28, YELLOW: 0.22 };
-    const vixDarken = vixDarkenMap[regime] || 0.15;
-    const vigPulse = vixDarken + Math.sin(atmospherePhase * 0.5) * 0.02;
-    const vg = ctx.createRadialGradient(ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.35, ROOM_W / 2, ROOM_H / 2, ROOM_W * 0.7);
-    vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(1, 'rgba(0,0,0,' + vigPulse.toFixed(3) + ')');
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, ROOM_W, ROOM_H);
-
-    // Corner CRT bezel brackets
-    ctx.strokeStyle = 'rgba(40,40,50,0.3)';
-    ctx.lineWidth = 2;
-    const bz = 8;
-    // Top-left
-    ctx.beginPath(); ctx.moveTo(bz, 1); ctx.lineTo(1, 1); ctx.lineTo(1, bz); ctx.stroke();
-    // Top-right
-    ctx.beginPath(); ctx.moveTo(ROOM_W - bz, 1); ctx.lineTo(ROOM_W - 1, 1); ctx.lineTo(ROOM_W - 1, bz); ctx.stroke();
-    // Bottom-left
-    ctx.beginPath(); ctx.moveTo(bz, ROOM_H - 1); ctx.lineTo(1, ROOM_H - 1); ctx.lineTo(1, ROOM_H - bz); ctx.stroke();
-    // Bottom-right
-    ctx.beginPath(); ctx.moveTo(ROOM_W - bz, ROOM_H - 1); ctx.lineTo(ROOM_W - 1, ROOM_H - 1); ctx.lineTo(ROOM_W - 1, ROOM_H - bz); ctx.stroke();
-
     ctx.restore();
   }
 
@@ -5016,37 +5001,51 @@ const WarRoom = (function() {
     return sectorFilters[base] === false;
   }
 
+  function _isViewHidden(a) {
+    if (currentView === 'all') return false;
+    if (currentView === 'stocks') {
+      return a.zone === 'council';
+    }
+    if (currentView === 'council') {
+      return a.zone === 'arsenal' || a.zone === 'watchtower' || a.zone === 'sentinel';
+    }
+    return false;
+  }
+
   // ── Zone HUD panels (B8) ──
   function drawZoneHUDs() {
     ctx.save();
     ctx.font = '6px monospace';
 
-    // Arsenal zone stats
-    const arsAgents = agents.filter(a => a.zone === 'arsenal');
-    const arsAvgChg = arsAgents.reduce((s, a) => s + (a.changePct || 0), 0) / (arsAgents.length || 1);
-    ctx.fillStyle = 'rgba(10,14,20,0.7)';
-    ctx.fillRect(32 * TILE, 3.5 * TILE, 6 * TILE, 2.4 * TILE);
-    ctx.fillStyle = '#4a7aaa';
-    ctx.fillText('POSITIONS: ' + arsAgents.length, 32.3 * TILE, 4.2 * TILE);
-    const chgColor = arsAvgChg >= 0 ? '#40c070' : '#ff5060';
-    ctx.fillStyle = chgColor;
-    ctx.fillText('AVG: ' + (arsAvgChg >= 0 ? '+' : '') + arsAvgChg.toFixed(2) + '%', 32.3 * TILE, 5 * TILE);
+    // Arsenal zone stats — hidden in council view
+    if (currentView !== 'council') {
+      const arsAgents = agents.filter(a => a.zone === 'arsenal');
+      const arsAvgChg = arsAgents.reduce((s, a) => s + (a.changePct || 0), 0) / (arsAgents.length || 1);
+      ctx.fillStyle = 'rgba(10,14,20,0.7)';
+      ctx.fillRect(32 * TILE, 3.5 * TILE, 6 * TILE, 2.4 * TILE);
+      ctx.fillStyle = '#4a7aaa';
+      ctx.fillText('POSITIONS: ' + arsAgents.length, 32.3 * TILE, 4.2 * TILE);
+      const chgColor = arsAvgChg >= 0 ? '#40c070' : '#ff5060';
+      ctx.fillStyle = chgColor;
+      ctx.fillText('AVG: ' + (arsAvgChg >= 0 ? '+' : '') + arsAvgChg.toFixed(2) + '%', 32.3 * TILE, 5 * TILE);
 
-    // Watchtower zone stats
-    const wtAgents = agents.filter(a => a.zone === 'watchtower');
-    const coreCount = wtAgents.filter(a => a.tier && !a.tier.startsWith('SAT')).length;
-    const satCount = wtAgents.filter(a => a.tier && a.tier.startsWith('SAT')).length;
-    ctx.fillStyle = 'rgba(10,14,20,0.7)';
-    ctx.fillRect(32 * TILE, 11.5 * TILE, 6 * TILE, 2.4 * TILE);
-    ctx.fillStyle = '#3a8898';
-    ctx.fillText('CORE: ' + coreCount + '/12', 32.3 * TILE, 12.2 * TILE);
-    ctx.fillText('SAT: ' + satCount + '/3', 32.3 * TILE, 13 * TILE);
+      // Watchtower zone stats
+      const wtAgents = agents.filter(a => a.zone === 'watchtower');
+      const coreCount = wtAgents.filter(a => a.tier && !a.tier.startsWith('SAT')).length;
+      const satCount = wtAgents.filter(a => a.tier && a.tier.startsWith('SAT')).length;
+      ctx.fillStyle = 'rgba(10,14,20,0.7)';
+      ctx.fillRect(32 * TILE, 11.5 * TILE, 6 * TILE, 2.4 * TILE);
+      ctx.fillStyle = '#3a8898';
+      ctx.fillText('CORE: ' + coreCount + '/12', 32.3 * TILE, 12.2 * TILE);
+      ctx.fillText('SAT: ' + satCount + '/3', 32.3 * TILE, 13 * TILE);
+    }
 
-    // Council Parliament zone stats
-    const councilAgents = agents.filter(a => a.zone === 'council');
-    const allFindings = councilAgents.reduce((arr, a) => arr.concat(a.findings || []), []);
-    const critF = allFindings.filter(f => f.severity === 'critical').length;
-    const warnF = allFindings.filter(f => f.severity === 'warning').length;
+    // Council Parliament zone stats — hidden in stocks view
+    if (currentView !== 'stocks') {
+      const councilAgents = agents.filter(a => a.zone === 'council');
+      const allFindings = councilAgents.reduce((arr, a) => arr.concat(a.findings || []), []);
+      const critF = allFindings.filter(f => f.severity === 'critical').length;
+      const warnF = allFindings.filter(f => f.severity === 'warning').length;
     const infoF = allFindings.filter(f => f.severity === 'info' || f.severity === 'ok').length;
     ctx.fillStyle = 'rgba(10,14,20,0.7)';
     ctx.fillRect(32 * TILE, 24 * TILE, 6 * TILE, 3 * TILE);
@@ -5058,10 +5057,11 @@ const WarRoom = (function() {
     ctx.fillText('🟡 ' + warnF, 34 * TILE, 25.5 * TILE);
     ctx.fillStyle = '#6a8a9a';
     ctx.fillText('ℹ ' + infoF, 35.5 * TILE, 25.5 * TILE);
-    // Consensus count
-    if (consensusTickers.length > 0) {
-      ctx.fillStyle = '#cc8800';
-      ctx.fillText('⚡ ' + consensusTickers.length, 32.3 * TILE, 26.3 * TILE);
+      // Consensus count
+      if (consensusTickers.length > 0) {
+        ctx.fillStyle = '#cc8800';
+        ctx.fillText('⚡ ' + consensusTickers.length, 32.3 * TILE, 26.3 * TILE);
+      }
     }
 
     ctx.restore();
@@ -5072,7 +5072,7 @@ const WarRoom = (function() {
     // Spawn particles for deployed agents
     if (particles.length < MAX_PARTICLES) {
       agents.forEach(a => {
-        if (a.state === 'deployed' && Math.random() < PARTICLE_SPAWN_RATE && !_isSectorHidden(a)) {
+        if (a.state === 'deployed' && Math.random() < PARTICLE_SPAWN_RATE && !_isSectorHidden(a) && !_isViewHidden(a)) {
           particles.push({
             x: a.x + (Math.random() - 0.5) * 8,
             y: a.y - 12,
@@ -5086,9 +5086,6 @@ const WarRoom = (function() {
     // Update existing
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
-      // Store previous positions for phosphor trail
-      p.prevX2 = p.prevX; p.prevY2 = p.prevY;
-      p.prevX = p.x; p.prevY = p.y;
       p.y += p.vy;
       p.life -= 0.02;
       if (p.life <= 0) particles.splice(i, 1);
@@ -5097,13 +5094,6 @@ const WarRoom = (function() {
   function _drawParticles() {
     particles.forEach(p => {
       ctx.fillStyle = p.color;
-      // Phosphor trail — 2 fading copies behind particle
-      if (p.prevY != null) {
-        ctx.globalAlpha = p.life * 0.15;
-        ctx.fillRect(p.prevX2 || p.x, p.prevY2 || p.prevY, 1, 1);
-        ctx.globalAlpha = p.life * 0.3;
-        ctx.fillRect(p.prevX || p.x, p.prevY, 1.2, 1.2);
-      }
       // Main particle with bloom halo
       ctx.globalAlpha = p.life * 0.15;
       ctx.fillRect(p.x - 0.5, p.y - 0.5, 2.5, 2.5);
@@ -5485,6 +5475,17 @@ const WarRoom = (function() {
     if (btn) btn.classList.toggle('active', ambientMode);
   }
 
+  function setView(view) {
+    if (!['all', 'stocks', 'council'].includes(view)) return;
+    currentView = view;
+    // Update toggle buttons
+    document.querySelectorAll('.wr-view-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === view);
+    });
+    // Persist view choice
+    try { sessionStorage.setItem('wr_view', view); } catch (_) {}
+  }
+
   // ── Multi-Agent Comparison (C18) ──
   function _addToCompare(a) {
     if (compareAgents.length >= MAX_COMPARE || compareAgents.includes(a)) return;
@@ -5655,6 +5656,25 @@ const WarRoom = (function() {
         });
       }
     } catch (_) {}
+
+    // View toggle (stocks/council split)
+    const viewToggle = document.getElementById('wrViewToggle');
+    if (viewToggle) {
+      viewToggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-view]');
+        if (btn) setView(btn.dataset.view);
+      });
+    }
+    // Restore view from sessionStorage
+    try {
+      const savedView = sessionStorage.getItem('wr_view');
+      if (savedView && ['all', 'stocks', 'council'].includes(savedView)) {
+        currentView = savedView;
+        document.querySelectorAll('.wr-view-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.view === savedView);
+        });
+      }
+    } catch (_) {}
   }
 
   // ── Public API ──
@@ -5675,6 +5695,7 @@ const WarRoom = (function() {
     toggleSectorFilter: toggleSectorFilter,
     setSearchHighlight: setSearchHighlight,
     toggleAmbient: toggleAmbient,
+    setView: setView,
     get agents() { return agents; },
     get regime() { return regime; },
     get _focusedIdx() { return _focusedIdx; },
