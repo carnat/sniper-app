@@ -3228,6 +3228,8 @@ const WarRoom = (function() {
   let searchHighlight = null;   // ticker string to highlight
   let ambientMode = false;
   let particles = [];           // activity particles (D21)
+  let consensusPackets = [];    // inter-agent data packet particles (Metro)
+  let departureBoard = [];      // flip-dot departure board entries
   let atmospherePhase = 0;      // (D22)
   let drawerAgent = null;       // currently open drawer agent
   let compareAgents = [];       // up to 3 agents for comparison (C18)
@@ -3441,6 +3443,16 @@ const WarRoom = (function() {
           a.speechLife = a.speech ? 99999 : 0;
         }
       });
+    }
+    // Populate departure board with recent price changes
+    departureBoard = [];
+    if (d.prices) {
+      const entries = Object.entries(d.prices)
+        .filter(([, v]) => v.price && v.change != null)
+        .map(([ticker, v]) => ({ ticker, price: v.price, chg: v.change }))
+        .sort((a, b) => Math.abs(b.chg) - Math.abs(a.chg))
+        .slice(0, 5);
+      departureBoard = entries;
     }
     const overlay = document.getElementById('wrRegimeOverlay');
     if (overlay) overlay.className = 'warroom-regime-overlay regime-' + regime.toLowerCase();
@@ -4722,11 +4734,146 @@ const WarRoom = (function() {
     ctx.restore();
   }
 
+  // ── Mini-map radar (top-right corner) ──
+  function drawMiniMap() {
+    const mw = 50, mh = 42;
+    const mx = ROOM_W - mw - 6, my = 4;
+    const sx = mw / ROOM_W, sy = mh / ROOM_H;
+    ctx.save();
+    // Background
+    ctx.fillStyle = 'rgba(5,8,18,0.75)';
+    ctx.fillRect(mx, my, mw, mh);
+    ctx.strokeStyle = 'rgba(0,200,255,0.2)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(mx, my, mw, mh);
+    // Label
+    ctx.font = '4px monospace';
+    ctx.fillStyle = 'rgba(0,200,255,0.4)';
+    ctx.textAlign = 'left';
+    ctx.fillText('RADAR', mx + 1, my + 4);
+    // Agent dots
+    agents.forEach(a => {
+      const dx = mx + a.x * sx;
+      const dy = my + a.y * sy;
+      const blink = (a.zone === 'council' || a.zone === 'commander') ? (Math.sin(atmospherePhase * 3 + a.x) > 0.3 ? 1 : 0.3) : 1;
+      ctx.globalAlpha = blink;
+      if (a.zone === 'arsenal') ctx.fillStyle = '#3a9fff';
+      else if (a.zone === 'watchtower') ctx.fillStyle = '#00c8e0';
+      else if (a.zone === 'commander') ctx.fillStyle = '#ffdd44';
+      else if (a.zone === 'sentinel') ctx.fillStyle = '#ff4040';
+      else if (a.zone === 'council') {
+        if (a.triad === 'thesis') ctx.fillStyle = '#c8a030';
+        else if (a.triad === 'timing') ctx.fillStyle = '#20bbbb';
+        else if (a.triad === 'safety') ctx.fillStyle = '#cc4050';
+        else if (a.triad === 'extintel') ctx.fillStyle = '#5050aa';
+        else if (a.triad === 'floating') ctx.fillStyle = '#707080';
+        else if (a.triad === 'bear') ctx.fillStyle = '#8a2020';
+        else ctx.fillStyle = '#b080ff';
+      } else ctx.fillStyle = '#606070';
+      ctx.fillRect(dx, dy, 1.5, 1.5);
+    });
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // ── Flip-dot departure board (bottom-right, price changes) ──
+  function drawDepartureBoard() {
+    if (departureBoard.length === 0) return;
+    const bw = 120, bh = 28;
+    const bx = ROOM_W - bw - 8, by = (ROOM_ROWS - 2.8) * TILE;
+    ctx.save();
+    // Board background
+    ctx.fillStyle = 'rgba(5,5,10,0.85)';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = 'rgba(60,60,80,0.4)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(bx, by, bw, bh);
+    // Header
+    ctx.font = '5px monospace';
+    ctx.fillStyle = 'rgba(255,180,0,0.5)';
+    ctx.textAlign = 'left';
+    ctx.fillText('DEPARTURES', bx + 2, by + 5);
+    // Entries (show up to 3)
+    ctx.font = '6px monospace';
+    const entries = departureBoard.slice(0, 3);
+    entries.forEach((e, i) => {
+      const ey = by + 10 + i * 6;
+      // Ticker
+      ctx.fillStyle = '#8ab0c8';
+      ctx.fillText(e.ticker, bx + 2, ey + 4);
+      // Price with flip animation: slight vertical offset based on phase
+      const flipPhase = Math.sin(atmospherePhase * 2 + i) * 0.3;
+      ctx.fillStyle = e.chg >= 0 ? '#00d084' : '#ff4055';
+      const priceStr = e.price.toFixed(2);
+      // Flip-dot: offset each character slightly for mechanical feel
+      for (let ci = 0; ci < priceStr.length; ci++) {
+        const charOffset = Math.sin(atmospherePhase * 3 + ci * 0.5 + i) * 0.3;
+        ctx.fillText(priceStr[ci], bx + 30 + ci * 4, ey + 4 + charOffset);
+      }
+      // Change %
+      const chgStr = (e.chg >= 0 ? '+' : '') + e.chg.toFixed(1) + '%';
+      ctx.fillText(chgStr, bx + 80, ey + 4 + flipPhase);
+    });
+    ctx.restore();
+  }
+
+  // ── Consensus data packets (travel between agents on consensus) ──
+  function _updateConsensusPackets() {
+    // Spawn packets when consensus detected
+    if (consensusTickers.length > 0 && consensusPackets.length < 15 && Math.random() < 0.03) {
+      // Pick random pair of agents from different triads with findings
+      const councilAgents = agents.filter(a => a.zone === 'council' && a.findings && a.findings.length > 0);
+      if (councilAgents.length >= 2) {
+        const a1 = councilAgents[Math.floor(Math.random() * councilAgents.length)];
+        let a2 = a1;
+        for (let tries = 0; tries < 5 && a2.triad === a1.triad; tries++) {
+          a2 = councilAgents[Math.floor(Math.random() * councilAgents.length)];
+        }
+        if (a2 !== a1) {
+          consensusPackets.push({
+            x: a1.x, y: a1.y - 8,
+            tx: a2.x, ty: a2.y - 8,
+            progress: 0,
+            color: a1.pal.glow || a1.pal.hi,
+          });
+        }
+      }
+    }
+    // Update packets
+    for (let i = consensusPackets.length - 1; i >= 0; i--) {
+      const pk = consensusPackets[i];
+      pk.progress += 0.02;
+      pk.x += (pk.tx - pk.x) * 0.02;
+      pk.y += (pk.ty - pk.y) * 0.02;
+      if (pk.progress >= 1) consensusPackets.splice(i, 1);
+    }
+  }
+  function _drawConsensusPackets() {
+    consensusPackets.forEach(pk => {
+      const alpha = Math.sin(pk.progress * Math.PI) * 0.6;
+      ctx.fillStyle = pk.color;
+      ctx.globalAlpha = alpha;
+      ctx.fillRect(pk.x, pk.y, 2, 2);
+      // Phosphor trail (2-frame fading copies)
+      ctx.globalAlpha = alpha * 0.4;
+      ctx.fillRect(pk.x - (pk.tx - pk.x) * 0.02, pk.y - (pk.ty - pk.y) * 0.02, 1.5, 1.5);
+      ctx.globalAlpha = alpha * 0.15;
+      ctx.fillRect(pk.x - (pk.tx - pk.x) * 0.04, pk.y - (pk.ty - pk.y) * 0.04, 1, 1);
+    });
+    ctx.globalAlpha = 1;
+  }
+
   // ── Render frame ──
   function render() {
     ctx.save();
     const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+    // RED regime screen shake (1px random offset every 0.5s)
+    let shakeX = 0, shakeY = 0;
+    if (regime === 'RED') {
+      shakeX = (Math.random() - 0.5) * 2;
+      shakeY = (Math.random() - 0.5) * 2;
+    }
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, shakeX * scale * dpr, shakeY * scale * dpr);
     ctx.clearRect(0, 0, ROOM_W, ROOM_H);
 
     drawFloor();
@@ -4798,7 +4945,13 @@ const WarRoom = (function() {
     _updateParticles();
     _drawParticles();
 
+    // Consensus data packets (travel between agents during consensus)
+    _updateConsensusPackets();
+    _drawConsensusPackets();
+
     drawStatusBar();
+    drawDepartureBoard();
+    drawMiniMap();
 
     // Enhanced CRT scanlines
     ctx.fillStyle = 'rgba(0,0,0,0.025)';
@@ -4817,8 +4970,20 @@ const WarRoom = (function() {
       ctx.fillRect(0, gy, ROOM_W, 2);
     }
 
-    // Chromatic aberration hint on text areas (subtle 1px offset)
-    // Applied via composite - minimal perf impact
+    // Chromatic aberration — 1px red/blue channel offset (subtle CRT phosphor misalignment)
+    // Use compositing to create color fringe on bright areas
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.015;
+    // Red channel shift right+down 1px
+    ctx.drawImage(canvas, 1 / (scale * dpr), 0.5 / (scale * dpr));
+    ctx.globalAlpha = 0.012;
+    // Blue channel shift left 1px (via tinted overlay at offset)
+    ctx.fillStyle = 'rgba(0,0,255,0.008)';
+    ctx.fillRect(-1, 0, ROOM_W, ROOM_H);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.restore();
 
     // Animated vignette (pulses with VIX)
     const vixDarkenMap = { RED: 0.35, ORANGE: 0.28, YELLOW: 0.22 };
@@ -4924,6 +5089,9 @@ const WarRoom = (function() {
     // Update existing
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
+      // Store previous positions for phosphor trail
+      p.prevX2 = p.prevX; p.prevY2 = p.prevY;
+      p.prevX = p.x; p.prevY = p.y;
       p.y += p.vy;
       p.life -= 0.02;
       if (p.life <= 0) particles.splice(i, 1);
@@ -4932,6 +5100,16 @@ const WarRoom = (function() {
   function _drawParticles() {
     particles.forEach(p => {
       ctx.fillStyle = p.color;
+      // Phosphor trail — 2 fading copies behind particle
+      if (p.prevY != null) {
+        ctx.globalAlpha = p.life * 0.15;
+        ctx.fillRect(p.prevX2 || p.x, p.prevY2 || p.prevY, 1, 1);
+        ctx.globalAlpha = p.life * 0.3;
+        ctx.fillRect(p.prevX || p.x, p.prevY, 1.2, 1.2);
+      }
+      // Main particle with bloom halo
+      ctx.globalAlpha = p.life * 0.15;
+      ctx.fillRect(p.x - 0.5, p.y - 0.5, 2.5, 2.5);
       ctx.globalAlpha = p.life * 0.5;
       ctx.fillRect(p.x, p.y, 1.5, 1.5);
     });
