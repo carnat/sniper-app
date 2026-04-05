@@ -7,6 +7,7 @@ Static HTML only. No Python. No server. No build step.
 - `../data/prices.json` — populated by GitHub Action daily at 09:00 BKK; read via `fetch('../data/prices.json')`
 - `./private.json` — gitignored, local dev only; injected without PIN prompt
 - `./private.enc.json` — AES-256-GCM encrypted, safe to commit; decrypted in-browser via PIN modal
+- `../data/doctrine_state.json` — gitignored, live thesis/tripwire/blackout data; see `data/doctrine_state.example.json` for schema
 
 ## Dependencies (CDN only)
 - Fonts: JetBrains Mono + Rajdhani via `fonts.googleapis.com`
@@ -43,41 +44,51 @@ Features added via PR #16, WorldMonitor-inspired:
 - **CSS Semantic Tokens** — `--panel-radius`, `--font-xs`→`--font-xl`, `--shadow-card`, `--transition-fast/normal`.
 - **Shared Helper** — `getBlackoutTickers()` used by both PRI and Triad Council audit engine.
 
-## War Room architecture (CMD-4 + CMD-5)
-- Canvas 2D rendering engine with `requestAnimationFrame` game loop
+## War Room architecture (CMD-4 + CMD-5 + War Council Parliament)
+- Canvas 2D rendering engine with `requestAnimationFrame` game loop — **Metro Pixel Art** aesthetic
+- Canvas expanded from 40×30 to **40×36** (576px base height) for parliament amphitheater
 - `WarRoom` IIFE module: `init()`, `start()`, `stop()`, `updateFromPriceData(d)`, `syncPrices()`
 - `Agent` class: ticker, zone (arsenal/watchtower/sentinel/commander/**council**), state machine, pixel art rendering
-- 28 stock agents created from existing `ARSENAL_CORE`, `ARSENAL_SAT`, `WT_CORE_ROSTER`, `WT_SAT_ROSTER` arrays
-- Sector-based color palettes: semi, defense, space, network, energy, vault, commander, sentinel
-- **3 Triad Council agents**: DOCTRINE (purple), GATE (steel-blue), WATCHER (emerald) — zone `council`
+- 28 stock agents + **16 council agents** + Bear veto = **45 total agents**
+- Sector-based color palettes: 25 entries (8-color: body/head/hi/dk/skin/glow/eye/accent)
+- **Metro visual effects**: animated circuit-trace floor, parallax cityscape, neon zone borders, dithered shadows, CRT glitch bars, regime-driven atmosphere (green data-rain, amber sweep, orange glow, red flash), data-flow pipes between zones
 - Regime-based visual effects: CSS overlay changes with VIX regime (GREEN/YELLOW/ORANGE/RED)
 - Game loop starts only when WAR ROOM tab is active (performance optimization)
 - Integrates with `fetchPrices()` via `WarRoom.updateFromPriceData(d)` call
 - VIX Sentinel agent changes color palette with regime state
 - All arsenal/watchtower agents freeze visually when VIX ≥ 25 (ORANGE/RED regime)
 
-## Triad Council (CMD-5)
-Three static agents at the bottom of the room (zone `council`) that continuously audit doctrine:
+## War Council Parliament (16 members × 4 Triads + 2 floating + Bear)
+Amphitheater layout with 4 Triad clusters across rows 24-33:
 
-| Agent | Palette | Audit domain |
-|-------|---------|--------------|
-| DOCTRINE | doctrine (purple) | Alpha Filters, thesis age/neglect (DC-06), China Watch (DC-46), Israel Watch (DC-47), blackout windows |
-| GATE | gate (steel-blue) | VIX regime (DC-15), ADV gate (DC-16), SPY vs 200DMA, heartbeat protocol |
-| WATCHER | watcher (emerald) | DC-40 capacity, removal dates, tripwires (TW-1→TW-5), F3 SMA live validation |
+| Triad | Members | Conviction | Audit Domain |
+|-------|---------|------------|-------------|
+| **THESIS** (row 25, left) | ELDER, SA (Sector Analyst), CA (Capital Allocator) | 2/3 | Thesis age/neglect, F3 SMA checks, concentration |
+| **TIMING** (row 25, right) | ROBOT, MACRO, CLOCK | 2/3 | VIX regime, ADV gates, SPY 200DMA, blackout windows |
+| **SAFETY** (row 28, left, 4 seats) | RISK, ARCH, PSY, IENG | 3/4 | Tripwires, WT capacity, behavioral flags, removal dates |
+| **EXT INTEL** (row 28, right) | IO, GEO, DSA (Demand-Side) | 2/3 | News watermark, China/Israel/LNG watches, demand signals |
+| **FLOATING** (row 31) | REG (Regulator), TF (Tech Forecaster) | non-voting | Compliance scan, domain ticker triggers |
+| **BEAR** (row 33, center) | BEAR | independent veto | Triggers when 3+ critical findings across all Triads |
 
-- Audit functions: `doctrineAudit()`, `gateAudit()`, `watchtowerAudit()` — pure computation, no API calls
+- Audit functions: `thesisTriadAudit()`, `timingTriadAudit()`, `safetyTriadAudit()`, `extIntelTriadAudit()` — per-member finding assignment
 - `runTriadAudits(d)` called inside `updateFromPriceData()` on every `prices.json` refresh
-- Speech bubbles rotate through findings every 6s, priority-sorted: critical→warning→info→ok
-- **Consensus**: when 2-of-3 members flag the same ticker, `⚡ CONSENSUS` label appears at table center
-- Click/hover on any Triad agent shows tooltip with full findings list + severity counts
-- Room expanded from 26→30 rows to accommodate council zone
+- Speech bubbles rotate through findings every 4-6s (staggered), priority-sorted: critical→warning→info→ok
+- **Consensus**: when 2-of-4 Triads flag the same ticker, `⚡ CONSENSUS` label + golden table glow
+- **Conviction badges**: each Triad zone shows ✓ CONVICTION / ✗ NO CONVICTION / — PENDING
+- Floating agents: Regulator patrols (drifts between zones), TF activates for domain tickers
+- Bear: independent veto layer, shows 🐻 BEAR VETO when 3+ critical alerts detected
+- Click/hover on any council agent shows tooltip with Triad affiliation, conviction status, NON-VOTING badge
+- Each member has unique body style (hair, build, accessories) — 15 new BODY_STYLES entries
 
 ## Doctrine implementation status
 - ✅ VIX regime bands (GREEN/YELLOW/ORANGE/RED)
 - ✅ PRI gauge (5-factor composite)
 - ✅ Thesis age clock (NEGLECT/STALE tracking)
 - ✅ Blackout window detection
-- ✅ Triad Council audit engine
+- ✅ War Council Parliament (16 members × 4 Triads + floating + Bear)
+- ✅ Per-member audit findings with conviction calculation
+- ✅ Consensus detection (2-of-4 Triads)
+- ✅ doctrine_state.json data pipeline (schema + loader + fallback)
 - ⚠️ DCA Matrix scores are hardcoded — F1-F4 not computed live
 - ⚠️ Drawdown Freeze displayed but not enforced (no DCA blocking)
 - ⚠️ Victory Protocol targets shown but 2x/3x automation missing

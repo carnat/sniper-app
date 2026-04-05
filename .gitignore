@@ -209,3 +209,7 @@ command_center/private.json
 # Portfolio sensitive data (never commit plaintext)
 data/portfolio_config.json
 data/portfolio.json
+
+# Doctrine state (live thesis data — gitignored, use .example.json as template)
+data/doctrine_state.json
+command_center/doctrine_state.json
