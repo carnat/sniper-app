@@ -2722,7 +2722,11 @@ function updateStaleIndicator(d) {
   const badge = document.getElementById('staleBadge');
   const banner = document.getElementById('staleBanner');
   if (!badge) return;
-  if (!d || !d.last_updated) { badge.innerHTML = ''; if (banner) { banner.className = 'stale-banner'; banner.textContent = ''; } return; }
+  if (!d || !d.last_updated) {
+    badge.innerHTML = '';
+    if (banner) { banner.className = 'stale-banner'; banner.textContent = ''; }
+    return;
+  }
   const updated = new Date(d.last_updated);
   const ageMs = Date.now() - updated.getTime();
   const ageHrs = ageMs / (1000 * 60 * 60);
