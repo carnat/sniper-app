@@ -754,7 +754,7 @@
 <header class="header">
   <div class="header-left">
     <div class="logo">SNIPER <span>CMD</span></div>
-    <div class="version-badge" id="appVersion" onclick="toggleDoctrineVersions(event)">v2.0
+    <div class="version-badge" id="appVersion">v2.0
       <div class="doctrine-versions" id="doctrineVersions"></div>
     </div>
   </div>
@@ -2790,7 +2790,8 @@ function nyseHolidays(year) {
   holidays.push(lastWeekday(year, 4, 1));    // Memorial Day — last Monday May
   holidays.push(nthWeekday(year, 8, 1, 1));  // Labor Day — 1st Monday Sep
   holidays.push(nthWeekday(year, 10, 4, 4)); // Thanksgiving — 4th Thursday Nov
-  // Good Friday — Friday before Easter (Anonymous Gregorian Computus)
+  // Good Friday — 2 days before Easter Sunday (Anonymous Gregorian Computus)
+  // Computus calculates Easter Sunday; Good Friday = Easter - 2 days
   const a = year % 19, b = Math.floor(year / 100), c = year % 100;
   const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
   const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
@@ -2824,7 +2825,7 @@ function nextExpectedRefresh(afterDate) {
   if (sameDayRefresh > afterDate && isTradingDay(sameDayRefresh)) return sameDayRefresh;
   // Otherwise advance to next day and find next trading day
   const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 2, 0, 0));
-  // Safety: cap at 10 days to avoid infinite loop (longest possible gap)
+  // Safety: cap at 10 days (covers worst-case multi-holiday clusters + weekends)
   for (let i = 0; i < 10; i++) {
     if (isTradingDay(next)) return next;
     next.setUTCDate(next.getUTCDate() + 1);
@@ -2849,7 +2850,7 @@ function updateStaleIndicator(d) {
   const ageHrs = ageMs / (1000 * 60 * 60);
   // Calculate staleness relative to expected trading-day refreshes
   const nextRefresh = nextExpectedRefresh(updated);
-  const GRACE_MS = 4 * 60 * 60 * 1000; // 4h grace for pipeline delays
+  const GRACE_MS = 4 * 60 * 60 * 1000; // 4h grace for GitHub Actions queue delays / retries
   const msSinceExpected = Date.now() - nextRefresh.getTime();
   // Count missed trading-day refreshes
   let missedRefreshes = 0;
