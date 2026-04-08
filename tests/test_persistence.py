@@ -7,6 +7,14 @@ from pathlib import Path
 from unittest.mock import patch
 
 from sniper.persistence import (
+    get_data_dir,
+    get_transactions_file_path,
+    get_alert_state_file_path,
+    get_analytics_snapshots_file_path,
+    get_scenario_library_file_path,
+    get_watchlists_file_path,
+    get_options_iv_history_file_path,
+    get_calendar_events_file_path,
     load_transaction_history,
     save_transaction_history,
     load_alert_state,
@@ -209,6 +217,63 @@ class TestCalendarEvents(PersistenceTestBase):
         self.assertEqual(len(loaded), 1)
         self.assertEqual(loaded[0]["event_type"], "Reminder")
         self.assertEqual(loaded[0]["status"], "Planned")
+
+
+class TestPathGetters(unittest.TestCase):
+    """Tests for all path-getter helper functions."""
+
+    def test_get_data_dir(self):
+        result = get_data_dir()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit"))
+
+    def test_get_transactions_file_path(self):
+        result = get_transactions_file_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "transactions.json")
+
+    def test_get_alert_state_file_path(self):
+        result = get_alert_state_file_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "alert_state.json")
+
+    def test_get_analytics_snapshots_file_path(self):
+        result = get_analytics_snapshots_file_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "analytics_snapshots.json")
+
+    def test_get_scenario_library_file_path(self):
+        result = get_scenario_library_file_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "scenario_library.json")
+
+    def test_get_watchlists_file_path(self):
+        result = get_watchlists_file_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "watchlists.json")
+
+    def test_get_options_iv_history_file_path(self):
+        result = get_options_iv_history_file_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "options_iv_history.json")
+
+    def test_get_calendar_events_file_path(self):
+        result = get_calendar_events_file_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "calendar_events.json")
+
+    def test_all_paths_share_parent(self):
+        paths = [
+            get_transactions_file_path(),
+            get_alert_state_file_path(),
+            get_analytics_snapshots_file_path(),
+            get_scenario_library_file_path(),
+            get_watchlists_file_path(),
+            get_options_iv_history_file_path(),
+            get_calendar_events_file_path(),
+        ]
+        for p in paths:
+            self.assertEqual(p.parent, get_data_dir())
 
 
 if __name__ == "__main__":
