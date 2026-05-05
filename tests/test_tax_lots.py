@@ -15,6 +15,7 @@ from sniper.tax_lots import (
     lot_record_sell_average,
     get_lot_method_for_asset,
     lot_apply_split,
+    seed_opening_lots_from_portfolios,
 )
 
 
@@ -214,6 +215,77 @@ class TestLotApplySplit(TaxLotTestBase):
     def test_split_negative_ratio_fails(self):
         result = lot_apply_split("AAPL", "US Stock", "USD", -1)
         self.assertFalse(result)
+
+
+class TestGetLotDbPath(unittest.TestCase):
+    def test_returns_path(self):
+        result = get_lot_db_path()
+        self.assertIsInstance(result, Path)
+        self.assertEqual(result, Path(".streamlit") / "portfolio_lots.db")
+
+    def test_path_suffix(self):
+        self.assertEqual(get_lot_db_path().suffix, ".db")
+
+
+class TestSeedOpeningLots(TaxLotTestBase):
+    def test_seeds_us_stocks(self):
+        us = {'Ticker': ['AAPL', 'MSFT'], 'Shares': [10, 20], 'Avg_Cost': [150.0, 300.0]}
+        seed_opening_lots_from_portfolios(us, {'Ticker': [], 'Shares': [], 'Avg_Cost': []}, [])
+        lots = self._get_lots()
+        self.assertEqual(len(lots), 2)
+        symbols = {lot[1] for lot in lots}
+        self.assertEqual(symbols, {'AAPL', 'MSFT'})
+
+    def test_seeds_thai_stocks(self):
+        thai = {'Ticker': ['DELTA'], 'Shares': [100], 'Avg_Cost': [50.0]}
+        seed_opening_lots_from_portfolios(
+            {'Ticker': [], 'Shares': [], 'Avg_Cost': []}, thai, [])
+        lots = self._get_lots()
+        self.assertEqual(len(lots), 1)
+        self.assertEqual(lots[0][1], 'DELTA')
+        self.assertEqual(lots[0][2], 'Thai Stock')
+        self.assertEqual(lots[0][3], 'THB')
+
+    def test_seeds_vault_funds(self):
+        vault = [{'Code': 'KFAFIX', 'Units': 500, 'Cost': 12.0}]
+        seed_opening_lots_from_portfolios(
+            {'Ticker': [], 'Shares': [], 'Avg_Cost': []},
+            {'Ticker': [], 'Shares': [], 'Avg_Cost': []},
+            vault)
+        lots = self._get_lots()
+        self.assertEqual(len(lots), 1)
+        self.assertEqual(lots[0][1], 'KFAFIX')
+        self.assertEqual(lots[0][2], 'Mutual Fund')
+
+    def test_skips_when_db_has_lots(self):
+        lot_record_buy("VRT", "US Stock", "USD", 5, 100.0)
+        us = {'Ticker': ['AAPL'], 'Shares': [10], 'Avg_Cost': [150.0]}
+        seed_opening_lots_from_portfolios(us, {'Ticker': [], 'Shares': [], 'Avg_Cost': []}, [])
+        lots = self._get_lots()
+        self.assertEqual(len(lots), 1)
+        self.assertEqual(lots[0][1], 'VRT')
+
+    def test_handles_empty_portfolios(self):
+        seed_opening_lots_from_portfolios(
+            {'Ticker': [], 'Shares': [], 'Avg_Cost': []},
+            {'Ticker': [], 'Shares': [], 'Avg_Cost': []},
+            [])
+        lots = self._get_lots()
+        self.assertEqual(len(lots), 0)
+
+    def test_source_is_opening(self):
+        us = {'Ticker': ['AAPL'], 'Shares': [10], 'Avg_Cost': [150.0]}
+        seed_opening_lots_from_portfolios(us, {'Ticker': [], 'Shares': [], 'Avg_Cost': []}, [])
+        lots = self._get_lots()
+        self.assertEqual(len(lots), 1)
+        self.assertEqual(lots[0][8], 'OPENING')
+
+    def test_zero_share_positions_skipped(self):
+        us = {'Ticker': ['AAPL', 'MSFT'], 'Shares': [0, 10], 'Avg_Cost': [150.0, 300.0]}
+        seed_opening_lots_from_portfolios(us, {'Ticker': [], 'Shares': [], 'Avg_Cost': []}, [])
+        lots = self._get_lots()
+        self.assertEqual(len(lots), 1)
+        self.assertEqual(lots[0][1], 'MSFT')
 
 
 if __name__ == "__main__":
