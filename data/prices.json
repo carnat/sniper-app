@@ -1,174 +1,181 @@
 {
-  "last_updated": "2026-09-10T06:46:53Z",
-  "fx_rate": 32.87,
-  "vix": 16.46,
+  "last_updated": "2026-09-11T06:46:09Z",
+  "fx_rate": 33.05,
+  "vix": 17.84,
   "spy_above_200dma": true,
   "regime": "GREEN",
-  "updated": "2026-09-10T06:46:53Z",
-  "updated_bkk": "2026-09-10 13:46 GMT+7",
+  "updated": "2026-09-11T06:46:09Z",
+  "updated_bkk": "2026-09-11 13:46 GMT+7",
   "prices": {
     "VRT": {
-      "price": 262.89,
-      "prev_close": 290.83,
-      "change": -9.61,
-      "change_pct": -9.61,
-      "change5d": 2.7,
-      "adv": 4087620,
-      "volume": 9770400,
+      "price": 248.13,
+      "prev_close": 262.89,
+      "change": -5.61,
+      "change_pct": -5.61,
+      "change5d": -3.34,
+      "adv": 4393215,
+      "volume": 10039100,
       "high52w": 379.8559,
       "low52w": 132.5764,
-      "sma50": 281.5536,
-      "sma200": 258.4388,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 279.8198,
+      "sma200": 258.8821,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "Why Vertiv Holdings Co. (VRT) Dipped More Than Broader Market Today",
-          "headline": "Why Vertiv Holdings Co. (VRT) Dipped More Than Broader Market Today",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/why-vertiv-holdings-co-vrt-214501852.html",
-          "publisher": "Zacks",
-          "date": "2026-09-09"
+          "title": "1 Big Reason Vertiv's New Acquisition Could Supercharge Its AI Dominance",
+          "headline": "1 Big Reason Vertiv's New Acquisition Could Supercharge Its AI Dominance",
+          "url": "https://www.fool.com/investing/2026/09/11/1-big-reason-vertivs-new-acquisition-could-superch/",
+          "publisher": "Motley Fool",
+          "date": "2026-09-11"
         },
         {
-          "title": "A Long-Term Bullish Trade Might Be The Ticket For This Stock",
-          "headline": "A Long-Term Bullish Trade Might Be The Ticket For This Stock",
-          "url": "https://www.investors.com/research/options/vertiv-stock-vrt-bull-put-spread-options/?src=A00220&yptr=yahoo",
-          "publisher": "Investor's Business Daily",
-          "date": "2026-09-09"
+          "title": "What Does Buying A Vertiv Dip Cost You Before It Pays?",
+          "headline": "What Does Buying A Vertiv Dip Cost You Before It Pays?",
+          "url": "https://www.trefis.com/articles/614918/what-does-buying-a-vertiv-dip-cost-you-before-it-pays/2026-09-10",
+          "publisher": "Trefis",
+          "date": "2026-09-10"
         },
         {
-          "title": "Is Vertiv Stock Outperforming the Nasdaq?",
-          "headline": "Is Vertiv Stock Outperforming the Nasdaq?",
-          "url": "https://www.barchart.com/story/news/4515688/is-vertiv-stock-outperforming-the-nasdaq",
-          "publisher": "Barchart",
-          "date": "2026-09-09"
+          "title": "3 Stocks Powering the AI Boom That Are Not Named Nvidia",
+          "headline": "3 Stocks Powering the AI Boom That Are Not Named Nvidia",
+          "url": "https://247wallst.com/investing/2026/09/10/3-stocks-powering-the-ai-boom-that-are-not-named-nvidia/",
+          "publisher": "24/7 Wall St.",
+          "date": "2026-09-10"
         }
       ]
     },
     "ASTS": {
-      "price": 62.42,
-      "prev_close": 66.12,
-      "change": -5.6,
-      "change_pct": -5.6,
-      "change5d": 11.86,
-      "adv": 9974050,
-      "volume": 8261300,
+      "price": 59.91,
+      "prev_close": 62.42,
+      "change": -4.02,
+      "change_pct": -4.02,
+      "change5d": -3.99,
+      "adv": 9717190,
+      "volume": 8317900,
       "high52w": 133.86,
-      "low52w": 37.18,
-      "sma50": 66.1412,
-      "sma200": 81.466,
-      "market_time": "2026-09-09T00:00:00",
+      "low52w": 37.73,
+      "sma50": 65.5622,
+      "sma200": 81.512,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
+        {
+          "title": "Rocket Lab CEO Warns \u2018Piping Hot\u2019 AI And Space Trades Could 'Go Pop' As SpaceX-Fueled Mania Sends Valuations Soaring",
+          "headline": "Rocket Lab CEO Warns \u2018Piping Hot\u2019 AI And Space Trades Could 'Go Pop' As SpaceX-Fueled Mania Sends Valuations Soaring",
+          "url": "https://stocktwits.com/news-articles/markets/equity/rocketlab-ceo-ai-space-trades-go-pop-spacex-mania-valuations-soaring/cZtX5I4RBGG",
+          "publisher": "Stocktwits",
+          "date": "2026-09-11"
+        },
+        {
+          "title": "Prediction: AST SpaceMobile Triples Its Revenue Again by 2028",
+          "headline": "Prediction: AST SpaceMobile Triples Its Revenue Again by 2028",
+          "url": "https://www.fool.com/investing/2026/09/10/prediction-ast-spacemobile-triples-its-revenue-again-by-2028/",
+          "publisher": "Motley Fool",
+          "date": "2026-09-10"
+        },
         {
           "title": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
           "headline": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
           "url": "https://stocktwits.com/news-articles/markets/equity/rklb-asts-spcx-pl-trump-task-force-10000-annual-space-operations-2035/cZt96DQRJCf",
           "publisher": "Stocktwits",
           "date": "2026-09-10"
-        },
-        {
-          "title": "AT&T CEO Stankey Details Fiber, Wireless and AI Growth Strategy at Goldman Sachs Conference",
-          "headline": "AT&T CEO Stankey Details Fiber, Wireless and AI Growth Strategy at Goldman Sachs Conference",
-          "url": "https://www.marketbeat.com/instant-alerts/event-att-ceo-stankey-details-fiber-wireless-and-ai-growth-strategy-at-goldman-sachs-conference-2026-09-09/?utm_source=yahoofinance&utm_medium=yahoofinance",
-          "publisher": "MarketBeat",
-          "date": "2026-09-09"
-        },
-        {
-          "title": "Verizon Targets Faster Growth, Cost Cuts and Bigger Shareholder Returns",
-          "headline": "Verizon Targets Faster Growth, Cost Cuts and Bigger Shareholder Returns",
-          "url": "https://www.marketbeat.com/instant-alerts/event-verizon-targets-faster-growth-cost-cuts-and-bigger-shareholder-returns-2026-09-09/?utm_source=yahoofinance&utm_medium=yahoofinance",
-          "publisher": "MarketBeat",
-          "date": "2026-09-09"
         }
       ]
     },
     "VST": {
-      "price": 151.1,
-      "prev_close": 151.72,
-      "change": -0.41,
-      "change_pct": -0.41,
-      "change5d": 9.43,
-      "adv": 4062935,
-      "volume": 3880900,
+      "price": 147.05,
+      "prev_close": 151.1,
+      "change": -2.68,
+      "change_pct": -2.68,
+      "change5d": 2.5,
+      "adv": 4089660,
+      "volume": 4531600,
       "high52w": 218.9083,
       "low52w": 132.4745,
-      "sma50": 149.1812,
-      "sma200": 157.2327,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 148.9496,
+      "sma200": 157.1026,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "Should You Buy Vistra Stock For Its Shrinking Share Count?",
-          "headline": "Should You Buy Vistra Stock For Its Shrinking Share Count?",
-          "url": "https://www.trefis.com/articles/614686/should-you-buy-vistra-stock-for-its-shrinking-share-count/2026-09-09",
-          "publisher": "Trefis",
+          "title": "Sector Update: Energy Stocks Decline Late Afternoon",
+          "headline": "Sector Update: Energy Stocks Decline Late Afternoon",
+          "url": "https://finance.yahoo.com/energy/articles/sector-energy-stocks-decline-afternoon-195829985.html",
+          "publisher": "MT Newswires",
           "date": "2026-09-10"
         },
         {
-          "title": "Vistra CEO Burke Buys 6,665 Shares",
-          "headline": "Vistra CEO Burke Buys 6,665 Shares",
-          "url": "https://www.fool.com/coverage/filings/2026/09/09/vistra-ceo-burke-buys-6-665-shares/",
-          "publisher": "Motley Fool",
-          "date": "2026-09-09"
+          "title": "Sector Update: Energy Stocks Mixed Thursday Afternoon",
+          "headline": "Sector Update: Energy Stocks Mixed Thursday Afternoon",
+          "url": "https://finance.yahoo.com/energy/articles/sector-energy-stocks-mixed-thursday-175034796.html",
+          "publisher": "MT Newswires",
+          "date": "2026-09-10"
         },
         {
-          "title": "Can VST's Diversified Power Generation Fleet Drive Long-Term Growth?",
-          "headline": "Can VST's Diversified Power Generation Fleet Drive Long-Term Growth?",
-          "url": "https://finance.yahoo.com/energy/articles/vsts-diversified-power-generation-fleet-155600067.html",
+          "title": "VST Stock Outperforms Industry in the Past 3 Months: Time to Buy?",
+          "headline": "VST Stock Outperforms Industry in the Past 3 Months: Time to Buy?",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/vst-stock-outperforms-industry-past-145200116.html",
           "publisher": "Zacks",
-          "date": "2026-09-09"
+          "date": "2026-09-10"
         }
       ]
     },
     "MU": {
-      "price": 1027.77,
-      "prev_close": 1000.26,
-      "change": 2.75,
-      "change_pct": 2.75,
-      "change5d": 10.11,
-      "adv": 27646580,
-      "volume": 23726900,
+      "price": 977.41,
+      "prev_close": 1027.77,
+      "change": -4.9,
+      "change_pct": -4.9,
+      "change5d": 2.23,
+      "adv": 27365265,
+      "volume": 26071000,
       "high52w": 1254.807,
-      "low52w": 147.3735,
-      "sma50": 933.2783,
-      "sma200": 614.2109,
-      "market_time": "2026-09-09T00:00:00",
+      "low52w": 152.9645,
+      "sma50": 929.7442,
+      "sma200": 618.092,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "Micron's Operating Margin Surged Past 80% for the First Time Ever. History Says This Is What's Coming Next.",
-          "headline": "Micron's Operating Margin Surged Past 80% for the First Time Ever. History Says This Is What's Coming Next.",
-          "url": "https://www.fool.com/investing/2026/09/09/microns-operating-margin-surged-past-80-for-the-fi/",
-          "publisher": "Motley Fool",
-          "date": "2026-09-09"
+          "title": "PLTR Stock Wins Whether We\u2019re In An AI Bubble Or Not? Wall Street Analyst Explains Why",
+          "headline": "PLTR Stock Wins Whether We\u2019re In An AI Bubble Or Not? Wall Street Analyst Explains Why",
+          "url": "https://stocktwits.com/news-articles/markets/equity/pltr-stock-wins-whether-we-re-in-an-ai-bubble-or-not-wall-street-analyst-explains-why/cZtXeu2RBGd",
+          "publisher": "Stocktwits",
+          "date": "2026-09-11"
         },
         {
-          "title": "SanDisk Traded Its Best Prices For Something Rarer",
-          "headline": "SanDisk Traded Its Best Prices For Something Rarer",
-          "url": "https://www.trefis.com/articles/614776/sandisk-traded-its-best-prices-for-something-rarer/2026-09-09",
-          "publisher": "Trefis",
-          "date": "2026-09-09"
-        },
-        {
-          "title": "Apple, ServiceTitan, Meta, Micron, Casey\u2019s, Jersey Mike\u2019s, and More Stocks That Explain Today\u2019s Market",
-          "headline": "Apple, ServiceTitan, Meta, Micron, Casey\u2019s, Jersey Mike\u2019s, and More Stocks That Explain Today\u2019s Market",
-          "url": "https://www.barrons.com/articles/stock-movers-fa21448d?siteid=yhoof2&yptr=yahoo",
+          "title": "The New Chip Rally Comes With a Warning Attached",
+          "headline": "The New Chip Rally Comes With a Warning Attached",
+          "url": "https://www.barrons.com/articles/new-chip-rally-warning-c35195a2?siteid=yhoof2&yptr=yahoo",
           "publisher": "Barrons.com",
-          "date": "2026-09-09"
+          "date": "2026-09-11"
+        },
+        {
+          "title": "Why Micron Stock Just Sank",
+          "headline": "Why Micron Stock Just Sank",
+          "url": "https://www.fool.com/investing/2026/09/11/why-micron-stock-just-sank/",
+          "publisher": "Motley Fool",
+          "date": "2026-09-11"
         }
       ]
     },
     "APH": {
-      "price": 81.34,
-      "prev_close": 81.76,
-      "change": -0.51,
-      "change_pct": -0.51,
-      "change5d": -0.31,
-      "adv": 11102985,
-      "volume": 9563900,
+      "price": 80.25,
+      "prev_close": 81.34,
+      "change": -1.34,
+      "change_pct": -1.34,
+      "change5d": 0.26,
+      "adv": 11185910,
+      "volume": 13079900,
       "high52w": 89.26,
       "low52w": 58.3535,
-      "sma50": 80.4725,
-      "sma200": 72.8626,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 80.3143,
+      "sma200": 72.9397,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
+        {
+          "title": "Can Corning's Long-Term Fiber Deal With Verizon Boost Its Shares?",
+          "headline": "Can Corning's Long-Term Fiber Deal With Verizon Boost Its Shares?",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/cornings-long-term-fiber-deal-151200061.html",
+          "publisher": "Zacks",
+          "date": "2026-09-10"
+        },
         {
           "title": "Amphenol Tests Key Level, Nears Pivot Amid Strong AI Datacom Sales",
           "headline": "Amphenol Tests Key Level, Nears Pivot Amid Strong AI Datacom Sales",
@@ -182,103 +189,96 @@
           "url": "https://finance.yahoo.com/markets/stocks/articles/amphenol-aph-upgraded-strong-buy-160004605.html",
           "publisher": "Zacks",
           "date": "2026-09-04"
-        },
-        {
-          "title": "2 Services Stocks to Research Further and 1 We Turn Down",
-          "headline": "2 Services Stocks to Research Further and 1 We Turn Down",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/2-services-stocks-research-further-123010978.html",
-          "publisher": "StockStory",
-          "date": "2026-09-04"
         }
       ]
     },
     "ANET": {
-      "price": 192.93,
-      "prev_close": 194.96,
-      "change": -1.04,
-      "change_pct": -1.04,
-      "change5d": 1.94,
-      "adv": 5673200,
-      "volume": 3673900,
+      "price": 188.99,
+      "prev_close": 192.93,
+      "change": -2.04,
+      "change_pct": -2.04,
+      "change5d": 1.55,
+      "adv": 5543030,
+      "volume": 2810900,
       "high52w": 214.89,
       "low52w": 114.52,
-      "sma50": 184.2552,
-      "sma200": 152.6387,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 184.6374,
+      "sma200": 152.9857,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
+        {
+          "title": "Dell enters the S&P 100 index after monstrous three-year rally",
+          "headline": "Dell enters the S&P 100 index after monstrous three-year rally",
+          "url": "https://www.thestreet.com/investing/stocks/dell-stock-sp-100-index-addition-price-target",
+          "publisher": "TheStreet",
+          "date": "2026-09-11"
+        },
+        {
+          "title": "3 Stocks Powering the AI Boom That Are Not Named Nvidia",
+          "headline": "3 Stocks Powering the AI Boom That Are Not Named Nvidia",
+          "url": "https://247wallst.com/investing/2026/09/10/3-stocks-powering-the-ai-boom-that-are-not-named-nvidia/",
+          "publisher": "24/7 Wall St.",
+          "date": "2026-09-10"
+        },
         {
           "title": "How Far Can Arista Networks Stock Move On You In A Year?",
           "headline": "How Far Can Arista Networks Stock Move On You In A Year?",
           "url": "https://www.trefis.com/articles/614696/how-far-can-arista-networks-stock-move-on-you-in-a-year/2026-09-09",
           "publisher": "Trefis",
           "date": "2026-09-10"
-        },
-        {
-          "title": "How Far Could Cisco Stock Fall With Its Fastest Growth Riding On Hyperscalers?",
-          "headline": "How Far Could Cisco Stock Fall With Its Fastest Growth Riding On Hyperscalers?",
-          "url": "https://www.trefis.com/articles/614730/how-far-could-cisco-stock-fall-with-its-fastest-growth-riding-on-hyperscalers/2026-09-09",
-          "publisher": "Trefis",
-          "date": "2026-09-09"
-        },
-        {
-          "title": "Arista Networks (ANET) Falls More Steeply Than Broader Market: What Investors Need to Know",
-          "headline": "Arista Networks (ANET) Falls More Steeply Than Broader Market: What Investors Need to Know",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/arista-networks-anet-falls-more-214505153.html",
-          "publisher": "Zacks",
-          "date": "2026-09-09"
         }
       ]
     },
     "TSM": {
-      "price": 435.36,
-      "prev_close": 439.0,
-      "change": -0.83,
-      "change_pct": -0.83,
-      "change5d": 5.16,
-      "adv": 9301550,
-      "volume": 7486700,
+      "price": 428.03,
+      "prev_close": 435.36,
+      "change": -1.68,
+      "change_pct": -1.68,
+      "change5d": 3.02,
+      "adv": 9191335,
+      "volume": 8341200,
       "high52w": 479.0,
-      "low52w": 255.4054,
-      "sma50": 420.1454,
-      "sma200": 373.422,
-      "market_time": "2026-09-09T00:00:00",
+      "low52w": 255.5537,
+      "sma50": 419.1546,
+      "sma200": 374.1855,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "Defiance Politely Asks the SEC to Let It Sell An ETF 8-Ball",
-          "headline": "Defiance Politely Asks the SEC to Let It Sell An ETF 8-Ball",
-          "url": "https://app.moby.co/home/news/news-defiance-politely-asks-the-sec-to-let-it-sell-an-etf-8-ball?utm_source=yahoo_finance&utm_medium=rss",
-          "publisher": "Moby",
-          "date": "2026-09-09"
+          "title": "Dow Jones Futures Rise, Oil Prices Fall, Oracle Jumps; CPI Inflation Data To Inform Fed",
+          "headline": "Dow Jones Futures Rise, Oil Prices Fall, Oracle Jumps; CPI Inflation Data To Inform Fed",
+          "url": "https://www.investors.com/market-trend/stock-market-today/dow-jones-futures-sp500-oil-prices-treasury-yields-cpi-inflation-oracle-earnings/?src=A00220&yptr=yahoo",
+          "publisher": "Investor's Business Daily",
+          "date": "2026-09-11"
         },
         {
-          "title": "Amkor Expands Advanced Packaging: Can Its $12B Arizona Bet Pay Off?",
-          "headline": "Amkor Expands Advanced Packaging: Can Its $12B Arizona Bet Pay Off?",
-          "url": "https://finance.yahoo.com/technology/articles/amkor-expands-advanced-packaging-12b-163200042.html",
+          "title": "TSMC (TSM) Registers a Bigger Fall Than the Market: Important Facts to Note",
+          "headline": "TSMC (TSM) Registers a Bigger Fall Than the Market: Important Facts to Note",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/tsmc-tsm-registers-bigger-fall-214505555.html",
           "publisher": "Zacks",
-          "date": "2026-09-09"
+          "date": "2026-09-10"
         },
         {
-          "title": "AMD Rises 3% as CFO Lifts AI Chip Market Forecast Toward $3 Trillion; Intel Ticks Up",
-          "headline": "AMD Rises 3% as CFO Lifts AI Chip Market Forecast Toward $3 Trillion; Intel Ticks Up",
-          "url": "https://247wallst.com/investing/2026/09/09/amd-rises-3-as-cfo-lifts-ai-chip-market-forecast-toward-3-trillion-intel-ticks-up/",
-          "publisher": "24/7 Wall St.",
-          "date": "2026-09-09"
+          "title": "Positron AI\u2019s $875M Bet: Commodity Memory Could Break NVIDIA\u2019s Inference Lock",
+          "headline": "Positron AI\u2019s $875M Bet: Commodity Memory Could Break NVIDIA\u2019s Inference Lock",
+          "url": "https://finance.yahoo.com/technology/ai/articles/positron-ai-875m-bet-commodity-212452199.html",
+          "publisher": "Forkast News",
+          "date": "2026-09-10"
         }
       ]
     },
     "ONDS": {
-      "price": 7.29,
-      "prev_close": 7.62,
-      "change": -4.33,
-      "change_pct": -4.33,
-      "change5d": 3.55,
-      "adv": 68599510,
-      "volume": 63684700,
+      "price": 7.25,
+      "prev_close": 7.29,
+      "change": -0.55,
+      "change_pct": -0.55,
+      "change5d": -4.73,
+      "adv": 68051700,
+      "volume": 52258300,
       "high52w": 15.28,
       "low52w": 4.95,
-      "sma50": 8.0102,
-      "sma200": 9.5204,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 7.9904,
+      "sma200": 9.5253,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "Drone Stocks Slide as Risk-Off Sentiment Hits High-Beta Names: AeroVironment Sinks 4%, Red Cat Drops 3%, Ondas Eases",
@@ -304,18 +304,18 @@
       ]
     },
     "FN": {
-      "price": 418.27,
-      "prev_close": 416.31,
-      "change": 0.47,
-      "change_pct": 0.47,
-      "change5d": 4.03,
-      "adv": 1056350,
-      "volume": 538200,
+      "price": 403.95,
+      "prev_close": 418.27,
+      "change": -3.42,
+      "change_pct": -3.42,
+      "change5d": 2.18,
+      "adv": 1052795,
+      "volume": 625200,
       "high52w": 748.89,
       "low52w": 348.01,
-      "sma50": 478.2552,
-      "sma200": 536.1512,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 475.0926,
+      "sma200": 536.2348,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
@@ -341,55 +341,55 @@
       ]
     },
     "COHR": {
-      "price": 303.48,
-      "prev_close": 301.88,
-      "change": 0.53,
-      "change_pct": 0.53,
-      "change5d": 11.56,
-      "adv": 6870945,
-      "volume": 5025100,
+      "price": 293.17,
+      "prev_close": 303.48,
+      "change": -3.4,
+      "change_pct": -3.4,
+      "change5d": 9.13,
+      "adv": 6797395,
+      "volume": 5627400,
       "high52w": 440.0,
       "low52w": 100.63,
-      "sma50": 303.7902,
-      "sma200": 278.0568,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 301.7642,
+      "sma200": 278.8446,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
-          "headline": "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
-          "url": "https://www.trefis.com/articles/614727/how-far-can-fabrinet-stock-fall-while-its-business-accelerates/2026-09-09",
-          "publisher": "Trefis",
-          "date": "2026-09-09"
+          "title": "Top Research Reports for Goldman Sachs, RTX & Abbott",
+          "headline": "Top Research Reports for Goldman Sachs, RTX & Abbott",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/top-research-reports-goldman-sachs-201200445.html",
+          "publisher": "Zacks",
+          "date": "2026-09-10"
         },
         {
-          "title": "AXT's Liquidity Supports InP Capacity Expansion: Can Growth Continue?",
-          "headline": "AXT's Liquidity Supports InP Capacity Expansion: Can Growth Continue?",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/axts-liquidity-supports-inp-capacity-153200067.html",
-          "publisher": "Zacks",
-          "date": "2026-09-09"
+          "title": "GoPro Spikes 11% as Lumentum Eases and Coherent Holds Flat: Is This a Merger Trade or a Meme Trade?",
+          "headline": "GoPro Spikes 11% as Lumentum Eases and Coherent Holds Flat: Is This a Merger Trade or a Meme Trade?",
+          "url": "https://247wallst.com/investing/2026/09/10/gopro-spikes-11-as-lumentum-eases-and-coherent-holds-flat-is-this-a-merger-trade-or-a-meme-trade/",
+          "publisher": "24/7 Wall St.",
+          "date": "2026-09-10"
         },
         {
-          "title": "Buy 3 AI-Powered Photonics Stocks to Tap Solid Short-Term Price Upside",
-          "headline": "Buy 3 AI-Powered Photonics Stocks to Tap Solid Short-Term Price Upside",
-          "url": "https://finance.yahoo.com/technology/ai/articles/buy-3-ai-powered-photonics-123900273.html",
+          "title": "Is Kforce (KFRC) Stock Outpacing Its Business Services Peers This Year?",
+          "headline": "Is Kforce (KFRC) Stock Outpacing Its Business Services Peers This Year?",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/kforce-kfrc-stock-outpacing-business-134004515.html",
           "publisher": "Zacks",
-          "date": "2026-09-09"
+          "date": "2026-09-10"
         }
       ]
     },
     "TSEM": {
-      "price": 216.57,
-      "prev_close": 219.82,
-      "change": -1.48,
-      "change_pct": -1.48,
-      "change5d": 8.8,
-      "adv": 1351545,
-      "volume": 987700,
+      "price": 208.07,
+      "prev_close": 216.57,
+      "change": -3.92,
+      "change_pct": -3.92,
+      "change5d": 0.61,
+      "adv": 1342070,
+      "volume": 1133900,
       "high52w": 319.94,
-      "low52w": 64.59,
-      "sma50": 229.3286,
-      "sma200": 187.3397,
-      "market_time": "2026-09-09T00:00:00",
+      "low52w": 64.81,
+      "sma50": 228.2772,
+      "sma200": 187.922,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "Here Are Wednesday\u2019s Top Wall Street Analyst Research Calls: Ally Financial, GitLab, GLOBAL FOUNDRIES, Martin Marietta Materials, Rocket Lab",
@@ -415,19 +415,26 @@
       ]
     },
     "BWXT": {
-      "price": 156.71,
-      "prev_close": 160.41,
-      "change": -2.31,
-      "change_pct": -2.31,
-      "change5d": -2.99,
-      "adv": 1093665,
-      "volume": 629700,
+      "price": 152.49,
+      "prev_close": 156.71,
+      "change": -2.69,
+      "change_pct": -2.69,
+      "change5d": -2.04,
+      "adv": 1094180,
+      "volume": 873100,
       "high52w": 241.1166,
       "low52w": 147.74,
-      "sma50": 169.5349,
-      "sma200": 192.0307,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 168.6979,
+      "sma200": 191.9205,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
+        {
+          "title": "Can BWXT's Canadian Lab Role Strengthen Nuclear Services Growth?",
+          "headline": "Can BWXT's Canadian Lab Role Strengthen Nuclear Services Growth?",
+          "url": "https://finance.yahoo.com/energy/articles/bwxts-canadian-lab-role-strengthen-142700236.html",
+          "publisher": "Zacks",
+          "date": "2026-09-10"
+        },
         {
           "title": "Jefferies Sees Cameco (CCJ) and BWXT as Winners in the Nuclear Boom",
           "headline": "Jefferies Sees Cameco (CCJ) and BWXT as Winners in the Nuclear Boom",
@@ -441,29 +448,22 @@
           "url": "https://www.marketbeat.com/articles/powering-the-ai-boom-uraniums-95-spark/?utm_source=yahoofinance&utm_medium=yahoofinance",
           "publisher": "MarketBeat",
           "date": "2026-09-07"
-        },
-        {
-          "title": "BWX Technologies Already Builds Reactors for the Navy. Why Is It Still the Cheapest Nuclear Stock?",
-          "headline": "BWX Technologies Already Builds Reactors for the Navy. Why Is It Still the Cheapest Nuclear Stock?",
-          "url": "https://www.fool.com/investing/2026/09/06/bwx-technologies-already-builds-reactors-for-the-n/",
-          "publisher": "Motley Fool",
-          "date": "2026-09-06"
         }
       ]
     },
     "MOD": {
-      "price": 185.97,
-      "prev_close": 192.35,
-      "change": -3.32,
-      "change_pct": -3.32,
-      "change5d": 2.8,
-      "adv": 1297465,
-      "volume": 953100,
+      "price": 179.26,
+      "prev_close": 185.97,
+      "change": -3.61,
+      "change_pct": -3.61,
+      "change5d": -0.14,
+      "adv": 1287900,
+      "volume": 1002900,
       "high52w": 323.25,
       "low52w": 111.18,
-      "sma50": 210.4252,
-      "sma200": 210.9879,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 208.67,
+      "sma200": 211.1891,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "Modine (MOD) Sees a More Significant Dip Than Broader Market: Some Facts to Know",
@@ -489,55 +489,55 @@
       ]
     },
     "NBIS": {
-      "price": 240.35,
-      "prev_close": 243.88,
-      "change": -1.45,
-      "change_pct": -1.45,
-      "change5d": 20.45,
-      "adv": 22389710,
-      "volume": 11340600,
+      "price": 228.11,
+      "prev_close": 240.35,
+      "change": -5.09,
+      "change_pct": -5.09,
+      "change5d": 11.77,
+      "adv": 21835225,
+      "volume": 13013800,
       "high52w": 299.86,
       "low52w": 73.52,
-      "sma50": 212.7336,
-      "sma200": 156.2814,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 211.7724,
+      "sma200": 156.9988,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "Can New Era Energy & Digital Become the Next Nebius Group?",
-          "headline": "Can New Era Energy & Digital Become the Next Nebius Group?",
-          "url": "https://www.fool.com/investing/2026/09/10/can-new-era-energy-digital-become-the-next-nebius/",
-          "publisher": "Motley Fool",
+          "title": "Michael Burry Dumps Nvidia and Palantir Put Options in Fresh Risk Warning",
+          "headline": "Michael Burry Dumps Nvidia and Palantir Put Options in Fresh Risk Warning",
+          "url": "https://finance.yahoo.com/markets/options/articles/michael-burry-dumps-nvidia-palantir-194635018.html",
+          "publisher": "GuruFocus.com",
           "date": "2026-09-10"
         },
         {
-          "title": "Could IREN Become the Next Nvidia-Backed AI Winner?",
-          "headline": "Could IREN Become the Next Nvidia-Backed AI Winner?",
-          "url": "https://247wallst.com/investing/2026/09/09/could-iren-become-the-next-nvidia-backed-ai-winner/",
-          "publisher": "24/7 Wall St.",
-          "date": "2026-09-09"
+          "title": "NVIDIA CEO Sees $4 Trillion AI Infrastructure Boom as Demand Outpaces Supply",
+          "headline": "NVIDIA CEO Sees $4 Trillion AI Infrastructure Boom as Demand Outpaces Supply",
+          "url": "https://www.marketbeat.com/instant-alerts/event-nvidia-ceo-sees-4-trillion-ai-infrastructure-boom-as-demand-outpaces-supply-2026-09-10/?utm_source=yahoofinance&utm_medium=yahoofinance",
+          "publisher": "MarketBeat",
+          "date": "2026-09-10"
         },
         {
-          "title": "Pure-Play AI Cloud vs. Energy-Driven Infrastructure: Nebius Scale Meets IREN Limited\u2019s Efficiency",
-          "headline": "Pure-Play AI Cloud vs. Energy-Driven Infrastructure: Nebius Scale Meets IREN Limited\u2019s Efficiency",
-          "url": "https://247wallst.com/investing/2026/09/09/pure-play-ai-cloud-vs-energy-driven-infrastructure-nebius-scale-meets-iren-limiteds-efficiency/",
+          "title": "CoreWeave Sinks 5% Despite Burry Pulling In His AI Short, Oracle Eases Into Earnings, Cloudflare Holds Steady",
+          "headline": "CoreWeave Sinks 5% Despite Burry Pulling In His AI Short, Oracle Eases Into Earnings, Cloudflare Holds Steady",
+          "url": "https://247wallst.com/investing/2026/09/10/coreweave-sinks-5-despite-burry-pulling-in-his-ai-short-oracle-eases-into-earnings-cloudflare-holds-steady/",
           "publisher": "24/7 Wall St.",
-          "date": "2026-09-09"
+          "date": "2026-09-10"
         }
       ]
     },
     "FORM": {
-      "price": 114.18,
-      "prev_close": 109.86,
-      "change": 3.93,
-      "change_pct": 3.93,
-      "change5d": 19.67,
-      "adv": 1078480,
-      "volume": 1233100,
+      "price": 112.12,
+      "prev_close": 114.18,
+      "change": -1.8,
+      "change_pct": -1.8,
+      "change5d": 16.09,
+      "adv": 1078460,
+      "volume": 1191800,
       "high52w": 160.27,
-      "low52w": 29.58,
-      "sma50": 113.0466,
-      "sma200": 102.662,
-      "market_time": "2026-09-09T00:00:00",
+      "low52w": 30.09,
+      "sma50": 112.0904,
+      "sma200": 102.979,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "Amkor Expands Advanced Packaging: Can Its $12B Arizona Bet Pay Off?",
@@ -563,19 +563,26 @@
       ]
     },
     "ENTG": {
-      "price": 143.03,
-      "prev_close": 141.09,
-      "change": 1.38,
-      "change_pct": 1.38,
-      "change5d": 10.44,
-      "adv": 2057465,
-      "volume": 1643300,
+      "price": 137.4,
+      "prev_close": 143.03,
+      "change": -3.94,
+      "change_pct": -3.94,
+      "change5d": 4.64,
+      "adv": 2052740,
+      "volume": 2232400,
       "high52w": 186.7818,
       "low52w": 67.8092,
-      "sma50": 140.7758,
-      "sma200": 126.7037,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 139.9297,
+      "sma200": 127.0475,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
+        {
+          "title": "AXT Stock Falls 22% in Three Months: 3 Reasons the Dip Looks Attractive",
+          "headline": "AXT Stock Falls 22% in Three Months: 3 Reasons the Dip Looks Attractive",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/axt-stock-falls-22-three-142200786.html",
+          "publisher": "Zacks",
+          "date": "2026-09-10"
+        },
         {
           "title": "Semiconductor Manufacturing Stocks Q2 In Review: Entegris (NASDAQ:ENTG) Vs Peers",
           "headline": "Semiconductor Manufacturing Stocks Q2 In Review: Entegris (NASDAQ:ENTG) Vs Peers",
@@ -589,29 +596,22 @@
           "url": "https://finance.yahoo.com/markets/stocks/articles/entegris-entg-outpaced-other-computer-195427420.html",
           "publisher": "Zacks",
           "date": "2026-09-09"
-        },
-        {
-          "title": "Entegris (ENTG): Buy, Sell, or Hold Post Q2 Earnings?",
-          "headline": "Entegris (ENTG): Buy, Sell, or Hold Post Q2 Earnings?",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/entegris-entg-buy-sell-hold-152718647.html",
-          "publisher": "StockStory",
-          "date": "2026-09-08"
         }
       ]
     },
     "ONTO": {
-      "price": 278.4,
-      "prev_close": 281.11,
-      "change": -0.96,
-      "change_pct": -0.96,
-      "change5d": 8.59,
-      "adv": 956755,
-      "volume": 692600,
+      "price": 268.92,
+      "prev_close": 278.4,
+      "change": -3.41,
+      "change_pct": -3.41,
+      "change5d": 5.65,
+      "adv": 932715,
+      "volume": 736300,
       "high52w": 386.46,
-      "low52w": 107.36,
-      "sma50": 291.6492,
-      "sma200": 242.5611,
-      "market_time": "2026-09-09T00:00:00",
+      "low52w": 107.55,
+      "sma50": 289.4586,
+      "sma200": 243.2794,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "Onto Innovation (ONTO) Bets $720M on X-Ray Chip Technology",
@@ -637,129 +637,129 @@
       ]
     },
     "LITE": {
-      "price": 988.98,
-      "prev_close": 978.535,
-      "change": 1.07,
-      "change_pct": 1.07,
-      "change5d": 13.81,
-      "adv": 4685250,
-      "volume": 4528200,
+      "price": 935.7,
+      "prev_close": 988.98,
+      "change": -5.39,
+      "change_pct": -5.39,
+      "change5d": 7.48,
+      "adv": 4612955,
+      "volume": 3951500,
       "high52w": 1085.6801,
       "low52w": 144.52,
-      "sma50": 822.3709,
-      "sma200": 692.4787,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 823.9237,
+      "sma200": 695.991,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
-          "headline": "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
-          "url": "https://www.trefis.com/articles/614727/how-far-can-fabrinet-stock-fall-while-its-business-accelerates/2026-09-09",
-          "publisher": "Trefis",
-          "date": "2026-09-09"
+          "title": "GoPro Spikes 11% as Lumentum Eases and Coherent Holds Flat: Is This a Merger Trade or a Meme Trade?",
+          "headline": "GoPro Spikes 11% as Lumentum Eases and Coherent Holds Flat: Is This a Merger Trade or a Meme Trade?",
+          "url": "https://247wallst.com/investing/2026/09/10/gopro-spikes-11-as-lumentum-eases-and-coherent-holds-flat-is-this-a-merger-trade-or-a-meme-trade/",
+          "publisher": "24/7 Wall St.",
+          "date": "2026-09-10"
         },
         {
-          "title": "Stock Market Today: Dow Falls 400 Points; Sellers Whack This AI Software Firm",
-          "headline": "Stock Market Today: Dow Falls 400 Points; Sellers Whack This AI Software Firm",
-          "url": "https://www.investors.com/market-trend/stock-market-today/dow-jones-sp500-nasdaq-oil-prices-apple-stock-aapl-iphone-event/?src=A00220&yptr=yahoo",
-          "publisher": "Investor's Business Daily",
-          "date": "2026-09-09"
-        },
-        {
-          "title": "LITE's Laser Growth Accelerates: Can It Challenge AVGO & AAOI?",
-          "headline": "LITE's Laser Growth Accelerates: Can It Challenge AVGO & AAOI?",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/lites-laser-growth-accelerates-challenge-164200195.html",
+          "title": "Why Is Lumentum (LITE) Up 6.1% Since Last Earnings Report?",
+          "headline": "Why Is Lumentum (LITE) Up 6.1% Since Last Earnings Report?",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/why-lumentum-lite-6-1-153004763.html",
           "publisher": "Zacks",
-          "date": "2026-09-09"
+          "date": "2026-09-10"
+        },
+        {
+          "title": "Top Funds Bet Billions As This AI Stock Lights Up A Buy Zone",
+          "headline": "Top Funds Bet Billions As This AI Stock Lights Up A Buy Zone",
+          "url": "https://www.investors.com/research/ibd-stock-analysis/lumentum-stock-lights-up-buy-zone-lite/?src=A00220&yptr=yahoo",
+          "publisher": "Investor's Business Daily",
+          "date": "2026-09-10"
         }
       ]
     },
     "QRVO": {
-      "price": 105.24,
-      "prev_close": 104.07,
-      "change": 1.12,
-      "change_pct": 1.12,
-      "change5d": 9.17,
-      "adv": 941265,
-      "volume": 981100,
-      "high52w": 109.49,
+      "price": 112.36,
+      "prev_close": 105.24,
+      "change": 6.77,
+      "change_pct": 6.77,
+      "change5d": 11.66,
+      "adv": 946070,
+      "volume": 2254700,
+      "high52w": 114.28,
       "low52w": 74.92,
-      "sma50": 92.6516,
-      "sma200": 88.0676,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 93.0334,
+      "sma200": 88.2332,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
+        {
+          "title": "Skyworks (SWKS) Rockets 9.8% on Looming $22B Qorvo Merger Nod",
+          "headline": "Skyworks (SWKS) Rockets 9.8% on Looming $22B Qorvo Merger Nod",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/skyworks-swks-rockets-9-8-014200183.html",
+          "publisher": "Insider Monkey",
+          "date": "2026-09-11"
+        },
+        {
+          "title": "Skyworks Solutions Surges 10%, Qorvo Climbs 6% While Chip Stocks Fall: Is the Merger Finally Clearing?",
+          "headline": "Skyworks Solutions Surges 10%, Qorvo Climbs 6% While Chip Stocks Fall: Is the Merger Finally Clearing?",
+          "url": "https://247wallst.com/investing/2026/09/10/skyworks-solutions-surges-10-qorvo-climbs-6-while-chip-stocks-fall-is-the-merger-finally-clearing/",
+          "publisher": "24/7 Wall St.",
+          "date": "2026-09-10"
+        },
         {
           "title": "Qorvo (QRVO) Agreed to Be Acquired by Skyworks",
           "headline": "Qorvo (QRVO) Agreed to Be Acquired by Skyworks",
           "url": "https://finance.yahoo.com/markets/stocks/articles/qorvo-qrvo-agreed-acquired-skyworks-171150703.html",
           "publisher": "Insider Monkey",
           "date": "2026-09-01"
-        },
-        {
-          "title": "Qorvo (QRVO) Up 6.3% Since Last Earnings Report: Can It Continue?",
-          "headline": "Qorvo (QRVO) Up 6.3% Since Last Earnings Report: Can It Continue?",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/qorvo-qrvo-6-3-since-153020412.html",
-          "publisher": "Zacks",
-          "date": "2026-08-27"
-        },
-        {
-          "title": "1 Semiconductor Stock Worth Investigating and 2 We Avoid",
-          "headline": "1 Semiconductor Stock Worth Investigating and 2 We Avoid",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/1-semiconductor-stock-worth-investigating-204620394.html",
-          "publisher": "StockStory",
-          "date": "2026-08-17"
         }
       ]
     },
     "PLTR": {
-      "price": 169.53,
-      "prev_close": 170.3,
-      "change": -0.45,
-      "change_pct": -0.45,
-      "change5d": -5.77,
-      "adv": 31514670,
-      "volume": 20289400,
+      "price": 165.86,
+      "prev_close": 169.53,
+      "change": -2.16,
+      "change_pct": -2.16,
+      "change5d": -2.12,
+      "adv": 30374385,
+      "volume": 21283400,
       "high52w": 207.52,
       "low52w": 106.37,
-      "sma50": 152.113,
-      "sma200": 151.4073,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 153.0968,
+      "sma200": 151.4579,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "Jim Cramer Compares Palantir (PLTR) to an NFL Wide Receiver",
-          "headline": "Jim Cramer Compares Palantir (PLTR) to an NFL Wide Receiver",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/jim-cramer-compares-palantir-pltr-230017699.html",
-          "publisher": "Insider Monkey",
-          "date": "2026-09-09"
+          "title": "PLTR Stock Wins Whether We\u2019re In An AI Bubble Or Not? Wall Street Analyst Explains Why",
+          "headline": "PLTR Stock Wins Whether We\u2019re In An AI Bubble Or Not? Wall Street Analyst Explains Why",
+          "url": "https://stocktwits.com/news-articles/markets/equity/pltr-stock-wins-whether-we-re-in-an-ai-bubble-or-not-wall-street-analyst-explains-why/cZtXeu2RBGd",
+          "publisher": "Stocktwits",
+          "date": "2026-09-11"
         },
         {
-          "title": "Q2 Data Analytics Earnings Review: First Prize Goes to Palantir Technologies (NASDAQ:PLTR)",
-          "headline": "Q2 Data Analytics Earnings Review: First Prize Goes to Palantir Technologies (NASDAQ:PLTR)",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/q2-data-analytics-earnings-review-203438095.html",
-          "publisher": "StockStory",
-          "date": "2026-09-09"
+          "title": "Dan Ives Says Software Stocks Just Got Their Clearest Buy Signal Yet",
+          "headline": "Dan Ives Says Software Stocks Just Got Their Clearest Buy Signal Yet",
+          "url": "https://beincrypto.com/dan-ives-software-stocks-buy-signal/",
+          "publisher": "BeInCrypto",
+          "date": "2026-09-11"
         },
         {
-          "title": "Meet the AI Software Stock That\u2019s Crushing Palantir (Hint: It\u2019s Significantly Cheaper)",
-          "headline": "Meet the AI Software Stock That\u2019s Crushing Palantir (Hint: It\u2019s Significantly Cheaper)",
-          "url": "https://www.fool.com/investing/2026/09/09/meet-the-ai-software-stock-that-s-crushing-palantir-hint-it-s-significantly-cheaper/",
-          "publisher": "Motley Fool",
-          "date": "2026-09-09"
+          "title": "Palantir Technologies Showcases Sovereign AI Wins With NVIDIA, Cisco and FAA",
+          "headline": "Palantir Technologies Showcases Sovereign AI Wins With NVIDIA, Cisco and FAA",
+          "url": "https://www.marketbeat.com/instant-alerts/event-palantir-technologies-showcases-sovereign-ai-wins-with-nvidia-cisco-and-faa-2026-09-10/?utm_source=yahoofinance&utm_medium=yahoofinance",
+          "publisher": "MarketBeat",
+          "date": "2026-09-10"
         }
       ]
     },
     "KTOS": {
-      "price": 46.74,
-      "prev_close": 48.2,
-      "change": -3.03,
-      "change_pct": -3.03,
-      "change5d": -5.27,
-      "adv": 3125820,
-      "volume": 4573700,
+      "price": 46.98,
+      "prev_close": 46.74,
+      "change": 0.51,
+      "change_pct": 0.51,
+      "change5d": -1.67,
+      "adv": 3203425,
+      "volume": 3394500,
       "high52w": 134.0,
       "low52w": 43.09,
-      "sma50": 52.3506,
-      "sma200": 71.3814,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 52.293,
+      "sma200": 71.2797,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "ONDS Stock Sinks 22% YTD: Is it Time to Hold Tight or Head for Exit?",
@@ -822,55 +822,55 @@
       ]
     },
     "RKLB": {
-      "price": 63.07,
-      "prev_close": 65.87,
-      "change": -4.25,
-      "change_pct": -4.25,
-      "change5d": 0.85,
-      "adv": 16638850,
-      "volume": 26370700,
+      "price": 61.96,
+      "prev_close": 63.07,
+      "change": -1.76,
+      "change_pct": -1.76,
+      "change5d": -1.81,
+      "adv": 16458685,
+      "volume": 18840700,
       "high52w": 151.0,
       "low52w": 37.57,
-      "sma50": 73.8432,
-      "sma200": 79.6863,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 73.0494,
+      "sma200": 79.7987,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
-          "title": "Bond yields tick higher as oil tops $100: AlphaCheck",
-          "headline": "Bond yields tick higher as oil tops $100: AlphaCheck",
-          "url": "https://finance.yahoo.com/markets/article/bond-yields-tick-higher-as-oil-tops-100-alphacheck-135740415.html",
-          "publisher": "Yahoo Finance",
-          "date": "2026-09-09"
+          "title": "Rocket Lab CEO Warns \u2018Piping Hot\u2019 AI And Space Trades Could 'Go Pop' As SpaceX-Fueled Mania Sends Valuations Soaring",
+          "headline": "Rocket Lab CEO Warns \u2018Piping Hot\u2019 AI And Space Trades Could 'Go Pop' As SpaceX-Fueled Mania Sends Valuations Soaring",
+          "url": "https://stocktwits.com/news-articles/markets/equity/rocketlab-ceo-ai-space-trades-go-pop-spacex-mania-valuations-soaring/cZtX5I4RBGG",
+          "publisher": "Stocktwits",
+          "date": "2026-09-11"
         },
         {
-          "title": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
-          "headline": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
-          "url": "https://stocktwits.com/news-articles/markets/equity/rklb-asts-spcx-pl-trump-task-force-10000-annual-space-operations-2035/cZt96DQRJCf",
-          "publisher": "Stocktwits",
+          "title": "Trump Administration Reveals SPACE Task Force To Boost Commercial Launches",
+          "headline": "Trump Administration Reveals SPACE Task Force To Boost Commercial Launches",
+          "url": "https://www.investors.com/news/space-task-force-us-dot-commercial-space-launches-white-house-trump/?src=A00220&yptr=yahoo",
+          "publisher": "Investor's Business Daily",
           "date": "2026-09-10"
         },
         {
-          "title": "RKLB Stock Jumps as Rocket Lab Debuts New Solar Cell for Space",
-          "headline": "RKLB Stock Jumps as Rocket Lab Debuts New Solar Cell for Space",
-          "url": "https://www.barchart.com/story/news/4521867/rklb-stock-jumps-as-rocket-lab-debuts-new-solar-cell-for-space",
-          "publisher": "Barchart",
-          "date": "2026-09-09"
+          "title": "Rocket Lab stock moves on solar cell announcement",
+          "headline": "Rocket Lab stock moves on solar cell announcement",
+          "url": "https://www.thestreet.com/investing/rocket-lab-rklb-stock-china-germanium-supply-hedge",
+          "publisher": "TheStreet",
+          "date": "2026-09-10"
         }
       ]
     },
     "SATL": {
-      "price": 4.99,
-      "prev_close": 5.35,
-      "change": -6.73,
-      "change_pct": -6.73,
-      "change5d": 8.48,
-      "adv": 4431200,
-      "volume": 4946300,
+      "price": 4.7,
+      "prev_close": 4.99,
+      "change": -5.81,
+      "change_pct": -5.81,
+      "change5d": -0.63,
+      "adv": 4337700,
+      "volume": 4179000,
       "high52w": 12.0,
       "low52w": 1.255,
-      "sma50": 4.7409,
-      "sma200": 4.8028,
-      "market_time": "2026-09-09T00:00:00",
+      "sma50": 4.7205,
+      "sma200": 4.8199,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
         {
           "title": "Satellogic taps former US geospatial-intelligence chief as president",
@@ -896,169 +896,169 @@
       ]
     },
     "PL": {
-      "price": 17.22,
-      "prev_close": 17.81,
-      "change": -3.31,
-      "change_pct": -3.31,
-      "change5d": -10.59,
-      "adv": 8850510,
-      "volume": 13285500,
+      "price": 16.69,
+      "prev_close": 17.22,
+      "change": -3.08,
+      "change_pct": -3.08,
+      "change5d": -16.51,
+      "adv": 9303020,
+      "volume": 11122600,
       "high52w": 51.76,
-      "low52w": 9.13,
-      "sma50": 23.0966,
-      "sma200": 27.0366,
-      "market_time": "2026-09-09T00:00:00",
+      "low52w": 9.39,
+      "sma50": 22.7678,
+      "sma200": 27.0639,
+      "market_time": "2026-09-10T00:00:00",
       "news": [
+        {
+          "title": "Planet Labs PBC (PL) Upgraded to Buy: Here's What You Should Know",
+          "headline": "Planet Labs PBC (PL) Upgraded to Buy: Here's What You Should Know",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/planet-labs-pbc-pl-upgraded-160002125.html",
+          "publisher": "Zacks",
+          "date": "2026-09-10"
+        },
+        {
+          "title": "Down 29.7% in 4 Weeks, Here's Why Planet Labs PBC (PL) Looks Ripe for a Turnaround",
+          "headline": "Down 29.7% in 4 Weeks, Here's Why Planet Labs PBC (PL) Looks Ripe for a Turnaround",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/down-29-7-4-weeks-133502784.html",
+          "publisher": "Zacks",
+          "date": "2026-09-10"
+        },
         {
           "title": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
           "headline": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
           "url": "https://stocktwits.com/news-articles/markets/equity/rklb-asts-spcx-pl-trump-task-force-10000-annual-space-operations-2035/cZt96DQRJCf",
           "publisher": "Stocktwits",
           "date": "2026-09-10"
-        },
-        {
-          "title": "Planet Labs (PL) Q2 2027 Earnings Call Transcript",
-          "headline": "Planet Labs (PL) Q2 2027 Earnings Call Transcript",
-          "url": "https://www.fool.com/earnings/call-transcripts/2026/09/09/planet-labs-pl-q2-2027-earnings-call-transcript/",
-          "publisher": "Motley Fool",
-          "date": "2026-09-09"
-        },
-        {
-          "title": "Planet Labs (PL) Reported 58% Revenue Growth. Can Backlog Conversion Sustain Profitability?",
-          "headline": "Planet Labs (PL) Reported 58% Revenue Growth. Can Backlog Conversion Sustain Profitability?",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/planet-labs-pl-reported-58-012242024.html",
-          "publisher": "Insider Monkey",
-          "date": "2026-09-09"
         }
       ]
     },
     "SOXX": {
-      "price": 532.0,
-      "prev_close": 528.4,
-      "change": 0.68,
-      "change_pct": 0.68,
-      "change5d": 6.33,
-      "adv": 7127325,
-      "volume": 6427500,
+      "price": 517.43,
+      "prev_close": 532.0,
+      "change": -2.74,
+      "change_pct": -2.74,
+      "change5d": 3.19,
+      "adv": 7089895,
+      "volume": 6628300,
       "high52w": 655.95,
       "low52w": 252.9795,
-      "sma50": 535.4426,
-      "sma200": 433.799,
-      "market_time": "2026-09-09T00:00:00",
-      "ytd_pct": 69.59
+      "sma50": 532.976,
+      "sma200": 435.0491,
+      "market_time": "2026-09-10T00:00:00",
+      "ytd_pct": 64.95
     },
     "ITA": {
-      "price": 219.45,
-      "prev_close": 223.53,
-      "change": -1.83,
-      "change_pct": -1.83,
-      "change5d": -2.67,
-      "adv": 566320,
-      "volume": 968100,
+      "price": 218.32,
+      "prev_close": 219.45,
+      "change": -0.51,
+      "change_pct": -0.51,
+      "change5d": -2.26,
+      "adv": 596115,
+      "volume": 868900,
       "high52w": 256.6,
       "low52w": 195.4459,
-      "sma50": 239.2618,
-      "sma200": 229.4634,
-      "market_time": "2026-09-09T00:00:00"
+      "sma50": 238.7798,
+      "sma200": 229.5625,
+      "market_time": "2026-09-10T00:00:00"
     },
     "XLU": {
-      "price": 42.94,
-      "prev_close": 43.45,
-      "change": -1.17,
-      "change_pct": -1.17,
-      "change5d": 0.89,
-      "adv": 19853080,
-      "volume": 16901700,
+      "price": 42.52,
+      "prev_close": 42.94,
+      "change": -0.98,
+      "change_pct": -0.98,
+      "change5d": -0.35,
+      "adv": 19713625,
+      "volume": 20610600,
       "high52w": 47.4073,
       "low52w": 40.773,
-      "sma50": 44.3234,
-      "sma200": 44.2875,
-      "market_time": "2026-09-09T00:00:00"
+      "sma50": 44.267,
+      "sma200": 44.2846,
+      "market_time": "2026-09-10T00:00:00"
     },
     "VOO": {
-      "price": 700.87,
-      "prev_close": 704.07,
-      "change": -0.45,
-      "change_pct": -0.45,
-      "change5d": 0.08,
-      "adv": 6667250,
-      "volume": 4293300,
+      "price": 696.65,
+      "prev_close": 700.87,
+      "change": -0.6,
+      "change_pct": -0.6,
+      "change5d": -0.96,
+      "adv": 6623450,
+      "volume": 18299200,
       "high52w": 716.39,
       "low52w": 576.7804,
-      "sma50": 696.7802,
-      "sma200": 653.3842,
-      "market_time": "2026-09-09T00:00:00",
-      "ytd_pct": 11.55
+      "sma50": 696.977,
+      "sma200": 653.8941,
+      "market_time": "2026-09-10T00:00:00",
+      "ytd_pct": 10.88
     },
     "QQQ": {
-      "price": 716.31,
-      "prev_close": 718.36,
-      "change": -0.29,
-      "change_pct": -0.29,
-      "change5d": 1.23,
-      "adv": 30896775,
-      "volume": 26659200,
+      "price": 708.69,
+      "prev_close": 716.31,
+      "change": -1.06,
+      "change_pct": -1.06,
+      "change5d": -0.08,
+      "adv": 30770640,
+      "volume": 31250100,
       "high52w": 747.8282,
       "low52w": 554.9901,
-      "sma50": 711.1664,
-      "sma200": 657.9963,
-      "market_time": "2026-09-09T00:00:00",
-      "ytd_pct": 16.83
+      "sma50": 710.6122,
+      "sma200": 658.622,
+      "market_time": "2026-09-10T00:00:00",
+      "ytd_pct": 15.59
     },
     "EWY": {
-      "price": 190.78,
-      "prev_close": 189.91,
-      "change": 0.46,
-      "change_pct": 0.46,
-      "change5d": 8.52,
-      "adv": 14363950,
-      "volume": 11146100,
+      "price": 182.78,
+      "prev_close": 190.78,
+      "change": -4.19,
+      "change_pct": -4.19,
+      "change5d": 2.19,
+      "adv": 14264290,
+      "volume": 14822000,
       "high52w": 220.89,
-      "low52w": 75.69,
-      "sma50": 174.2548,
-      "sma200": 148.2598,
-      "market_time": "2026-09-09T00:00:00",
-      "ytd_pct": 86.64
+      "low52w": 76.5506,
+      "sma50": 173.8724,
+      "sma200": 148.7407,
+      "market_time": "2026-09-10T00:00:00",
+      "ytd_pct": 78.81
     },
     "GLD": {
-      "price": 403.35,
-      "prev_close": 399.72,
-      "change": 0.91,
-      "change_pct": 0.91,
-      "change5d": 1.66,
-      "adv": 12022415,
-      "volume": 8165400,
+      "price": 396.36,
+      "prev_close": 403.35,
+      "change": -1.73,
+      "change_pct": -1.73,
+      "change5d": -1.59,
+      "adv": 12059880,
+      "volume": 10163600,
       "high52w": 509.7,
-      "low52w": 332.97,
-      "sma50": 390.0938,
-      "sma200": 415.7045,
-      "market_time": "2026-09-09T00:00:00"
+      "low52w": 333.81,
+      "sma50": 390.6534,
+      "sma200": 415.812,
+      "market_time": "2026-09-10T00:00:00"
     },
     "SPY": {
-      "price": 762.4,
-      "prev_close": 765.96,
-      "change": -0.46,
-      "change_pct": -0.46,
-      "change5d": 0.08,
-      "adv": 36597800,
-      "volume": 32772300,
+      "price": 757.83,
+      "prev_close": 762.4,
+      "change": -0.6,
+      "change_pct": -0.6,
+      "change5d": -0.96,
+      "adv": 36401390,
+      "volume": 42679700,
       "high52w": 779.37,
       "low52w": 627.663,
-      "sma50": 758.0246,
-      "sma200": 710.9511,
-      "market_time": "2026-09-09T00:00:00"
+      "sma50": 758.2458,
+      "sma200": 711.5045,
+      "market_time": "2026-09-10T00:00:00"
     },
     "^VIX": {
-      "price": 16.46,
-      "prev_close": 15.72,
-      "change": 4.71,
-      "change_pct": 4.71
+      "price": 17.84,
+      "prev_close": 16.46,
+      "change": 8.38,
+      "change_pct": 8.38
     },
     "THB=X": {
-      "price": 32.87,
-      "prev_close": 32.89,
-      "change": -0.06,
-      "change_pct": -0.06
+      "price": 33.05,
+      "prev_close": 32.92,
+      "change": 0.39,
+      "change_pct": 0.39
     }
   },
   "ytd_ref": {
@@ -1069,63 +1069,87 @@
   },
   "gate": {
     "vix_freeze": false,
-    "vix": 16.46,
+    "vix": 17.84,
     "thb_zone": "B",
-    "thb": 32.87
+    "thb": 33.05
   },
   "adv": {
-    "PLTR": {
-      "adv_20d": 31514670,
-      "today_vol": 20289400,
-      "adv_ratio": 0.64,
+    "NBIS": {
+      "adv_20d": 21835225,
+      "today_vol": 13013800,
+      "adv_ratio": 0.6,
       "gate_met": false
     },
     "PL": {
-      "adv_20d": 8850510,
-      "today_vol": 13285500,
-      "adv_ratio": 1.5,
-      "gate_met": true
-    },
-    "FN": {
-      "adv_20d": 1056350,
-      "today_vol": 538200,
-      "adv_ratio": 0.51,
-      "gate_met": false
-    },
-    "ENTG": {
-      "adv_20d": 2057465,
-      "today_vol": 1643300,
-      "adv_ratio": 0.8,
-      "gate_met": false
-    },
-    "ONTO": {
-      "adv_20d": 956755,
-      "today_vol": 692600,
-      "adv_ratio": 0.72,
+      "adv_20d": 9303020,
+      "today_vol": 11122600,
+      "adv_ratio": 1.2,
       "gate_met": false
     },
     "FORM": {
-      "adv_20d": 1078480,
-      "today_vol": 1233100,
-      "adv_ratio": 1.14,
+      "adv_20d": 1078460,
+      "today_vol": 1191800,
+      "adv_ratio": 1.11,
       "gate_met": false
     },
-    "QRVO": {
-      "adv_20d": 941265,
-      "today_vol": 981100,
-      "adv_ratio": 1.04,
-      "gate_met": false
-    },
-    "NBIS": {
-      "adv_20d": 22389710,
-      "today_vol": 11340600,
-      "adv_ratio": 0.51,
+    "KTOS": {
+      "adv_20d": 3203425,
+      "today_vol": 3394500,
+      "adv_ratio": 1.06,
       "gate_met": false
     },
     "LITE": {
-      "adv_20d": 4685250,
-      "today_vol": 4528200,
-      "adv_ratio": 0.97,
+      "adv_20d": 4612955,
+      "today_vol": 3951500,
+      "adv_ratio": 0.86,
+      "gate_met": false
+    },
+    "QRVO": {
+      "adv_20d": 946070,
+      "today_vol": 2254700,
+      "adv_ratio": 2.38,
+      "gate_met": true
+    },
+    "FN": {
+      "adv_20d": 1052795,
+      "today_vol": 625200,
+      "adv_ratio": 0.59,
+      "gate_met": false
+    },
+    "RKLB": {
+      "adv_20d": 16458685,
+      "today_vol": 18840700,
+      "adv_ratio": 1.14,
+      "gate_met": false
+    },
+    "MOD": {
+      "adv_20d": 1287900,
+      "today_vol": 1002900,
+      "adv_ratio": 0.78,
+      "gate_met": false
+    },
+    "ENTG": {
+      "adv_20d": 2052740,
+      "today_vol": 2232400,
+      "adv_ratio": 1.09,
+      "gate_met": false
+    },
+    "PLTR": {
+      "adv_20d": 30374385,
+      "today_vol": 21283400,
+      "adv_ratio": 0.7,
+      "gate_met": false
+    },
+    "SATL": {
+      "adv_20d": 4337700,
+      "today_vol": 4179000,
+      "adv_ratio": 0.96,
+      "gate_met": false
+    },
+    "BWXT": {
+      "adv_20d": 1094180,
+      "today_vol": 873100,
+      "adv_ratio": 0.8,
       "gate_met": false
     },
     "SKYT": {
@@ -1134,78 +1158,54 @@
       "adv_ratio": 0.0,
       "gate_met": false
     },
-    "MOD": {
-      "adv_20d": 1297465,
-      "today_vol": 953100,
-      "adv_ratio": 0.73,
-      "gate_met": false
-    },
-    "KTOS": {
-      "adv_20d": 3125820,
-      "today_vol": 4573700,
-      "adv_ratio": 1.46,
+    "ONTO": {
+      "adv_20d": 932715,
+      "today_vol": 736300,
+      "adv_ratio": 0.79,
       "gate_met": false
     },
     "TSEM": {
-      "adv_20d": 1351545,
-      "today_vol": 987700,
-      "adv_ratio": 0.73,
+      "adv_20d": 1342070,
+      "today_vol": 1133900,
+      "adv_ratio": 0.84,
       "gate_met": false
-    },
-    "BWXT": {
-      "adv_20d": 1093665,
-      "today_vol": 629700,
-      "adv_ratio": 0.58,
-      "gate_met": false
-    },
-    "SATL": {
-      "adv_20d": 4431200,
-      "today_vol": 4946300,
-      "adv_ratio": 1.12,
-      "gate_met": false
-    },
-    "RKLB": {
-      "adv_20d": 16638850,
-      "today_vol": 26370700,
-      "adv_ratio": 1.58,
-      "gate_met": true
     }
   },
   "news": {
     "VRT": {
-      "headline": "Why Vertiv Holdings Co. (VRT) Dipped More Than Broader Market Today",
-      "publisher": "Zacks",
-      "date": "2026-09-09"
+      "headline": "1 Big Reason Vertiv's New Acquisition Could Supercharge Its AI Dominance",
+      "publisher": "Motley Fool",
+      "date": "2026-09-11"
     },
     "ASTS": {
-      "headline": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
+      "headline": "Rocket Lab CEO Warns \u2018Piping Hot\u2019 AI And Space Trades Could 'Go Pop' As SpaceX-Fueled Mania Sends Valuations Soaring",
       "publisher": "Stocktwits",
-      "date": "2026-09-10"
+      "date": "2026-09-11"
     },
     "VST": {
-      "headline": "Should You Buy Vistra Stock For Its Shrinking Share Count?",
-      "publisher": "Trefis",
+      "headline": "Sector Update: Energy Stocks Decline Late Afternoon",
+      "publisher": "MT Newswires",
       "date": "2026-09-10"
     },
     "MU": {
-      "headline": "Micron's Operating Margin Surged Past 80% for the First Time Ever. History Says This Is What's Coming Next.",
-      "publisher": "Motley Fool",
-      "date": "2026-09-09"
+      "headline": "PLTR Stock Wins Whether We\u2019re In An AI Bubble Or Not? Wall Street Analyst Explains Why",
+      "publisher": "Stocktwits",
+      "date": "2026-09-11"
     },
     "APH": {
-      "headline": "Amphenol Tests Key Level, Nears Pivot Amid Strong AI Datacom Sales",
-      "publisher": "Investor's Business Daily",
-      "date": "2026-09-09"
-    },
-    "ANET": {
-      "headline": "How Far Can Arista Networks Stock Move On You In A Year?",
-      "publisher": "Trefis",
+      "headline": "Can Corning's Long-Term Fiber Deal With Verizon Boost Its Shares?",
+      "publisher": "Zacks",
       "date": "2026-09-10"
     },
+    "ANET": {
+      "headline": "Dell enters the S&P 100 index after monstrous three-year rally",
+      "publisher": "TheStreet",
+      "date": "2026-09-11"
+    },
     "TSM": {
-      "headline": "Defiance Politely Asks the SEC to Let It Sell An ETF 8-Ball",
-      "publisher": "Moby",
-      "date": "2026-09-09"
+      "headline": "Dow Jones Futures Rise, Oil Prices Fall, Oracle Jumps; CPI Inflation Data To Inform Fed",
+      "publisher": "Investor's Business Daily",
+      "date": "2026-09-11"
     },
     "ONDS": {
       "headline": "Drone Stocks Slide as Risk-Off Sentiment Hits High-Beta Names: AeroVironment Sinks 4%, Red Cat Drops 3%, Ondas Eases",
@@ -1218,9 +1218,9 @@
       "date": "2026-09-09"
     },
     "COHR": {
-      "headline": "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
-      "publisher": "Trefis",
-      "date": "2026-09-09"
+      "headline": "Top Research Reports for Goldman Sachs, RTX & Abbott",
+      "publisher": "Zacks",
+      "date": "2026-09-10"
     },
     "TSEM": {
       "headline": "Here Are Wednesday\u2019s Top Wall Street Analyst Research Calls: Ally Financial, GitLab, GLOBAL FOUNDRIES, Martin Marietta Materials, Rocket Lab",
@@ -1228,9 +1228,9 @@
       "date": "2026-09-02"
     },
     "BWXT": {
-      "headline": "Jefferies Sees Cameco (CCJ) and BWXT as Winners in the Nuclear Boom",
-      "publisher": "Insider Monkey",
-      "date": "2026-09-07"
+      "headline": "Can BWXT's Canadian Lab Role Strengthen Nuclear Services Growth?",
+      "publisher": "Zacks",
+      "date": "2026-09-10"
     },
     "MOD": {
       "headline": "Modine (MOD) Sees a More Significant Dip Than Broader Market: Some Facts to Know",
@@ -1238,8 +1238,8 @@
       "date": "2026-09-08"
     },
     "NBIS": {
-      "headline": "Can New Era Energy & Digital Become the Next Nebius Group?",
-      "publisher": "Motley Fool",
+      "headline": "Michael Burry Dumps Nvidia and Palantir Put Options in Fresh Risk Warning",
+      "publisher": "GuruFocus.com",
       "date": "2026-09-10"
     },
     "FORM": {
@@ -1248,9 +1248,9 @@
       "date": "2026-09-09"
     },
     "ENTG": {
-      "headline": "Semiconductor Manufacturing Stocks Q2 In Review: Entegris (NASDAQ:ENTG) Vs Peers",
-      "publisher": "StockStory",
-      "date": "2026-09-09"
+      "headline": "AXT Stock Falls 22% in Three Months: 3 Reasons the Dip Looks Attractive",
+      "publisher": "Zacks",
+      "date": "2026-09-10"
     },
     "ONTO": {
       "headline": "Onto Innovation (ONTO) Bets $720M on X-Ray Chip Technology",
@@ -1258,19 +1258,19 @@
       "date": "2026-09-07"
     },
     "LITE": {
-      "headline": "How Far Can Fabrinet Stock Fall While Its Business Accelerates?",
-      "publisher": "Trefis",
-      "date": "2026-09-09"
+      "headline": "GoPro Spikes 11% as Lumentum Eases and Coherent Holds Flat: Is This a Merger Trade or a Meme Trade?",
+      "publisher": "24/7 Wall St.",
+      "date": "2026-09-10"
     },
     "QRVO": {
-      "headline": "Qorvo (QRVO) Agreed to Be Acquired by Skyworks",
+      "headline": "Skyworks (SWKS) Rockets 9.8% on Looming $22B Qorvo Merger Nod",
       "publisher": "Insider Monkey",
-      "date": "2026-09-01"
+      "date": "2026-09-11"
     },
     "PLTR": {
-      "headline": "Jim Cramer Compares Palantir (PLTR) to an NFL Wide Receiver",
-      "publisher": "Insider Monkey",
-      "date": "2026-09-09"
+      "headline": "PLTR Stock Wins Whether We\u2019re In An AI Bubble Or Not? Wall Street Analyst Explains Why",
+      "publisher": "Stocktwits",
+      "date": "2026-09-11"
     },
     "KTOS": {
       "headline": "ONDS Stock Sinks 22% YTD: Is it Time to Hold Tight or Head for Exit?",
@@ -1283,9 +1283,9 @@
       "date": "2026-08-16"
     },
     "RKLB": {
-      "headline": "Bond yields tick higher as oil tops $100: AlphaCheck",
-      "publisher": "Yahoo Finance",
-      "date": "2026-09-09"
+      "headline": "Rocket Lab CEO Warns \u2018Piping Hot\u2019 AI And Space Trades Could 'Go Pop' As SpaceX-Fueled Mania Sends Valuations Soaring",
+      "publisher": "Stocktwits",
+      "date": "2026-09-11"
     },
     "SATL": {
       "headline": "Satellogic taps former US geospatial-intelligence chief as president",
@@ -1293,8 +1293,8 @@
       "date": "2026-09-08"
     },
     "PL": {
-      "headline": "RKLB, ASTS, SPCX, PL In Focus: New Trump Task Force Targets 10,000 Annual Space Operations By 2035",
-      "publisher": "Stocktwits",
+      "headline": "Planet Labs PBC (PL) Upgraded to Buy: Here's What You Should Know",
+      "publisher": "Zacks",
       "date": "2026-09-10"
     }
   }
