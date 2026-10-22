@@ -97,3 +97,6 @@ Amphitheater layout with 4 Triad clusters across rows 24-33:
 - ❌ Bear Restructure logic not implemented
 - ❌ Dead Hand Clause not implemented
 - ❌ Concentration limit enforcement missing
+
+## War Room and stale quotes
+Agents carry `stale`, `marketDate` and `sessionsBehind` from `quoteFreshness()`; the click tooltip shows a STALE badge. The TIMING triad audit skips the ADV check for stale tickers, adds a STALE QUOTE finding for each, and surfaces the feed-level `stale_data_caveat`. Streamlit does not read `prices.json` (it fetches closes from yfinance directly), so it needs no change.

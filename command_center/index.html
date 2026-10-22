@@ -3758,6 +3758,10 @@ const WarRoom = (function() {
         a.price = entry.price;
         a.changePct = entry.change;
         a.adv = entry.adv;
+        const fr = quoteFreshness(entry, d);
+        a.stale = fr.stale;
+        a.marketDate = fr.marketDate;
+        a.sessionsBehind = fr.sessionsBehind;
       }
     });
     // Freeze all agents when VIX >= 25 (ORANGE/RED)
@@ -3871,10 +3875,19 @@ const WarRoom = (function() {
       advCheck.forEach(ticker => {
         const entry = d.prices[ticker];
         if (!entry || !entry.adv || !entry.volume) return;
+        if (quoteFreshness(entry, d).stale) return;   // stale session: reported by the STALE QUOTE finding below
         const ratio = entry.volume / entry.adv;
         if (ratio < 1.5) {
           robot.push({ text: ticker + ': ADV ' + ratio.toFixed(1) + 'x (< 1.5x)', severity: 'info', ticker });
         }
+      });
+    }
+    // Stale quotes (data quality) and the whole-feed STALE DATA caveat (RULE 7)
+    if (d?.feed_stale && d.stale_data_caveat) robot.push({ text: d.stale_data_caveat, severity: 'warning', ticker: null });
+    if (d?.prices) {
+      staleTickers(d, Object.keys(d.prices).filter(t => advCheck.includes(t))).forEach(ticker => {
+        const fr = quoteFreshness(d.prices[ticker], d);
+        robot.push({ text: ticker + ': STALE QUOTE ' + fmtMarketDate(fr.marketDate) + ' — ADV gate not evaluated', severity: 'warning', ticker });
       });
     }
     // Macro Economist: SPY 200DMA + heartbeat
@@ -5628,6 +5641,9 @@ const WarRoom = (function() {
     else if (a.zone === 'commander') zoneBadge = '<span class="tt-zone" style="background:rgba(255,184,0,0.1);color:var(--amber);border:1px solid var(--amber)">COMMANDER</span>';
 
     const priceStr = a.price != null ? '$' + a.price.toFixed(2) : '—';
+    const staleStr = a.stale
+      ? '<span style="color:var(--amber);font-size:9px;margin-left:4px">STALE ' + fmtMarketDate(a.marketDate) + '</span>'
+      : '';
     const changeStr = a.changePct != null
       ? '<span style="color:' + (a.changePct >= 0 ? 'var(--green)' : 'var(--red)') + '"> ' + (a.changePct >= 0 ? '+' : '') + a.changePct.toFixed(2) + '%</span>'
       : '';
@@ -5635,7 +5651,7 @@ const WarRoom = (function() {
 
     let rows = '';
     if (a.zone !== 'commander') {
-      rows += '<div class="tt-row"><span class="tt-key">Price</span><span class="tt-val">' + priceStr + changeStr + '</span></div>';
+      rows += '<div class="tt-row"><span class="tt-key">Price</span><span class="tt-val">' + priceStr + changeStr + staleStr + '</span></div>';
     }
     if (a.cost) rows += '<div class="tt-row"><span class="tt-key">Cost basis</span><span class="tt-val">$' + a.cost.toFixed(2) + '</span></div>';
     if (a.tier) rows += '<div class="tt-row"><span class="tt-key">Tier</span><span class="tt-val">' + a.tier + '</span></div>';
