@@ -21,7 +21,7 @@ Price pipeline, encryption, and portfolio import. Outputs are read-only JSON. No
 `price`, `change` (daily%), `change5d` (5d%), `adv` (20d avg vol), `volume`, `high52w`, `low52w`, `sma50`, `sma200`, `market_time`, `market_date` (YYYY-MM-DD of the close), `stale` (bool), `sessions_behind` (int), `data_quality` (list of codes), `news` (array of `{title, url, date}`, max 3)
 
 ## prices.json Metadata Keys
-`last_updated`, `fx_rate` (THB/USD), `vix`, `spy_above_200dma` (bool), `regime` (GREEN/YELLOW/ORANGE/RED), `reference_market_date` (newest session in the feed), `stale_tickers` (list)
+`last_updated`, `fx_rate` (THB/USD), `vix`, `spy_above_200dma` (bool), `regime` (GREEN/YELLOW/ORANGE/RED), `reference_market_date` (newest session in the feed), `stale_tickers` (list), `missing_tickers` (configured but not in this refresh)
 
 ## Per-ticker data quality (not doctrine)
 `last_updated` is when the pipeline ran. It says nothing about each quote's age: one

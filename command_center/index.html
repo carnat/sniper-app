@@ -2364,9 +2364,12 @@ function renderWatchtowerTable(roster, tbodyId, pricesData, advData) {
     const changeStr = change == null
       ? ''
       : `<span style="color:${changeColor};font-size:9px;margin-left:4px">${change >= 0 ? '+' : ''}${change.toFixed(2)}%${fr.stale ? ' @' + fmtMarketDate(fr.marketDate) : ''}</span>`;
+    const noData = !!pricesData && !pricesData[sym];
     const priceStr = p
       ? `<span style="${fr.stale ? 'color:var(--text-dim)' : ''}">$${p.toFixed(2)}</span>${sparkline}${changeStr}${staleQuoteBadge(fr)}`
-      : '<span style="color:var(--text-dim)">—</span>';
+      : noData
+        ? '<span style="color:var(--text-dim)">—</span><span class="stale-badge warn" style="margin-left:4px" title="Ticker is configured but missing from prices.json">NO DATA</span>'
+        : '<span style="color:var(--text-dim)">—</span>';
 
     // ADV cell. Missing volume reads "VOL n/a", never 0; a stale session
     // never shows a gate tick.
@@ -2411,15 +2414,22 @@ function updateWatchtowerLive(d) {
   // Per-ticker stale-quote notice (the global badge only covers the feed run time)
   const wtStaleEl = document.getElementById('wtStaleNotice');
   if (wtStaleEl) {
-    const wtStale = staleTickers(d, [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker));
-    if (wtStale.length) {
+    const wtSyms = [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker);
+    const wtStale = staleTickers(d, wtSyms);
+    const wtMissing = wtSyms.filter(sym => !priceMap[sym]);
+    if (wtStale.length || wtMissing.length) {
       const ref = feedReferenceDate(d);
-      const parts = wtStale.map(sym => {
-        const fr = quoteFreshness(priceMap[sym], d);
-        return `${sym} (last close ${fmtMarketDate(fr.marketDate)}, ${fr.sessionsBehind} session${fr.sessionsBehind === 1 ? '' : 's'} behind)`;
-      });
+      const msgs = [];
+      if (wtStale.length) {
+        const parts = wtStale.map(sym => {
+          const fr = quoteFreshness(priceMap[sym], d);
+          return `${sym} (last close ${fmtMarketDate(fr.marketDate)}, ${fr.sessionsBehind} session${fr.sessionsBehind === 1 ? '' : 's'} behind)`;
+        });
+        msgs.push(`⚠ STALE QUOTE${wtStale.length > 1 ? 'S' : ''} — ${parts.join(' · ')} · rest of feed is ${fmtMarketDate(ref)}. Price, change and volume shown are from the older session.`);
+      }
+      if (wtMissing.length) msgs.push(`⚠ NO DATA — ${wtMissing.join(', ')} missing from this refresh.`);
       wtStaleEl.className = 'stale-banner active warn';
-      wtStaleEl.textContent = `⚠ STALE QUOTE${wtStale.length > 1 ? 'S' : ''} — ${parts.join(' · ')} · rest of feed is ${fmtMarketDate(ref)}. Price, change and volume shown are from the older session.`;
+      wtStaleEl.textContent = msgs.join('  ');
     } else {
       wtStaleEl.className = 'stale-banner';
       wtStaleEl.textContent = '';

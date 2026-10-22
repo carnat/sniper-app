@@ -472,6 +472,8 @@ def build_output(prices: dict, adv: dict, news_arrays: dict, news_compat: dict) 
         # Per-ticker freshness (data quality, not doctrine)
         'reference_market_date': freshness['reference_market_date'],
         'stale_tickers':         freshness['stale_tickers'],
+        # Configured tickers the download returned nothing usable for
+        'missing_tickers':       sorted(set(ALL) - set(prices)),
         # Backward-compat keys
         'updated':           timestamp_iso,
         'updated_bkk':       bkk.strftime('%Y-%m-%d %H:%M GMT+7'),
@@ -530,6 +532,8 @@ def main() -> int:
     print(f"Prices:   {len(prices)}/{len(ALL)} tickers")
     print(f"ADV:      {len(adv)} tickers enriched")
     print(f"Session:  {output['reference_market_date']} (reference)")
+    for sym in output['missing_tickers']:
+        print(f"  ⚠ NO DATA: {sym} missing from this refresh", file=sys.stderr)
     for sym in output['stale_tickers']:
         e = output['prices'][sym]
         print(f"  ⚠ STALE QUOTE: {sym} as of {e.get('market_date')} "

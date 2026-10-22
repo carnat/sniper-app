@@ -7,9 +7,9 @@ The format follows Keep a Changelog, and this project uses Semantic Versioning.
 ## [Unreleased]
 
 ### Fixed
-- Price pipeline: per-ticker freshness check. A ticker whose last close lags the feed's newest session is flagged `stale` with `sessions_behind`, `market_date` and `data_quality` codes; the feed adds `reference_market_date` and `stale_tickers` (QRVO stuck on 2026-10-05 inside the 2026-10-22 refresh).
+- Price pipeline: per-ticker freshness check. A ticker whose last close lags the feed's newest session is flagged `stale` with `sessions_behind`, `market_date` and `data_quality` codes; the feed adds `reference_market_date`, `stale_tickers` and `missing_tickers` (QRVO stuck on 2026-10-05 inside the 2026-10-22 refresh).
 - Price pipeline: last-session volume is read from the close's own session; padded NaN/0 volume is reported as unavailable (`null`), not zero. ADV averages only real sessions. A stale session never sets `gate_met`.
-- Command Center: Watchtower stale-quote banner and badges, dimmed stale prices with dated change, `VOL n/a` for missing volume; Arsenal stale badge; Signal Convergence STALE QUOTE warning; market-close label uses the feed's newest session.
+- Command Center: Watchtower stale-quote banner and badges, dimmed stale prices with dated change, `VOL n/a` for missing volume, `NO DATA` for configured tickers missing from the feed; Arsenal stale badge; Signal Convergence STALE QUOTE warning; market-close label uses the feed's newest session.
 
 ## [1.3.0] - 2026-02-19
 

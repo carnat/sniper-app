@@ -213,6 +213,10 @@ class TestStaleTickerInFreshFeed(unittest.TestCase):
         out = build_output(self.prices, build_adv_section(self.prices), {}, {})
         self.assertEqual(out['reference_market_date'], FRESH_SESSION)
         self.assertEqual(out['stale_tickers'], ['QRVO'])
+        # SKYT and others have no frame columns here: reported, not silently dropped
+        self.assertIn('SKYT', out['missing_tickers'])
+        self.assertNotIn('QRVO', out['missing_tickers'])
+        self.assertNotIn('VRT', out['missing_tickers'])
         # Feed run timestamp is still "now": the two coexist, which is the bug
         updated = datetime.strptime(out['last_updated'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
         self.assertLess((datetime.now(timezone.utc) - updated).total_seconds(), 60)
