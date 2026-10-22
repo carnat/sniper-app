@@ -1282,6 +1282,8 @@
         <span style="font-size:10px;color:var(--text-dim)">doctrine_ops v1.15.1</span>
       </div>
     </div>
+    <!-- PER-TICKER STALE QUOTE NOTICE (populated by updateWatchtowerLive) -->
+    <div id="wtStaleNotice" class="stale-banner" role="status"></div>
     <!-- CORE ROSTER -->
     <div class="wt-section-header">WATCHTOWER CORE (12) — S1/S2/S3 TIERS</div>
     <table>
@@ -1826,9 +1828,12 @@ function renderArsenal(positions, tbodyId) {
     const price = prices[p.ticker] || 0;
     const entry = lastPriceData?.prices?.[p.ticker];
     const sparkline = createSparkline(entry);
+    const fr = entry ? quoteFreshness(entry, lastPriceData) : null;
     const priceDisplay = pricesStale
       ? `<span class="price-cell loading">${price.toFixed(2)}*</span>`
-      : `<span class="price-cell">$${price.toFixed(2)}${sparkline}</span>`;
+      : (fr && fr.stale)
+        ? `<span class="price-cell" style="color:var(--text-dim)">$${price.toFixed(2)}${staleQuoteBadge(fr)}</span>`
+        : `<span class="price-cell">$${price.toFixed(2)}${sparkline}</span>`;
     const costDisplay = (privateUnlocked && p.cost) ? `$${p.cost.toFixed(2)}` : '——';
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -2229,13 +2234,12 @@ async function fetchPrices() {
     renderSignalConvergence(d);
 
     // Price timestamp — use first available arsenal ticker's market_time
-    const firstSym = ARSENAL_CORE[0]?.ticker || Object.keys(d.prices)[0];
-    const firstEntry = d.prices[firstSym];
-    const mktTime = firstEntry?.market_time;
+    // Uses the feed's newest session so one lagging ticker can't set the label
+    const refDate = feedReferenceDate(d);
     const tsEl = document.getElementById('arsenalPriceTimestamp');
-    if (tsEl && mktTime) {
-      const dt = new Date(mktTime);
-      tsEl.textContent = '· Market close: ' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (tsEl && refDate) {
+      const dt = new Date(refDate + 'T00:00:00Z');
+      tsEl.textContent = '· Market close: ' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
     } else if (tsEl && d.updated_bkk) {
       tsEl.textContent = '· Data as of: ' + d.updated_bkk;
     }
@@ -2255,6 +2259,78 @@ async function fetchPrices() {
     icon.classList.remove('spin');
     icon.textContent = '↻';
   }
+}
+
+// ─── QUOTE FRESHNESS (per-ticker) — BEGIN ───
+// The feed's last_updated says when the pipeline ran, not how old each quote
+// is. A single ticker can lag the rest of a fresh feed (e.g. QRVO stuck on an
+// Oct 5 close inside an Oct 22 refresh). These helpers read the pipeline's
+// per-ticker flags (stale, sessions_behind, market_date) and fall back to
+// comparing market_time against the feed's newest session for older feeds.
+function quoteMarketDate(entry) {
+  if (!entry) return null;
+  if (entry.market_date) return entry.market_date;
+  return entry.market_time ? String(entry.market_time).slice(0, 10) : null;
+}
+function feedReferenceDate(d) {
+  if (d && d.reference_market_date) return d.reference_market_date;
+  let ref = null;
+  Object.entries((d && d.prices) || {}).forEach(([sym, e]) => {
+    if (sym.startsWith('^') || sym.includes('=')) return; // macro: other calendars
+    const md = quoteMarketDate(e);
+    if (md && (!ref || md > ref)) ref = md;
+  });
+  return ref;
+}
+// Weekdays after `earlier` up to and including `later` (YYYY-MM-DD strings)
+function weekdaysBetween(earlier, later) {
+  if (!earlier || !later || later <= earlier) return 0;
+  const cur = new Date(earlier + 'T00:00:00Z');
+  const end = new Date(later + 'T00:00:00Z');
+  let n = 0;
+  for (let i = 0; i < 400 && cur < end; i++) {
+    cur.setUTCDate(cur.getUTCDate() + 1);
+    const dow = cur.getUTCDay();
+    if (dow !== 0 && dow !== 6) n++;
+  }
+  return n;
+}
+function quoteFreshness(entry, d) {
+  const marketDate = quoteMarketDate(entry);
+  let sessionsBehind = 0;
+  let stale = false;
+  if (entry && typeof entry.stale === 'boolean') {
+    stale = entry.stale;
+    sessionsBehind = entry.sessions_behind ?? weekdaysBetween(marketDate, feedReferenceDate(d));
+  } else if (entry && marketDate) {
+    sessionsBehind = weekdaysBetween(marketDate, feedReferenceDate(d));
+    stale = sessionsBehind >= 1;
+  }
+  return {
+    stale,
+    marketDate,
+    sessionsBehind,
+    // 0 or null volume is a missing observation, not confirmed zero trading
+    volumeMissing: !(entry && entry.volume > 0),
+    sma50Missing:  !(entry && entry.sma50 != null),
+    sma200Missing: !(entry && entry.sma200 != null),
+  };
+}
+function fmtMarketDate(md) {
+  if (!md) return '?';
+  const dt = new Date(md + 'T00:00:00Z');
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+function staleTickers(d, tickers) {
+  const pm = (d && d.prices) || {};
+  return tickers.filter(sym => pm[sym] && quoteFreshness(pm[sym], d).stale);
+}
+// ─── QUOTE FRESHNESS (per-ticker) — END ───
+
+function staleQuoteBadge(fr) {
+  if (!fr.stale) return '';
+  const sessions = fr.sessionsBehind ? ` · ${fr.sessionsBehind} session${fr.sessionsBehind === 1 ? '' : 's'} behind` : '';
+  return `<span class="stale-badge warn" style="margin-left:4px" title="Last close ${fr.marketDate || 'unknown'}${sessions}. Price and change are from that session, not the latest one.">STALE ${fmtMarketDate(fr.marketDate)}</span>`;
 }
 
 // ─── WATCHTOWER LIVE: TABLE + ADV PANEL + NEWS PULSE ───
@@ -2279,22 +2355,30 @@ function renderWatchtowerTable(roster, tbodyId, pricesData, advData) {
     const aEntry = (advData || {})[sym] || {};
     const p = pEntry.price || (prices[sym] || null);
     const change = pEntry.change ?? pEntry.change_pct;
+    const fr = quoteFreshness(pricesData ? pEntry : null, lastPriceData);
 
-    // Price cell + sparkline
-    const sparkline = createSparkline(pEntry);
+    // Price cell + sparkline. A stale quote keeps its price but is dimmed,
+    // badged with its session date, and its change is labelled with that date.
+    const sparkline = fr.stale ? '' : createSparkline(pEntry);
+    const changeColor = fr.stale ? 'var(--text-dim)' : (change >= 0 ? 'var(--green)' : 'var(--red)');
+    const changeStr = change == null
+      ? ''
+      : `<span style="color:${changeColor};font-size:9px;margin-left:4px">${change >= 0 ? '+' : ''}${change.toFixed(2)}%${fr.stale ? ' @' + fmtMarketDate(fr.marketDate) : ''}</span>`;
     const priceStr = p
-      ? `$${p.toFixed(2)}${sparkline}<span style="color:${change >= 0 ? 'var(--green)' : 'var(--red)'};font-size:9px;margin-left:4px">${change >= 0 ? '+' : ''}${(change ?? 0).toFixed(2)}%</span>`
+      ? `<span style="${fr.stale ? 'color:var(--text-dim)' : ''}">$${p.toFixed(2)}</span>${sparkline}${changeStr}${staleQuoteBadge(fr)}`
       : '<span style="color:var(--text-dim)">—</span>';
 
-    // ADV cell
+    // ADV cell. Missing volume reads "VOL n/a", never 0; a stale session
+    // never shows a gate tick.
     let advStr = '<span style="color:var(--text-dim)">—</span>';
-    if (aEntry.adv_20d) {
+    const volMissing = !(aEntry.today_vol > 0) || (pricesData && fr.volumeMissing);
+    if (aEntry.adv_20d && !volMissing) {
       const ratio = aEntry.adv_ratio;
-      const gm = aEntry.gate_met;
-      const color = advColor(gm, ratio);
-      advStr = `<span style="color:${color};font-size:9px">${fmtVol(aEntry.today_vol)} · ${ratio != null ? ratio.toFixed(2) + '×' : '—'}${gm ? ' ✓' : ''}</span>`;
-    } else if (pEntry.adv) {
-      advStr = `<span style="color:var(--text-dim);font-size:9px">ADV ${fmtVol(pEntry.adv)}</span>`;
+      const gm = aEntry.gate_met && !fr.stale;
+      const color = fr.stale ? 'var(--text-dim)' : advColor(gm, ratio);
+      advStr = `<span style="color:${color};font-size:9px">${fmtVol(aEntry.today_vol)} · ${ratio != null ? ratio.toFixed(2) + '×' : '—'}${gm ? ' ✓' : ''}${fr.stale ? ' (old session)' : ''}</span>`;
+    } else if (aEntry.adv_20d || pEntry.adv) {
+      advStr = `<span style="color:var(--text-dim);font-size:9px">VOL n/a · ADV ${fmtVol(aEntry.adv_20d || pEntry.adv)}</span>`;
     }
 
     // Tier badge
@@ -2324,6 +2408,24 @@ function updateWatchtowerLive(d) {
   const advData  = d.adv    || {};
   const priceMap = d.prices || {};
 
+  // Per-ticker stale-quote notice (the global badge only covers the feed run time)
+  const wtStaleEl = document.getElementById('wtStaleNotice');
+  if (wtStaleEl) {
+    const wtStale = staleTickers(d, [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker));
+    if (wtStale.length) {
+      const ref = feedReferenceDate(d);
+      const parts = wtStale.map(sym => {
+        const fr = quoteFreshness(priceMap[sym], d);
+        return `${sym} (last close ${fmtMarketDate(fr.marketDate)}, ${fr.sessionsBehind} session${fr.sessionsBehind === 1 ? '' : 's'} behind)`;
+      });
+      wtStaleEl.className = 'stale-banner active warn';
+      wtStaleEl.textContent = `⚠ STALE QUOTE${wtStale.length > 1 ? 'S' : ''} — ${parts.join(' · ')} · rest of feed is ${fmtMarketDate(ref)}. Price, change and volume shown are from the older session.`;
+    } else {
+      wtStaleEl.className = 'stale-banner';
+      wtStaleEl.textContent = '';
+    }
+  }
+
   // Render full Watchtower tables
   renderWatchtowerTable(WT_CORE_ROSTER, 'wtCoreTable', priceMap, advData);
   renderWatchtowerTable(WT_SAT_ROSTER,  'wtSatTable',  priceMap, advData);
@@ -2337,12 +2439,18 @@ function updateWatchtowerLive(d) {
       .map(p => {
         const sym = p.ticker;
         const a = advData[sym];
-        const gm = a.gate_met;
-        const color = advColor(gm, a.adv_ratio);
+        const fr = quoteFreshness(priceMap[sym], d);
+        const stale = fr.stale || a.stale === true;
+        const volMissing = !(a.today_vol > 0);
+        const gm = a.gate_met && !stale && !volMissing;
+        const color = (stale || volMissing) ? 'var(--text-dim)' : advColor(gm, a.adv_ratio);
+        const reading = volMissing
+          ? 'VOL n/a'
+          : `${fmtVol(a.today_vol)} / ${a.adv_ratio != null ? a.adv_ratio.toFixed(2) + '× ADV' : '—'}`;
         return `<div class="so-item" style="padding:4px 10px">
           <div class="so-header">
-            <span class="so-id">${sym}</span>
-            <span style="font-size:9px;color:${color};font-weight:700">${fmtVol(a.today_vol)} / ${a.adv_ratio != null ? a.adv_ratio.toFixed(2) + '× ADV' : '—'}${gm ? ' ✓ GATE' : ''}</span>
+            <span class="so-id">${sym}${staleQuoteBadge({ ...fr, stale })}</span>
+            <span style="font-size:9px;color:${color};font-weight:700">${reading}${gm ? ' ✓ GATE' : ''}</span>
           </div>
           <div class="so-desc" style="font-size:9px;color:var(--text-dim)">20d ADV: ${fmtVol(a.adv_20d)} · gate ≥1.5×</div>
         </div>`;
@@ -2623,7 +2731,10 @@ function detectSignals(d) {
   // Count ADV gates met
   let gatesMet = 0;
   const advData = d.adv || {};
-  Object.values(advData).forEach(a => { if (a.gate_met) gatesMet++; });
+  Object.entries(advData).forEach(([sym, a]) => {
+    // An ADV ratio from an old session is not today's volume signal
+    if (a.gate_met && !a.stale && !quoteFreshness(priceMap[sym], d).stale) gatesMet++;
+  });
 
   // ELEVATED RISK: VIX rising + positions below SMA200 + blackouts
   if (regime !== 'GREEN' && belowSma200 >= 2 && blackouts.length > 0) {
@@ -2676,6 +2787,17 @@ function detectSignals(d) {
       sev: 'info', icon: '📅',
       title: 'EARNINGS BLACKOUT ZONE',
       desc: `${blackouts.join(', ')} — in pre-earnings blackout window. No new positions.`
+    });
+  }
+
+  // STALE QUOTES (data quality): tickers lagging the rest of the feed
+  const staleSyms = staleTickers(d, Object.keys(priceMap).filter(s => !s.startsWith('^') && !s.includes('=')));
+  if (staleSyms.length > 0) {
+    signals.push({
+      sev: 'warn', icon: '🕒',
+      title: 'STALE QUOTE' + (staleSyms.length > 1 ? 'S' : ''),
+      desc: staleSyms.map(s => `${s} as of ${fmtMarketDate(quoteMarketDate(priceMap[s]))}`).join(', ') +
+        ` — older than the feed's ${fmtMarketDate(feedReferenceDate(d))} session. Verify before acting.`
     });
   }
 
