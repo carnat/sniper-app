@@ -32,6 +32,7 @@ from scripts.fetch_prices import (  # noqa: E402
     build_output,
     build_prices_from_history,
     business_days_between,
+    feed_staleness,
 )
 
 FIXTURE = ROOT / 'tests' / 'fixtures' / 'prices_2026-10-22_qrvo_stale.json'
@@ -101,6 +102,27 @@ class TestBusinessDays(unittest.TestCase):
 
     def test_missing_dates(self):
         self.assertEqual(business_days_between(None, FRESH_SESSION), 0)
+
+
+class TestFeedStaleness(unittest.TestCase):
+    """doctrine_ops RULE 7: reference session vs run date."""
+
+    def test_previous_weekday_session_is_current(self):
+        out = feed_staleness('2026-10-21', '2026-10-22')
+        self.assertFalse(out['feed_stale'])
+        self.assertIsNone(out['stale_data_caveat'])
+
+    def test_friday_session_on_monday_is_current(self):
+        self.assertFalse(feed_staleness('2026-10-16', '2026-10-19')['feed_stale'])
+
+    def test_two_business_days_old_is_stale_with_caveat(self):
+        out = feed_staleness('2026-10-20', '2026-10-22')
+        self.assertTrue(out['feed_stale'])
+        self.assertEqual(out['feed_sessions_behind_run'], 2)
+        self.assertIn('STALE DATA', out['stale_data_caveat'])
+
+    def test_no_session_is_stale(self):
+        self.assertTrue(feed_staleness(None, '2026-10-22')['feed_stale'])
 
 
 class TestPositiveVolume(unittest.TestCase):

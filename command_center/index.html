@@ -2417,9 +2417,11 @@ function updateWatchtowerLive(d) {
     const wtSyms = [...WT_CORE_ROSTER, ...WT_SAT_ROSTER].map(p => p.ticker);
     const wtStale = staleTickers(d, wtSyms);
     const wtMissing = wtSyms.filter(sym => !priceMap[sym]);
-    if (wtStale.length || wtMissing.length) {
+    const feedCaveat = d && d.feed_stale && d.stale_data_caveat ? d.stale_data_caveat : '';
+    if (wtStale.length || wtMissing.length || feedCaveat) {
       const ref = feedReferenceDate(d);
       const msgs = [];
+      if (feedCaveat) msgs.push(feedCaveat + '. Gate checks below use that session.');
       if (wtStale.length) {
         const parts = wtStale.map(sym => {
           const fr = quoteFreshness(priceMap[sym], d);

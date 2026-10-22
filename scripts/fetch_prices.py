@@ -68,6 +68,12 @@ OUT_PATH = Path(__file__).resolve().parents[1] / 'data' / 'prices.json'
 # feed-level last_updated timestamp cannot show. It is a data-quality flag only.
 STALE_SESSION_LAG = 1
 
+# doctrine_ops RULE 7: data older than 1 business day is STALE. Applied to the
+# feed's reference session against the run date (the per-ticker check above
+# only compares tickers with each other).
+FEED_STALE_BUSINESS_DAYS = 1
+STALE_DATA_CAVEAT = '⚠️ STALE DATA'
+
 # Codes written to each entry's `data_quality` list
 DQ_STALE_QUOTE     = 'stale_quote'
 DQ_VOLUME_MISSING  = 'volume_unavailable'
@@ -361,6 +367,27 @@ def annotate_freshness(prices: dict) -> dict:
     return {'reference_market_date': reference, 'stale_tickers': sorted(stale)}
 
 
+def feed_staleness(reference: str | None, run_date: str) -> dict:
+    """RULE 7 check of the whole feed: reference session vs the run date.
+
+    `run_date` is YYYY-MM-DD (UTC). The feed is stale when its newest session is
+    more than FEED_STALE_BUSINESS_DAYS weekdays before the run date, or when it
+    has no session at all. Holidays are not removed, so the first run after a
+    market holiday can flag a feed that is actually current.
+    """
+    if not reference:
+        return {'feed_stale': True, 'feed_sessions_behind_run': None,
+                'stale_data_caveat': STALE_DATA_CAVEAT + ': no market session in feed'}
+    behind = business_days_between(reference, run_date)
+    stale = behind > FEED_STALE_BUSINESS_DAYS
+    return {
+        'feed_stale': stale,
+        'feed_sessions_behind_run': behind,
+        'stale_data_caveat': (f"{STALE_DATA_CAVEAT}: newest session {reference} is "
+                              f"{behind} business days before {run_date}") if stale else None,
+    }
+
+
 def build_adv_section(prices: dict) -> dict:
     """
     Build backward-compatible top-level 'adv' dict from enriched per-ticker data.
@@ -472,6 +499,7 @@ def build_output(prices: dict, adv: dict, news_arrays: dict, news_compat: dict) 
         # Per-ticker freshness (data quality, not doctrine)
         'reference_market_date': freshness['reference_market_date'],
         'stale_tickers':         freshness['stale_tickers'],
+        **feed_staleness(freshness['reference_market_date'], now_utc.strftime('%Y-%m-%d')),
         # Configured tickers the download returned nothing usable for
         'missing_tickers':       sorted(set(ALL) - set(prices)),
         # Backward-compat keys
@@ -532,6 +560,8 @@ def main() -> int:
     print(f"Prices:   {len(prices)}/{len(ALL)} tickers")
     print(f"ADV:      {len(adv)} tickers enriched")
     print(f"Session:  {output['reference_market_date']} (reference)")
+    if output.get('stale_data_caveat'):
+        print(f"  {output['stale_data_caveat']}", file=sys.stderr)
     for sym in output['missing_tickers']:
         print(f"  ⚠ NO DATA: {sym} missing from this refresh", file=sys.stderr)
     for sym in output['stale_tickers']:
@@ -543,7 +573,8 @@ def main() -> int:
     # Log any ADV gate-met signals
     for sym, v in adv.items():
         if v.get('gate_met'):
-            print(f"  ✓ ADV GATE MET: {sym} ratio={v['adv_ratio']}× (vol {v['today_vol']:,})")
+            caveat = f"  {STALE_DATA_CAVEAT}" if output.get('feed_stale') else ''
+            print(f"  ✓ ADV GATE MET: {sym} ratio={v['adv_ratio']}× (vol {v['today_vol']:,}){caveat}")
 
     return 0
 

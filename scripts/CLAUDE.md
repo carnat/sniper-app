@@ -21,7 +21,7 @@ Price pipeline, encryption, and portfolio import. Outputs are read-only JSON. No
 `price`, `change` (daily%), `change5d` (5d%), `adv` (20d avg vol), `volume`, `high52w`, `low52w`, `sma50`, `sma200`, `market_time`, `market_date` (YYYY-MM-DD of the close), `stale` (bool), `sessions_behind` (int), `data_quality` (list of codes), `news` (array of `{title, url, date}`, max 3)
 
 ## prices.json Metadata Keys
-`last_updated`, `fx_rate` (THB/USD), `vix`, `spy_above_200dma` (bool), `regime` (GREEN/YELLOW/ORANGE/RED), `reference_market_date` (newest session in the feed), `stale_tickers` (list), `missing_tickers` (configured but not in this refresh)
+`last_updated`, `fx_rate` (THB/USD), `vix`, `spy_above_200dma` (bool), `regime` (GREEN/YELLOW/ORANGE/RED), `reference_market_date` (newest session in the feed), `stale_tickers` (list), `missing_tickers` (configured but not in this refresh), `feed_stale` (bool), `feed_sessions_behind_run` (int), `stale_data_caveat` (string or null)
 
 ## Per-ticker data quality (not doctrine)
 `last_updated` is when the pipeline ran. It says nothing about each quote's age: one
@@ -38,11 +38,14 @@ the 2026-10-22 refresh). `annotate_freshness()` handles this:
 - Stale quotes are kept (not dropped) and flagged; the Command Center badges them.
 
 Doctrine reconciliation: `docs/doctrine/doctrine_ops.md` RULE 7 says price data older than
-1 business day is marked STALE in gate check outputs. Before this change the code only
-checked the feed run time (Command Center banner, trading-day aware). Now each ticker is
-also checked against the feed's own newest session. The pipeline does not yet compare
-the reference session against the run date, and no gate output prints a
-"STALE DATA" caveat. Doctrine text is unchanged.
+1 business day is marked STALE in gate check outputs. Three layers now cover it (doctrine text unchanged):
+- Command Center banner: feed run time, trading-day aware (unchanged).
+- Per ticker: `annotate_freshness()` compares each ticker with the feed's newest session.
+- Whole feed: `feed_staleness()` compares `reference_market_date` with the run date (UTC).
+  More than 1 weekday old sets `feed_stale: true`, `feed_sessions_behind_run` and
+  `stale_data_caveat` ("⚠️ STALE DATA: ..."). The caveat is printed in the pipeline log,
+  appended to each `ADV GATE MET` line, and shown in the Watchtower banner.
+  Holidays are not removed, so the first run after a market holiday can flag a current feed.
 
 ## Regime Bands (doctrine_core v1.12.1)
 - GREEN: VIX < 22
