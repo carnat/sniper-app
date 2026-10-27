@@ -61,6 +61,62 @@ def get_thb_zone(thb: float) -> str:
 
 OUT_PATH = Path(__file__).resolve().parents[1] / 'data' / 'prices.json'
 
+# ── Per-ticker data quality ───────────────────────────────────────────────────
+# A ticker is STALE when its last close is from an earlier session than the
+# feed's reference session (the newest market date among PRICE_TICKERS).
+# This catches one symbol lagging inside an otherwise fresh refresh, which the
+# feed-level last_updated timestamp cannot show. It is a data-quality flag only.
+STALE_SESSION_LAG = 1
+
+# doctrine_ops RULE 7: data older than 1 business day is STALE. Applied to the
+# feed's reference session against the run date (the per-ticker check above
+# only compares tickers with each other).
+FEED_STALE_BUSINESS_DAYS = 1
+STALE_DATA_CAVEAT = '⚠️ STALE DATA'
+
+# Codes written to each entry's `data_quality` list
+DQ_STALE_QUOTE     = 'stale_quote'
+DQ_VOLUME_MISSING  = 'volume_unavailable'
+DQ_SMA50_MISSING   = 'sma50_unavailable'
+DQ_SMA200_MISSING  = 'sma200_unavailable'
+
+
+def _ts_to_market_time(ts) -> str | None:
+    """Format an OHLCV index timestamp the way prices.json always has."""
+    if not hasattr(ts, 'strftime'):
+        return None
+    if getattr(ts, 'tz', None) is not None:
+        return ts.tz_convert('UTC').strftime('%Y-%m-%dT%H:%M:%SZ')
+    return ts.strftime('%Y-%m-%dT%H:%M:%S')
+
+
+def _positive_volume(value) -> int | None:
+    """Return a volume only when it is a real, positive observation.
+
+    yfinance fills sessions it has no data for with NaN or 0 volume. A zero
+    next to a missing close is not confirmed zero trading activity, so it is
+    reported as unavailable (None) rather than 0.
+    """
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    if v != v or v <= 0:   # NaN or non-positive
+        return None
+    return round(v)
+
+
+def business_days_between(earlier: str, later: str) -> int:
+    """Weekdays from `earlier` (exclusive) to `later` (inclusive), dates as YYYY-MM-DD.
+
+    Returns 0 when `later` is not after `earlier`. Holidays are not removed; the
+    reference session comes from the feed itself, so any lag >= 1 is a real lag.
+    """
+    import numpy as np
+    if not earlier or not later or later <= earlier:
+        return 0
+    return int(np.busday_count(earlier, later))
+
 # ── Rate limiting for individual ticker API calls ─────────────────────────────
 NEWS_CALLS_PER_PERIOD = 3   # max 3 news calls per second
 NEWS_PERIOD_SECONDS   = 1
@@ -188,24 +244,31 @@ def build_prices_from_history(raw, raw_macro) -> dict:
             if len(close) >= 200:
                 sma200 = round(float(close.rolling(200).mean().iloc[-1]), 4)
 
-            # 20-day ADV (exclude today) and last session volume
-            adv_20d    = None
-            last_vol   = None
-            if vol is not None and len(vol) >= 2:
-                prior_vol = vol.iloc[:-1]
-                adv_20d   = round(float(prior_vol.iloc[-20:].mean())) if len(prior_vol) >= 1 else None
-                last_vol  = round(float(vol.iloc[-1]))
+            last_ts = close.index[-1]
 
-            # Market time — last trade date from OHLCV index
-            # yfinance returns timezone-aware timestamps; convert to UTC ISO format
-            market_time = None
-            ts = close.index[-1]
-            if hasattr(ts, 'strftime'):
-                if hasattr(ts, 'tz') and ts.tz is not None:
-                    market_time = ts.tz_convert('UTC').strftime('%Y-%m-%dT%H:%M:%SZ')
-                else:
-                    # No timezone info — format without Z suffix
-                    market_time = ts.strftime('%Y-%m-%dT%H:%M:%S')
+            # Last session volume — taken from the SAME session as the close.
+            # A volume series can run past the last valid close (NaN close,
+            # 0 volume), so never read vol.iloc[-1] blindly.
+            last_vol = None
+            adv_20d  = None
+            if vol is not None and len(vol) >= 1:
+                last_vol = _positive_volume(vol.get(last_ts)) if last_ts in vol.index else None
+                # 20-day ADV over prior sessions with real (positive) volume
+                prior = [v for v in (_positive_volume(x) for x in vol[vol.index < last_ts].tolist()) if v is not None]
+                if prior:
+                    adv_20d = round(sum(prior[-20:]) / len(prior[-20:]))
+
+            # Market time — last trade date from OHLCV index (UTC ISO)
+            market_time = _ts_to_market_time(last_ts)
+            market_date = market_time[:10] if market_time else None
+
+            quality = []
+            if last_vol is None:
+                quality.append(DQ_VOLUME_MISSING)
+            if sma50 is None:
+                quality.append(DQ_SMA50_MISSING)
+            if sma200 is None:
+                quality.append(DQ_SMA200_MISSING)
 
             entry = {
                 'price':      round(price, 4),
@@ -220,6 +283,8 @@ def build_prices_from_history(raw, raw_macro) -> dict:
                 'sma50':      sma50,
                 'sma200':     sma200,
                 'market_time': market_time,
+                'market_date': market_date,
+                'data_quality': quality,
             }
 
             if sym in YTD_REF and YTD_REF[sym] != 0:
@@ -239,7 +304,13 @@ def build_prices_from_history(raw, raw_macro) -> dict:
                 continue
 
             price = float(close.iloc[-1])
-            entry = {'price': round(price, 4)}
+            market_time = _ts_to_market_time(close.index[-1])
+            entry = {
+                'price':       round(price, 4),
+                'market_time': market_time,
+                'market_date': market_time[:10] if market_time else None,
+                'data_quality': [],
+            }
 
             if len(close) >= 2:
                 prev = float(close.iloc[-2])
@@ -253,7 +324,68 @@ def build_prices_from_history(raw, raw_macro) -> dict:
         except Exception as exc:
             print(f"  WARN: failed to process macro {sym}: {exc}", file=sys.stderr)
 
+    annotate_freshness(prices)
     return prices
+
+
+def annotate_freshness(prices: dict) -> dict:
+    """Mark each ticker fresh or stale against the feed's reference session.
+
+    Adds to every entry that has a market_date:
+      stale              — True when the ticker lags the reference session
+      sessions_behind    — weekdays between the ticker's session and the reference
+    and appends DQ_STALE_QUOTE to its data_quality list when stale.
+
+    The reference session is the newest market_date among PRICE_TICKERS
+    (macro tickers such as THB=X trade on other calendars and are excluded
+    from the reference, but are still checked against it).
+    Returns {'reference_market_date', 'stale_tickers'}; mutates `prices`.
+    """
+    # Older feeds carry only market_time; derive market_date from it
+    for entry in prices.values():
+        if not entry.get('market_date') and entry.get('market_time'):
+            entry['market_date'] = str(entry['market_time'])[:10]
+
+    dates = [prices[s].get('market_date') for s in PRICE_TICKERS if s in prices]
+    dates = [d for d in dates if d]
+    reference = max(dates) if dates else None
+
+    stale = []
+    for sym, entry in prices.items():
+        md = entry.get('market_date')
+        if reference is None or not md:
+            continue
+        behind = business_days_between(md, reference)
+        entry['sessions_behind'] = behind
+        entry['stale'] = behind >= STALE_SESSION_LAG
+        quality = entry.setdefault('data_quality', [])
+        if entry['stale']:
+            stale.append(sym)
+            if DQ_STALE_QUOTE not in quality:
+                quality.insert(0, DQ_STALE_QUOTE)
+
+    return {'reference_market_date': reference, 'stale_tickers': sorted(stale)}
+
+
+def feed_staleness(reference: str | None, run_date: str) -> dict:
+    """RULE 7 check of the whole feed: reference session vs the run date.
+
+    `run_date` is YYYY-MM-DD (UTC). The feed is stale when its newest session is
+    more than FEED_STALE_BUSINESS_DAYS weekdays before the run date, or when it
+    has no session at all. Holidays are not removed, so the first run after a
+    market holiday can flag a feed that is actually current.
+    """
+    if not reference:
+        return {'feed_stale': True, 'feed_sessions_behind_run': None,
+                'stale_data_caveat': STALE_DATA_CAVEAT + ': no market session in feed'}
+    behind = business_days_between(reference, run_date)
+    stale = behind > FEED_STALE_BUSINESS_DAYS
+    return {
+        'feed_stale': stale,
+        'feed_sessions_behind_run': behind,
+        'stale_data_caveat': (f"{STALE_DATA_CAVEAT}: newest session {reference} is "
+                              f"{behind} business days before {run_date}") if stale else None,
+    }
 
 
 def build_adv_section(prices: dict) -> dict:
@@ -270,11 +402,15 @@ def build_adv_section(prices: dict) -> dict:
         if adv_20d is None or today_vol is None:
             continue
         ratio = round(today_vol / adv_20d, 2) if adv_20d > 0 else None
+        stale = bool(entry.get('stale'))
         adv[sym] = {
             'adv_20d':   adv_20d,
             'today_vol': today_vol,
             'adv_ratio': ratio,
-            'gate_met':  ratio is not None and ratio >= 1.5,
+            # A ratio from an old session is not today's volume signal
+            'gate_met':  (not stale) and ratio is not None and ratio >= 1.5,
+            'stale':     stale,
+            'market_date': entry.get('market_date'),
         }
     return adv
 
@@ -351,6 +487,7 @@ def build_output(prices: dict, adv: dict, news_arrays: dict, news_compat: dict) 
         enriched_prices[sym] = enriched
 
     timestamp_iso = now_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+    freshness = annotate_freshness(enriched_prices)
 
     return {
         # New top-level metadata (doctrine_ops v1.15.1)
@@ -359,6 +496,12 @@ def build_output(prices: dict, adv: dict, news_arrays: dict, news_compat: dict) 
         'vix':               vix,
         'spy_above_200dma':  spy_above_200dma,
         'regime':            regime,
+        # Per-ticker freshness (data quality, not doctrine)
+        'reference_market_date': freshness['reference_market_date'],
+        'stale_tickers':         freshness['stale_tickers'],
+        **feed_staleness(freshness['reference_market_date'], now_utc.strftime('%Y-%m-%d')),
+        # Configured tickers the download returned nothing usable for
+        'missing_tickers':       sorted(set(ALL) - set(prices)),
         # Backward-compat keys
         'updated':           timestamp_iso,
         'updated_bkk':       bkk.strftime('%Y-%m-%d %H:%M GMT+7'),
@@ -416,12 +559,22 @@ def main() -> int:
     print(f"SPY 200DMA: {'ABOVE' if output['spy_above_200dma'] else 'BELOW'}")
     print(f"Prices:   {len(prices)}/{len(ALL)} tickers")
     print(f"ADV:      {len(adv)} tickers enriched")
+    print(f"Session:  {output['reference_market_date']} (reference)")
+    if output.get('stale_data_caveat'):
+        print(f"  {output['stale_data_caveat']}", file=sys.stderr)
+    for sym in output['missing_tickers']:
+        print(f"  ⚠ NO DATA: {sym} missing from this refresh", file=sys.stderr)
+    for sym in output['stale_tickers']:
+        e = output['prices'][sym]
+        print(f"  ⚠ STALE QUOTE: {sym} as of {e.get('market_date')} "
+              f"({e.get('sessions_behind')} sessions behind)", file=sys.stderr)
     print(f"News:     {len(news_arrays)}/{len(news_tickers)} tickers")
 
     # Log any ADV gate-met signals
     for sym, v in adv.items():
         if v.get('gate_met'):
-            print(f"  ✓ ADV GATE MET: {sym} ratio={v['adv_ratio']}× (vol {v['today_vol']:,})")
+            caveat = f"  {STALE_DATA_CAVEAT}" if output.get('feed_stale') else ''
+            print(f"  ✓ ADV GATE MET: {sym} ratio={v['adv_ratio']}× (vol {v['today_vol']:,}){caveat}")
 
     return 0
 

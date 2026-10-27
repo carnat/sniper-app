@@ -43,6 +43,7 @@ Features added via PR #16, WorldMonitor-inspired:
 - **PanelManager (A1)** — Collapse/expand panels with localStorage state persistence.
 - **CSS Semantic Tokens** — `--panel-radius`, `--font-xs`→`--font-xl`, `--shadow-card`, `--transition-fast/normal`.
 - **Shared Helper** — `getBlackoutTickers()` used by both PRI and Triad Council audit engine.
+- **Per-ticker quote freshness** — `quoteFreshness(entry, d)` / `feedReferenceDate(d)` / `staleTickers(d, list)` between the `QUOTE FRESHNESS (per-ticker) — BEGIN/END` markers (tests run them under node, so keep them self-contained). Uses pipeline flags (`stale`, `sessions_behind`, `market_date`) and falls back to `market_time` vs the feed's newest session for older feeds. Watchtower shows a `#wtStaleNotice` banner and `STALE <date>` badges, dims the price, labels the change with its session date, shows `VOL n/a` instead of 0, and never shows an ADV gate tick for a stale session. Arsenal badges stale prices; Signal Convergence adds a STALE QUOTE warning and skips stale ADV gates.
 
 ## War Room architecture (CMD-4 + CMD-5 + War Council Parliament)
 - Canvas 2D rendering engine with `requestAnimationFrame` game loop — **Metro Pixel Art** aesthetic
